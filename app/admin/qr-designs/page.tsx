@@ -16,7 +16,7 @@ export default async function AdminQrDesignsPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold text-ink-900">QR designs</h1>
+        <h1 className="text-xl font-semibold text-ink-900 sm:text-2xl">QR designs</h1>
         <p className="mt-1 text-sm text-ink-500">
           The label templates restaurants choose from on their QR codes page.
         </p>

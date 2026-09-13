@@ -45,7 +45,7 @@ export default async function AdminUsersPage({
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold text-ink-900">{t("admin.users")}</h1>
+        <h1 className="text-xl font-semibold text-ink-900 sm:text-2xl">{t("admin.users")}</h1>
         <p className="mt-1 text-sm text-ink-500">{t("admin.users")}</p>
       </div>
 
@@ -69,7 +69,7 @@ export default async function AdminUsersPage({
               const owned = byOwner.get(profile.id) ?? [];
               return (
                 <li key={profile.id} className="flex flex-wrap items-center gap-3 p-4">
-                  <div className="min-w-48 flex-1">
+                  <div className="w-full min-w-0 flex-1 sm:w-auto sm:min-w-48">
                     <p className="font-medium text-ink-900">
                       {profile.full_name || profile.email || "Unnamed user"}
                     </p>

@@ -31,7 +31,7 @@ export default async function AdminPlatformPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold text-ink-900">{t("admin.platformTitle")}</h1>
+        <h1 className="text-xl font-semibold text-ink-900 sm:text-2xl">{t("admin.platformTitle")}</h1>
         <p className="mt-1 text-sm text-ink-500">{t("admin.platformSub")}</p>
       </div>
 

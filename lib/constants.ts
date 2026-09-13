@@ -124,6 +124,10 @@ export const IMAGE_PRESETS = {
   category: { maxEdge: 1200, quality: 0.78 },
   product: { maxEdge: 1200, quality: 0.8 },
   library: { maxEdge: 1200, quality: 0.8 },
+  // The shared menu ships to every restaurant that copies it, so it is the
+  // one place worth compressing hardest. 1000px still covers the largest
+  // place it renders (the full-screen product sheet on a phone).
+  catalog: { maxEdge: 1000, quality: 0.72 },
 } as const;
 
 export type ImageRole = keyof typeof IMAGE_PRESETS;

@@ -222,6 +222,103 @@ function parseCatalogVariants(raw: string): { name: string; price: number | null
     .filter((v) => v.name.length > 0);
 }
 
+// ------------------------------------------------------- catalog categories
+
+export async function saveCatalogCategoryAction(
+  _prev: ActionState,
+  form: FormData
+): Promise<ActionState> {
+  const admin = await assertAdmin();
+  if (!admin.ok) return admin.error;
+
+  const id = String(form.get("id") ?? "").trim();
+  const name = String(form.get("name") ?? "").trim().slice(0, 60);
+  if (name.length < 1) return fail("A name is required.", { name: "A name is required." });
+
+  const payload = {
+    name,
+    description: String(form.get("description") ?? "").trim().slice(0, 200) || null,
+    image_url: sanitiseImageUrl(String(form.get("image_url") ?? "").trim() || null),
+    is_active: form.get("is_active") !== "off",
+  };
+
+  const supabase = await createServerSupabase();
+  const { error } = id
+    ? await supabase.from("catalog_categories").update(payload).eq("id", id)
+    : await supabase.from("catalog_categories").insert(payload);
+
+  if (error) {
+    if (/duplicate key|unique/i.test(error.message)) {
+      return fail("A section with that name already exists.", { name: "Already used." });
+    }
+    return fail(error.message);
+  }
+
+  revalidatePath("/admin/catalog");
+  revalidatePath("/dashboard/catalog");
+  return done(id ? "Section updated." : "Section added.");
+}
+
+/**
+ * Deleting a section never deletes its dishes — `category_id` is
+ * `on delete set null`, so they land in "Not filed yet" and can be moved.
+ */
+export async function deleteCatalogCategoryAction(id: string): Promise<ActionState> {
+  const admin = await assertAdmin();
+  if (!admin.ok) return admin.error;
+
+  const supabase = await createServerSupabase();
+  const { error } = await supabase.from("catalog_categories").delete().eq("id", id);
+  if (error) return fail(error.message);
+
+  revalidatePath("/admin/catalog");
+  revalidatePath("/dashboard/catalog");
+  return done("Section removed. Its dishes are still in the catalog.");
+}
+
+export async function moveCatalogCategoryAction(
+  id: string,
+  direction: "up" | "down"
+): Promise<ActionState> {
+  const admin = await assertAdmin();
+  if (!admin.ok) return admin.error;
+
+  const supabase = await createServerSupabase();
+  const { data: rows, error: readError } = await supabase
+    .from("catalog_categories")
+    .select("id, sort_order")
+    .order("sort_order", { ascending: true })
+    .order("name", { ascending: true })
+    .limit(500);
+
+  if (readError) return fail(readError.message);
+  const list = rows ?? [];
+  const index = list.findIndex((row) => row.id === id);
+  const swapWith = direction === "up" ? index - 1 : index + 1;
+  if (index < 0 || swapWith < 0 || swapWith >= list.length) return done();
+
+  // Rewrite the whole column rather than swapping two values: the seeded rows
+  // all start at sort_order 0, so swapping alone would not move anything.
+  const reordered = [...list];
+  const [moved] = reordered.splice(index, 1);
+  reordered.splice(swapWith, 0, moved);
+
+  const results = await Promise.all(
+    reordered.map((row, position) =>
+      supabase.from("catalog_categories").update({ sort_order: position }).eq("id", row.id)
+    )
+  );
+
+  // A half-applied reorder leaves duplicate sort_order values, so say so
+  // rather than reporting success.
+  const failed = results.find((result) => result.error);
+  if (failed?.error) return fail(failed.error.message);
+
+  revalidatePath("/admin/catalog");
+  revalidatePath("/dashboard/catalog");
+  return done();
+}
+
 export async function saveCatalogItemAction(
   _prev: ActionState,
   form: FormData
@@ -233,11 +330,16 @@ export async function saveCatalogItemAction(
   const name = String(form.get("name") ?? "").trim().slice(0, 90);
   if (!name) return fail("A name is required.");
 
+  const categoryId = String(form.get("category_id") ?? "").trim();
+
   const payload = {
     name,
     description: String(form.get("description") ?? "").trim().slice(0, 400) || null,
     ingredients: String(form.get("ingredients") ?? "").trim().slice(0, 300) || null,
-    category_name: String(form.get("category_name") ?? "").trim().slice(0, 60) || null,
+    // `category_name` is written by a trigger from the section, so it is
+    // deliberately absent here — sending it would let a stale form value
+    // overwrite the real label.
+    category_id: categoryId || null,
     cuisine: String(form.get("cuisine") ?? "").trim().slice(0, 60) || null,
     image_url: sanitiseImageUrl(String(form.get("image_url") ?? "").trim() || null),
     variants: parseCatalogVariants(String(form.get("variants") ?? "")),
@@ -257,6 +359,7 @@ export async function saveCatalogItemAction(
   if (error) return fail(error.message);
 
   revalidatePath("/admin/catalog");
+  revalidatePath("/dashboard/catalog");
   return done(id ? "Item updated." : "Item added to the catalog.");
 }
 
@@ -269,6 +372,7 @@ export async function deleteCatalogItemAction(id: string): Promise<ActionState> 
   if (error) return fail(error.message);
 
   revalidatePath("/admin/catalog");
+  revalidatePath("/dashboard/catalog");
   return done("Item removed.");
 }
 

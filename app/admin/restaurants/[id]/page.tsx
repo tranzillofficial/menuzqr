@@ -65,7 +65,7 @@ export default async function AdminRestaurantPage({
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-ink-900">{restaurant.name}</h1>
+          <h1 className="text-xl font-semibold text-ink-900 sm:text-2xl">{restaurant.name}</h1>
           <p className="mt-1 text-sm text-ink-500">
             /{restaurant.slug} · owner {owner.data?.email ?? "unknown"}
           </p>

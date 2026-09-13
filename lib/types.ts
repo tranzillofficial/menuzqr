@@ -189,8 +189,18 @@ export type QrTemplate = {
 
 export type CatalogVariant = { name: string; price?: number | null };
 
+export type CatalogCategory = {
+  id: string;
+  name: string;
+  description: string | null;
+  image_url: string | null;
+  sort_order: number;
+  is_active: boolean;
+};
+
 export type CatalogItem = {
   id: string;
+  category_id: string | null;
   name: string;
   description: string | null;
   ingredients: string | null;

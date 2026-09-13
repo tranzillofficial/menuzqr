@@ -25,7 +25,7 @@ export default async function AdminLibraryPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold text-ink-900">Image library</h1>
+        <h1 className="text-xl font-semibold text-ink-900 sm:text-2xl">Image library</h1>
         <p className="mt-1 text-sm text-ink-500">
           Shared artwork every restaurant can use on its menu. {images.length} images.
         </p>

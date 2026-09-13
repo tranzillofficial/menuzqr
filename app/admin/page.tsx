@@ -53,7 +53,7 @@ export default async function AdminRestaurantsPage({
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold text-ink-900">{t("admin.restaurants")}</h1>
+        <h1 className="text-xl font-semibold text-ink-900 sm:text-2xl">{t("admin.restaurants")}</h1>
         <p className="mt-1 text-sm text-ink-500">
           {t("admin.restaurantsSub")}
         </p>
@@ -69,12 +69,12 @@ export default async function AdminRestaurantsPage({
           <Link
             key={label as string}
             href={filterValue ? `/admin?status=${filterValue}` : "/admin"}
-            className={`rounded-2xl border bg-white p-4 transition-colors ${
+            className={`rounded-2xl border bg-white p-3 transition-colors sm:p-4 ${
               status === filterValue ? "border-brand-400 ring-1 ring-brand-100" : "border-ink-200"
             }`}
           >
-            <p className="text-xs font-medium uppercase tracking-wide text-ink-500">{label}</p>
-            <p className="ltr-nums mt-1 text-2xl font-semibold text-ink-900">{value}</p>
+            <p className="truncate text-[11px] font-medium uppercase tracking-wide text-ink-500 sm:text-xs">{label}</p>
+            <p className="ltr-nums mt-1 text-xl font-semibold text-ink-900 sm:text-2xl">{value}</p>
           </Link>
         ))}
       </div>
@@ -100,7 +100,7 @@ export default async function AdminRestaurantsPage({
               const owner = ownerById[restaurant.owner_id];
               return (
                 <li key={restaurant.id} className="flex flex-wrap items-center gap-3 p-4">
-                  <div className="min-w-48 flex-1">
+                  <div className="w-full min-w-0 flex-1 sm:w-auto sm:min-w-48">
                     <Link
                       href={`/admin/restaurants/${restaurant.id}`}
                       className="font-medium text-ink-900 hover:underline"

@@ -21,6 +21,7 @@ const NAV: Array<{
   { href: "/dashboard/restaurant", label: "nav.restaurant", icon: Icon.store },
   { href: "/dashboard/categories", label: "nav.categories", icon: Icon.grid },
   { href: "/dashboard/products", label: "nav.products", icon: Icon.burger },
+  { href: "/dashboard/catalog", label: "nav.catalog", icon: Icon.sparkles },
   { href: "/dashboard/tables", label: "nav.tables", icon: Icon.table },
   { href: "/dashboard/qr-codes", label: "nav.qrCodes", icon: Icon.qr },
   { href: "/dashboard/orders", label: "nav.orders", icon: Icon.receipt },
