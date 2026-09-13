@@ -48,7 +48,7 @@ export function StationShell({
 
           <span
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium",
+              "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium",
               status === "live"
                 ? "bg-emerald-500/15 text-emerald-300"
                 : status === "connecting"
@@ -78,7 +78,7 @@ export function StationShell({
             onClick={() => setMuted(!muted)}
             aria-label={muted ? t("dash.unmuteSound") : t("dash.muteSound")}
             className={cn(
-              "rounded-xl p-2 transition-colors",
+              "shrink-0 rounded-xl p-2 transition-colors",
               muted ? "bg-white/5 text-white/40" : "bg-white/10 text-white"
             )}
           >

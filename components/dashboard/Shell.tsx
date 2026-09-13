@@ -104,7 +104,7 @@ export function DashboardShell({
         <span className="truncate text-sm font-semibold text-ink-900">
           {restaurantName ?? "MenuzQR"}
         </span>
-        <div className="ms-auto flex items-center gap-2">
+        <div className="ms-auto flex shrink-0 items-center gap-2">
           {restaurantId && <NotificationCenter />}
           <AccountMenu email={userEmail} restaurantName={restaurantName} isAdmin={isAdmin} />
         </div>

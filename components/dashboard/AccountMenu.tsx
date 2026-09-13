@@ -53,7 +53,7 @@ export function AccountMenu({
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden="true" />
           <div
             role="menu"
-            className="animate-slide-up absolute end-0 z-50 mt-2 w-60 overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-xl"
+            className="animate-slide-up absolute end-0 z-50 mt-2 w-[min(15rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-xl"
           >
             <div className="border-b border-ink-100 px-4 py-3">
               <p className="truncate text-sm font-medium text-ink-900">

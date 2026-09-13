@@ -40,6 +40,13 @@ body {
   color: var(--color-ink-900);
 }
 
+/* A page must never scroll sideways on a phone. `clip` rather than `hidden`
+   on purpose: `hidden` turns the root into a scroll container and breaks
+   every `position: sticky` header in the app. */
+html {
+  overflow-x: clip;
+}
+
 body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
