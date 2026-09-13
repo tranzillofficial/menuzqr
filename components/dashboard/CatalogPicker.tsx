@@ -5,6 +5,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Icon } from "@/components/ui/Icons";
 import { SmartImage } from "@/components/ui/SmartImage";
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/i18n/I18nProvider";
 import type { CatalogItem } from "@/lib/types";
 
 let cache: CatalogItem[] | null = null;
@@ -64,17 +65,19 @@ function CatalogRow({
   item,
   onPick,
   compact,
+  label,
 }: {
   item: CatalogItem;
   onPick: (item: CatalogItem) => void;
   compact?: boolean;
+  label: string;
 }) {
   return (
     <button
       type="button"
       onClick={() => onPick(item)}
       className={cn(
-        "flex w-full items-center gap-3 text-left transition-colors hover:bg-brand-50",
+        "flex w-full items-center gap-3 text-start transition-colors hover:bg-brand-50",
         compact ? "px-3 py-2" : "rounded-xl border border-ink-200 bg-white p-3"
       )}
     >
@@ -90,7 +93,7 @@ function CatalogRow({
         </p>
       </div>
       <span className="shrink-0 rounded-lg bg-brand-50 px-2 py-1 text-[11px] font-medium text-brand-700">
-        Use
+        {label}
       </span>
     </button>
   );
@@ -106,6 +109,7 @@ export function CatalogSuggestions({
   onPick: (item: CatalogItem) => void;
   onDismiss: () => void;
 }) {
+  const t = useT();
   const [items, setItems] = useState<CatalogItem[] | null>(cache);
 
   useEffect(() => {
@@ -126,25 +130,25 @@ export function CatalogSuggestions({
       <div className="flex items-center gap-1.5 border-b border-brand-100 bg-brand-50/70 px-3 py-2">
         <Icon.sparkles className="size-3.5 text-brand-600" />
         <span className="text-xs font-semibold text-brand-800">
-          Similar items in the MenuzQR catalog
+          {t("products.similarTitle")}
         </span>
         <button
           type="button"
           onClick={onDismiss}
-          className="ml-auto text-xs text-brand-700 underline-offset-2 hover:underline"
+          className="ms-auto text-xs text-brand-700 underline-offset-2 hover:underline"
         >
-          Hide
+          {t("common.dismiss")}
         </button>
       </div>
       <ul className="divide-y divide-ink-100">
         {matches.map((item) => (
           <li key={item.id}>
-            <CatalogRow item={item} onPick={onPick} compact />
+            <CatalogRow item={item} onPick={onPick} compact label={t("products.catalogUse")} />
           </li>
         ))}
       </ul>
       <p className="border-t border-ink-100 px-3 py-2 text-[11px] text-ink-500">
-        Picking one fills the form in. You can change everything before saving.
+        {t("products.similarNote")}
       </p>
     </div>
   );
@@ -162,6 +166,7 @@ export function CatalogBrowser({
   onPick: (item: CatalogItem) => void;
   seed?: string;
 }) {
+  const t = useT();
   const [items, setItems] = useState<CatalogItem[] | null>(cache);
   const [query, setQuery] = useState("");
 
@@ -187,21 +192,21 @@ export function CatalogBrowser({
     <Modal
       open={open}
       onClose={onClose}
-      title="MenuzQR catalog"
-      description="Ready-made items with description, ingredients, photo and sizes."
+      title={t("products.catalogTitle")}
+      description={t("products.catalogSub")}
       size="lg"
     >
       <div className="relative mb-4">
-        <Icon.search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
+        <Icon.search className="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") e.preventDefault();
           }}
-          placeholder="Search the catalog…"
-          aria-label="Search the catalog"
-          className="w-full rounded-xl border border-ink-200 bg-white py-2.5 pl-9 pr-3 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
+          placeholder={t("products.catalogSearch")}
+          aria-label={t("products.catalogSearch")}
+          className="w-full rounded-xl border border-ink-200 bg-white py-2.5 ps-9 pe-3 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
         />
       </div>
 
@@ -214,14 +219,14 @@ export function CatalogBrowser({
       ) : list.length === 0 ? (
         <p className="py-10 text-center text-sm text-ink-500">
           {items.length === 0
-            ? "The catalog is empty. Your MenuzQR admin fills this in."
-            : `Nothing matched “${query}”.`}
+            ? t("products.catalogEmpty")
+            : `${t("common.nothingMatched")}`}
         </p>
       ) : (
         <ul className="grid gap-2 sm:grid-cols-2">
           {list.slice(0, 200).map((item) => (
             <li key={item.id}>
-              <CatalogRow item={item} onPick={onPick} />
+              <CatalogRow item={item} onPick={onPick} label={t("products.catalogUse")} />
             </li>
           ))}
         </ul>

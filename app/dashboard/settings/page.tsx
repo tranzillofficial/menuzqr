@@ -4,16 +4,22 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/dashboard/Shell";
 import { SettingsForm } from "@/components/dashboard/SettingsForm";
 import { ActivationPanel } from "@/components/dashboard/ActivationPanel";
+import { AlertsCard } from "@/components/pwa/AlertsCard";
 import { Card, CardHeader } from "@/components/ui/Card";
-import { PRICE_USD, SUPPORT_WHATSAPP_DISPLAY, SUPPORT_WHATSAPP_URL } from "@/lib/constants";
 import { Icon } from "@/components/ui/Icons";
+import { getPlatformSettings } from "@/lib/platform";
+import { getT } from "@/lib/i18n/server";
 import { formatDate } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Settings" };
 
 export default async function SettingsPage() {
-  const restaurant = await requireRestaurant();
-  const supabase = await createServerSupabase();
+  const [restaurant, supabase, platform, t] = await Promise.all([
+    requireRestaurant(),
+    createServerSupabase(),
+    getPlatformSettings(),
+    getT(),
+  ]);
 
   const { data: settings } = await supabase
     .from("restaurant_settings")
@@ -21,9 +27,19 @@ export default async function SettingsPage() {
     .eq("restaurant_id", restaurant.id)
     .maybeSingle();
 
+  const rows: Array<[string, string, boolean?]> = [
+    [t("settings.planName"), `${platform.brandName} — $${platform.priceUsd} ${t("settings.oneTime")}`, true],
+    [
+      t("settings.paymentStatus"),
+      restaurant.payment_status === "paid" ? t("settings.paid") : t("settings.awaiting"),
+    ],
+    [t("settings.activated"), formatDate(restaurant.activated_at), true],
+    [t("settings.menuLink"), `/${restaurant.slug}/menu`, true],
+  ];
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <PageHeader title="Settings" description="Features, activation and support." />
+      <PageHeader title={t("settings.title")} description={t("settings.sub")} />
 
       <ActivationPanel restaurant={restaurant} />
 
@@ -36,37 +52,30 @@ export default async function SettingsPage() {
         }}
       />
 
+      <AlertsCard />
+
       <Card>
-        <CardHeader title="Plan & billing" />
+        <CardHeader title={t("settings.plan")} />
         <dl className="divide-y divide-ink-100 text-sm">
-          {[
-            ["Plan", `MenuzQR — $${PRICE_USD} one-time`],
-            [
-              "Payment status",
-              restaurant.payment_status === "paid" ? "Paid" : "Awaiting payment",
-            ],
-            ["Activated", formatDate(restaurant.activated_at)],
-            ["Menu link", `/${restaurant.slug}/menu`],
-          ].map(([label, value]) => (
+          {rows.map(([label, value, ltr]) => (
             <div key={label} className="flex justify-between gap-4 px-5 py-3">
               <dt className="text-ink-500">{label}</dt>
-              <dd className="text-right font-medium text-ink-900">{value}</dd>
+              <dd className={`text-end font-medium text-ink-900 ${ltr ? "ltr-nums" : ""}`}>
+                {value}
+              </dd>
             </div>
           ))}
         </dl>
         <div className="border-t border-ink-100 px-5 py-4">
-          <p className="text-sm text-ink-600">
-            Payments are handled manually over WhatsApp. Send your payment, message us, and we
-            activate your menu.
-          </p>
+          <p className="text-sm text-ink-600">{t("settings.billingNote")}</p>
           <a
-            href={SUPPORT_WHATSAPP_URL}
+            href={platform.supportWhatsappUrl}
             target="_blank"
             rel="noreferrer"
             className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl bg-[#25D366] px-4 text-sm font-semibold text-white hover:brightness-95"
           >
             <Icon.whatsapp className="size-4" />
-            {SUPPORT_WHATSAPP_DISPLAY}
+            <span className="ltr-nums">{platform.supportWhatsappDisplay}</span>
           </a>
         </div>
       </Card>

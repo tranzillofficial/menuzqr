@@ -5,6 +5,7 @@ import { Card, EmptyState } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icons";
 import { AdminToggle } from "@/components/admin/AdminToggle";
 import { formatDate } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
 
 export const metadata: Metadata = { title: "Admin — Users" };
 
@@ -14,7 +15,7 @@ export default async function AdminUsersPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q = "" } = await searchParams;
-  const supabase = await createServerSupabase();
+  const [supabase, t] = await Promise.all([createServerSupabase(), getT()]);
 
   let query = supabase
     .from("profiles")
@@ -44,23 +45,23 @@ export default async function AdminUsersPage({
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold text-ink-900">Users</h1>
-        <p className="mt-1 text-sm text-ink-500">Everyone who has signed up for MenuzQR.</p>
+        <h1 className="text-2xl font-semibold text-ink-900">{t("admin.users")}</h1>
+        <p className="mt-1 text-sm text-ink-500">{t("admin.users")}</p>
       </div>
 
       <form className="relative max-w-md">
-        <Icon.search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
+        <Icon.search className="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
         <input
           name="q"
           defaultValue={q}
-          placeholder="Search by email or name…"
-          aria-label="Search users"
-          className="h-10 w-full rounded-xl border border-ink-200 bg-white pl-9 pr-3 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
+          placeholder={t("admin.searchUsers")}
+          aria-label={t("admin.searchUsers")}
+          className="h-10 w-full rounded-xl border border-ink-200 bg-white ps-9 pe-3 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
         />
       </form>
 
       {(profiles?.length ?? 0) === 0 ? (
-        <EmptyState title="No users found" description="Try a different search." />
+        <EmptyState title={t("admin.noUsers")} />
       ) : (
         <Card className="overflow-hidden">
           <ul className="divide-y divide-ink-100">

@@ -8,13 +8,16 @@ import { SubmitButton } from "@/components/ui/SubmitButton";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { ImagePicker } from "@/components/ui/ImagePicker";
 import { useToast } from "@/components/ui/Toast";
+import { useT } from "@/components/i18n/I18nProvider";
 import { CURRENCIES, LANGUAGES, RESTAURANT_TYPES } from "@/lib/constants";
 import { slugify } from "@/lib/slug";
+import { siteOrigin } from "@/lib/utils";
 import type { Restaurant } from "@/lib/types";
 
 export function RestaurantForm({ restaurant }: { restaurant: Restaurant | null }) {
   const router = useRouter();
   const toast = useToast();
+  const t = useT();
   const isEdit = Boolean(restaurant);
 
   const [state, formAction] = useActionState(
@@ -38,19 +41,17 @@ export function RestaurantForm({ restaurant }: { restaurant: Restaurant | null }
     if (state.ok) router.refresh();
   }, [state, toast, router]);
 
-  const origin =
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/^https?:\/\//, "").replace(/\/$/, "") ||
-    "menuzqr.com";
+  const origin = siteOrigin().replace(/^https?:\/\//, "").replace(/\/$/, "");
 
   return (
     <form action={formAction} className="space-y-5">
       <Card>
         <CardHeader
-          title="Restaurant details"
-          description="This is what your guests see at the top of the menu."
+          title={t("restaurant.details")}
+          description={t("restaurant.detailsSub")}
         />
         <div className="grid gap-5 p-5 sm:grid-cols-2">
-          <Field label="Restaurant name" htmlFor="name" required error={state?.fieldErrors?.name}>
+          <Field label={t("restaurant.name")} htmlFor="name" required error={state?.fieldErrors?.name}>
             <Input
               id="name"
               name="name"
@@ -62,7 +63,7 @@ export function RestaurantForm({ restaurant }: { restaurant: Restaurant | null }
           </Field>
 
           <Field
-            label="Menu link"
+            label={t("restaurant.link")}
             htmlFor="slug"
             required
             error={state?.fieldErrors?.slug}
@@ -85,13 +86,13 @@ export function RestaurantForm({ restaurant }: { restaurant: Restaurant | null }
             />
           </Field>
 
-          <Field label="Restaurant type" htmlFor="restaurant_type" className="sm:col-span-2">
+          <Field label={t("restaurant.type")} htmlFor="restaurant_type" className="sm:col-span-2">
             <Select
               id="restaurant_type"
               name="restaurant_type"
               defaultValue={restaurant?.restaurant_type ?? ""}
             >
-              <option value="">Choose a type (helps AI suggestions)</option>
+              <option value="">{t("restaurant.typePlaceholder")}</option>
               {RESTAURANT_TYPES.map((type) => (
                 <option key={type} value={type}>
                   {type}
@@ -100,7 +101,7 @@ export function RestaurantForm({ restaurant }: { restaurant: Restaurant | null }
             </Select>
           </Field>
 
-          <Field label="Short description" htmlFor="description" className="sm:col-span-2">
+          <Field label={t("restaurant.description")} htmlFor="description" className="sm:col-span-2">
             <Textarea
               id="description"
               name="description"
@@ -110,7 +111,7 @@ export function RestaurantForm({ restaurant }: { restaurant: Restaurant | null }
             />
           </Field>
 
-          <Field label="Phone" htmlFor="phone">
+          <Field label={t("restaurant.phone")} htmlFor="phone">
             <Input
               id="phone"
               name="phone"
@@ -120,7 +121,7 @@ export function RestaurantForm({ restaurant }: { restaurant: Restaurant | null }
             />
           </Field>
 
-          <Field label="Address" htmlFor="address">
+          <Field label={t("restaurant.address")} htmlFor="address">
             <Input
               id="address"
               name="address"
@@ -129,7 +130,7 @@ export function RestaurantForm({ restaurant }: { restaurant: Restaurant | null }
             />
           </Field>
 
-          <Field label="Currency" htmlFor="currency">
+          <Field label={t("restaurant.currency")} htmlFor="currency">
             <Select id="currency" name="currency" defaultValue={restaurant?.currency ?? "USD"}>
               {CURRENCIES.map((c) => (
                 <option key={c.code} value={c.code}>
@@ -139,7 +140,7 @@ export function RestaurantForm({ restaurant }: { restaurant: Restaurant | null }
             </Select>
           </Field>
 
-          <Field label="Menu language" htmlFor="language">
+          <Field label={t("restaurant.menuLanguage")} htmlFor="language">
             <Select id="language" name="language" defaultValue={restaurant?.language ?? "en"}>
               {LANGUAGES.map((l) => (
                 <option key={l.code} value={l.code}>
@@ -153,10 +154,10 @@ export function RestaurantForm({ restaurant }: { restaurant: Restaurant | null }
 
       {restaurant ? (
         <Card>
-          <CardHeader title="Branding" description="A square logo and a wide cover photo." />
+          <CardHeader title={t("restaurant.branding")} description={t("restaurant.brandingSub")} />
           <div className="grid gap-6 p-5 sm:grid-cols-2">
             <div>
-              <p className="mb-2 text-sm font-medium text-ink-800">Logo</p>
+              <p className="mb-2 text-sm font-medium text-ink-800">{t("restaurant.logo")}</p>
               <ImagePicker
                 restaurantId={restaurant.id}
                 kind="logo"
@@ -166,7 +167,7 @@ export function RestaurantForm({ restaurant }: { restaurant: Restaurant | null }
               />
             </div>
             <div>
-              <p className="mb-2 text-sm font-medium text-ink-800">Cover photo</p>
+              <p className="mb-2 text-sm font-medium text-ink-800">{t("restaurant.cover")}</p>
               <ImagePicker
                 restaurantId={restaurant.id}
                 kind="cover"
@@ -180,7 +181,7 @@ export function RestaurantForm({ restaurant }: { restaurant: Restaurant | null }
         </Card>
       ) : (
         <p className="rounded-xl bg-ink-100 px-4 py-3 text-sm text-ink-600">
-          Save your restaurant first — then you can upload a logo and cover photo.
+          {t("restaurant.saveFirst")}
         </p>
       )}
 
@@ -188,7 +189,7 @@ export function RestaurantForm({ restaurant }: { restaurant: Restaurant | null }
       <input type="hidden" name="cover_url" value={coverUrl ?? ""} />
 
       <div className="flex justify-end">
-        <SubmitButton size="lg">{isEdit ? "Save changes" : "Create restaurant"}</SubmitButton>
+        <SubmitButton size="lg">{isEdit ? t("common.saveChanges") : t("restaurant.create")}</SubmitButton>
       </div>
     </form>
   );

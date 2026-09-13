@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useMenu } from "./MenuContext";
 import { placeOrderAction } from "@/lib/actions/orders";
 import { formatMoney } from "@/lib/utils";
+import { useT } from "@/components/i18n/I18nProvider";
 
 function sessionId() {
   if (typeof window === "undefined") return "";
@@ -20,6 +21,7 @@ function sessionId() {
 }
 
 export function CartBar({ slug, tableToken }: { slug: string; tableToken: string }) {
+  const t = useT();
   const { itemCount, total, currency, orderingEnabled, setCartOpen } = useMenu();
 
   if (!orderingEnabled) return null;
@@ -36,8 +38,8 @@ export function CartBar({ slug, tableToken }: { slug: string; tableToken: string
             <span className="grid size-7 place-items-center rounded-full bg-white text-sm font-bold text-ink-900">
               {itemCount}
             </span>
-            <span className="text-sm font-semibold">View order</span>
-            <span className="ml-auto text-sm font-semibold">{formatMoney(total, currency)}</span>
+            <span className="text-sm font-semibold">{t("menu.viewOrder")}</span>
+            <span className="ms-auto text-sm font-semibold">{formatMoney(total, currency)}</span>
           </button>
         </div>
       )}
@@ -48,6 +50,7 @@ export function CartBar({ slug, tableToken }: { slug: string; tableToken: string
 }
 
 function CartSheet({ slug, tableToken }: { slug: string; tableToken: string }) {
+  const t = useT();
   const {
     cartOpen,
     setCartOpen,
@@ -109,10 +112,9 @@ function CartSheet({ slug, tableToken }: { slug: string; tableToken: string }) {
             <div className="mx-auto grid size-16 place-items-center rounded-full bg-emerald-100 text-3xl">
               ✓
             </div>
-            <h2 className="mt-4 text-xl font-semibold">Order sent</h2>
+            <h2 className="mt-4 text-xl font-semibold">{t("menu.orderSent")}</h2>
             <p className="mt-1.5 text-sm text-ink-600">
-              Order #{placed.number} for {table?.label}. The kitchen has it — a waiter will be with
-              you shortly.
+              {t("menu.orderSentBody", { number: placed.number, table: table?.label ?? "" })}
             </p>
             <button
               type="button"
@@ -122,14 +124,14 @@ function CartSheet({ slug, tableToken }: { slug: string; tableToken: string }) {
               }}
               className="mt-6 w-full rounded-xl bg-ink-900 px-4 py-3 text-sm font-semibold text-white"
             >
-              Back to the menu
+              {t("menu.backToMenu")}
             </button>
           </div>
         ) : (
           <>
             <div className="flex items-center justify-between border-b border-ink-100 px-5 py-4">
               <div>
-                <h2 className="text-base font-semibold">Your order</h2>
+                <h2 className="text-base font-semibold">{t("menu.yourOrder")}</h2>
                 {table && <p className="text-xs text-ink-500">{table.label}</p>}
               </div>
               <button
@@ -146,7 +148,7 @@ function CartSheet({ slug, tableToken }: { slug: string; tableToken: string }) {
 
             <div className="flex-1 overflow-y-auto px-5 py-4">
               {items.length === 0 ? (
-                <p className="py-10 text-center text-sm text-ink-500">Your order is empty.</p>
+                <p className="py-10 text-center text-sm text-ink-500">{t("menu.emptyOrder")}</p>
               ) : (
                 <ul className="divide-y divide-ink-100">
                   {items.map((item) => (
@@ -162,7 +164,7 @@ function CartSheet({ slug, tableToken }: { slug: string; tableToken: string }) {
                           onClick={() => removeItem(item.key)}
                           className="mt-1 text-xs text-red-600 underline-offset-2 hover:underline"
                         >
-                          Remove
+                          {t("common.remove")}
                         </button>
                       </div>
                       <div className="flex flex-col items-end gap-2">
@@ -197,7 +199,7 @@ function CartSheet({ slug, tableToken }: { slug: string; tableToken: string }) {
               {items.length > 0 && (
                 <div className="mt-4">
                   <label htmlFor="order-note" className="text-xs font-semibold uppercase tracking-wide text-ink-400">
-                    Note for the kitchen
+                    {t("menu.noteForKitchen")}
                   </label>
                   <textarea
                     id="order-note"
@@ -205,7 +207,7 @@ function CartSheet({ slug, tableToken }: { slug: string; tableToken: string }) {
                     onChange={(e) => setNote(e.target.value)}
                     maxLength={400}
                     rows={2}
-                    placeholder="Anything the kitchen should know?"
+                    placeholder={t("menu.notePlaceholder")}
                     className="mt-2 w-full rounded-xl border border-ink-200 px-3.5 py-2.5 text-sm focus:border-ink-900 focus:outline-none"
                   />
                 </div>
@@ -220,7 +222,7 @@ function CartSheet({ slug, tableToken }: { slug: string; tableToken: string }) {
 
             <div className="border-t border-ink-100 p-4">
               <div className="mb-3 flex items-center justify-between text-sm">
-                <span className="text-ink-500">Total</span>
+                <span className="text-ink-500">{t("menu.total")}</span>
                 <span className="text-lg font-semibold">{formatMoney(total, currency)}</span>
               </div>
               <button
@@ -229,10 +231,10 @@ function CartSheet({ slug, tableToken }: { slug: string; tableToken: string }) {
                 onClick={submit}
                 className="w-full rounded-xl bg-ink-900 px-4 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-ink-800 disabled:bg-ink-300"
               >
-                {submitting ? "Sending…" : "Place order"}
+                {submitting ? t("menu.sending") : t("menu.placeOrder")}
               </button>
               <p className="mt-2 text-center text-xs text-ink-400">
-                No account needed. Pay at the table as usual.
+                {t("menu.noAccountNote")}
               </p>
             </div>
           </>

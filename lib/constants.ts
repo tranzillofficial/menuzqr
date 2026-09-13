@@ -1,34 +1,17 @@
-export const SUPPORT_WHATSAPP =
-  process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP?.replace(/\D/g, "") || "201094963553";
-
-export const SUPPORT_WHATSAPP_DISPLAY = "+20 109 496 3553";
-
-export const SUPPORT_WHATSAPP_URL = `https://wa.me/${SUPPORT_WHATSAPP}`;
-
-export const PRICE_USD = 20;
-
+/**
+ * The public menu designs. Names and descriptions live in the translation
+ * dictionary under `theme.<id>.*` so they follow the interface language.
+ *
+ * Adding one: add the id here, to the `menu_theme` check constraint in SQL,
+ * to `theme.<id>.*` in both dictionaries, and to the THEMES map in
+ * components/menu/MenuExperience.tsx.
+ */
 export const MENU_THEMES = [
-  {
-    id: "elegant",
-    name: "Elegant",
-    tagline: "Premium dining",
-    description:
-      "Large photography, serif headings and generous spacing. Best for restaurants that want a fine-dining feel.",
-  },
-  {
-    id: "modern",
-    name: "Modern",
-    tagline: "Cafés & fast casual",
-    description:
-      "Bold cards, strong hierarchy and a horizontal category rail. Compact but visual.",
-  },
-  {
-    id: "minimal",
-    name: "Minimal",
-    tagline: "Simple & fast",
-    description:
-      "Typography-first list with no clutter. Loads fastest and reads perfectly on any phone.",
-  },
+  { id: "elegant", swatch: ["#2f2a24", "#b9a88d", "#faf7f2"] },
+  { id: "modern", swatch: ["#1c1917", "#ea580c", "#ffffff"] },
+  { id: "minimal", swatch: ["#1c1917", "#a8a29e", "#ffffff"] },
+  { id: "noir", swatch: ["#0b0b0d", "#c9a227", "#1a1a1f"] },
+  { id: "market", swatch: ["#0f766e", "#f59e0b", "#fffbeb"] },
 ] as const;
 
 export type MenuThemeId = (typeof MENU_THEMES)[number]["id"];
@@ -46,14 +29,34 @@ export const ORDER_STATUSES = [
 
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
-export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
-  pending: "New",
-  accepted: "Accepted",
-  preparing: "Preparing",
-  ready: "Ready",
-  completed: "Completed",
-  cancelled: "Cancelled",
-};
+
+/**
+ * Who a person is inside a restaurant.
+ *
+ * `owner` and `manager` run the dashboard. `waiter` and `chef` are sub-accounts
+ * the owner creates: they sign in with their own email and password and land on
+ * the station screen instead of the dashboard. `staff` is the older generic
+ * role, kept so existing rows stay valid.
+ */
+export const MEMBER_ROLES = ["owner", "manager", "waiter", "chef", "staff"] as const;
+export type MemberRole = (typeof MEMBER_ROLES)[number];
+
+/**
+ * Roles an owner can hand out from /dashboard/staff.
+ *
+ * `manager` exists in the schema but is not offered yet: the dashboard's write
+ * actions still resolve the restaurant by ownership, so a manager could open
+ * the dashboard without being able to save anything. Offering a role that half
+ * works is worse than not offering it.
+ */
+export const ASSIGNABLE_ROLES = ["waiter", "chef"] as const;
+export type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
+
+/** Roles that get the full dashboard. Everyone else gets /station. */
+export const MANAGER_ROLES: MemberRole[] = ["owner", "manager"];
+
+export const MAX_STAFF_PER_RESTAURANT = 25;
+export const MIN_STAFF_PASSWORD = 8;
 
 export const RESTAURANT_STATUSES = ["inactive", "active", "suspended"] as const;
 export type RestaurantStatus = (typeof RESTAURANT_STATUSES)[number];

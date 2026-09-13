@@ -1,4 +1,4 @@
-import type { MenuThemeId, OrderStatus, RestaurantStatus } from "./constants";
+import type { MemberRole, MenuThemeId, OrderStatus, RestaurantStatus } from "./constants";
 
 export type Profile = {
   id: string;
@@ -104,6 +104,7 @@ export type Order = {
   id: string;
   restaurant_id: string;
   table_id: string | null;
+  placed_by: string | null;
   order_number: number;
   public_token: string;
   session_id: string | null;
@@ -123,12 +124,38 @@ export type OrderWithDetails = Order & {
 export type WaiterRequest = {
   id: string;
   restaurant_id: string;
-  table_id: string;
+  table_id: string | null;
+  order_id: string | null;
+  origin: "guest" | "staff";
+  created_by: string | null;
+  note: string | null;
   status: "pending" | "handled" | "cancelled";
   created_at: string;
   handled_at: string | null;
   handled_by: string | null;
   restaurant_tables?: Pick<RestaurantTable, "id" | "label"> | null;
+  orders?: Pick<Order, "id" | "order_number"> | null;
+};
+
+/** A row of `restaurant_members`, joined with the account's email. */
+export type StaffMember = {
+  id: string;
+  restaurant_id: string;
+  user_id: string;
+  role: MemberRole;
+  display_name: string | null;
+  is_active: boolean;
+  created_at: string;
+  email: string | null;
+};
+
+export type PushSubscriptionRow = {
+  id: string;
+  user_id: string;
+  restaurant_id: string | null;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
 };
 
 export type LibraryImage = {

@@ -68,9 +68,24 @@ export function initials(name: string) {
     .join("");
 }
 
+/**
+ * The public origin, used for QR links.
+ *
+ * Prefer NEXT_PUBLIC_SITE_URL: on Vercel, NEXT_PUBLIC_VERCEL_URL changes with
+ * every deployment, so a QR code printed from a preview build would stop
+ * resolving. The Vercel value is only a fallback for previews.
+ */
+export function siteOrigin() {
+  const explicit = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+  if (explicit) return explicit;
+
+  const vercel = process.env.NEXT_PUBLIC_VERCEL_URL;
+  if (vercel) return `https://${vercel.replace(/^https?:\/\//, "").replace(/\/$/, "")}`;
+
+  if (typeof window !== "undefined") return window.location.origin;
+  return "http://localhost:3000";
+}
+
 export function absoluteUrl(path: string) {
-  const base =
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-    (typeof window !== "undefined" ? window.location.origin : "http://localhost:3000");
-  return `${base}${path.startsWith("/") ? path : `/${path}`}`;
+  return `${siteOrigin()}${path.startsWith("/") ? path : `/${path}`}`;
 }

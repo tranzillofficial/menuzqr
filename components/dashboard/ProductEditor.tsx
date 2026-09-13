@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { saveProductAction } from "@/lib/actions/products";
 import { createCategoryQuickAction } from "@/lib/actions/categories";
 import { CatalogBrowser, CatalogSuggestions } from "./CatalogPicker";
-import { AiButton, SuggestionChips } from "@/components/ai/AiAssist";
+import { useT } from "@/components/i18n/I18nProvider";
 import { Button } from "@/components/ui/Button";
-import { Field, Input, Select, Switch, Textarea } from "@/components/ui/Field";
+import { Input, Select, Switch, Textarea } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icons";
 import { ImagePicker } from "@/components/ui/ImagePicker";
 import { Modal } from "@/components/ui/Modal";
@@ -54,6 +54,7 @@ export function ProductEditor({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const t = useT();
   const [state, formAction] = useActionState(saveProductAction, null);
 
   const [name, setName] = useState(product?.name ?? "");
@@ -66,9 +67,6 @@ export function ProductEditor({
   );
   const [isActive, setIsActive] = useState(product?.is_active ?? true);
   const [variants, setVariants] = useState<VariantDraft[]>(toDrafts(product));
-
-  const [nameIdeas, setNameIdeas] = useState<string[]>([]);
-  const [ingredientIdeas, setIngredientIdeas] = useState<string[]>([]);
 
   // Categories can be created inline, so the editor keeps its own list rather
   // than trusting the prop — the owner must never lose a half-filled form just
@@ -135,7 +133,7 @@ export function ProductEditor({
     }
     setSuggestionsHidden(true);
     setCatalogOpen(false);
-    toast("Filled in from the catalog — edit anything before saving.", "info");
+    toast(t("products.filledFromCatalog"), "info");
   }
 
   useEffect(() => {
@@ -148,15 +146,6 @@ export function ProductEditor({
   }, [state, toast, router, onClose]);
 
   const symbol = currencySymbol(restaurant.currency);
-
-  const aiInput = () => ({
-    name,
-    details: ingredients || description,
-    restaurantName: restaurant.name,
-    restaurantType: restaurant.restaurant_type ?? "",
-    language: restaurant.language,
-    categories: categoryList.map((c) => c.name).join(", "),
-  });
 
   const serialisedVariants = JSON.stringify(
     variants
@@ -177,8 +166,8 @@ export function ProductEditor({
     <Modal
       open
       onClose={onClose}
-      title={product ? "Edit product" : "New product"}
-      description="Every product needs at least one size with a price."
+      title={product ? t("products.editTitle") : t("products.new")}
+      description={t("products.modalSub")}
       size="lg"
     >
       <form action={formAction} className="space-y-6">
@@ -194,7 +183,7 @@ export function ProductEditor({
           <div className="space-y-1.5 sm:col-span-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <label htmlFor="p-name" className="text-sm font-medium text-ink-800">
-                Product name <span className="text-brand-600">*</span>
+                {t("products.name")} <span className="text-brand-600">*</span>
               </label>
               <div className="flex flex-wrap gap-1.5">
                 <button
@@ -209,43 +198,8 @@ export function ProductEditor({
                     <path d="M10 9v5" strokeLinecap="round" />
                     <circle cx="10" cy="6.4" r=".9" fill="currentColor" stroke="none" />
                   </svg>
-                  Catalog
+                  {t("products.catalogBtn")}
                 </button>
-                <AiButton
-                  label="Better names"
-                  task="product_names"
-                  input={aiInput}
-                  disabled={!name.trim()}
-                  onResult={(data) => setNameIdeas(data.nameSuggestions)}
-                />
-                <AiButton
-                  label="Fill everything"
-                  task="product_full"
-                  input={aiInput}
-                  disabled={!name.trim()}
-                  onResult={(data) => {
-                    if (data.nameSuggestions.length) setNameIdeas(data.nameSuggestions);
-                    if (data.description) setDescription(data.description);
-                    if (data.ingredients.length) setIngredients(data.ingredients.join(", "));
-                    if (data.categorySuggestion) {
-                      const match = categoryList.find(
-                        (c) => c.name.toLowerCase() === data.categorySuggestion.toLowerCase()
-                      );
-                      if (match) setCategoryId(match.id);
-                    }
-                    if (data.variantSuggestions.length && variants.every((v) => !v.price)) {
-                      setVariants(
-                        data.variantSuggestions.map((label) => ({
-                          key: newKey(),
-                          name: label,
-                          price: "",
-                          is_active: true,
-                        }))
-                      );
-                    }
-                    toast("AI filled in suggestions — review them before saving.", "info");
-                  }}
-                />
               </div>
             </div>
             <Input
@@ -259,15 +213,6 @@ export function ProductEditor({
             {state?.fieldErrors?.name && (
               <p className="text-xs font-medium text-red-600">{state.fieldErrors.name}</p>
             )}
-            <SuggestionChips
-              title="AI name ideas"
-              items={nameIdeas}
-              onPick={(value) => {
-                setName(value);
-                setNameIdeas([]);
-              }}
-              onDismiss={() => setNameIdeas([])}
-            />
 
             {!suggestionsHidden && name.trim().length >= 2 && (
               <CatalogSuggestions
@@ -281,7 +226,7 @@ export function ProductEditor({
           <div className="space-y-1.5 sm:col-span-2">
             <div className="flex items-center justify-between gap-2">
               <label htmlFor="p-category" className="text-sm font-medium text-ink-800">
-                Category
+                {t("products.category")}
               </label>
               <button
                 type="button"
@@ -289,7 +234,7 @@ export function ProductEditor({
                 className="inline-flex items-center gap-1 rounded-lg border border-ink-200 bg-white px-2 py-1.5 text-xs font-medium text-ink-600 transition-colors hover:border-brand-300 hover:text-brand-700"
               >
                 <Icon.plus className="size-3.5" />
-                New category
+                {t("products.newCategory")}
               </button>
             </div>
 
@@ -298,7 +243,7 @@ export function ProductEditor({
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
             >
-              <option value="">Uncategorised</option>
+              <option value="">{t("products.uncategorised")}</option>
               {categoryList.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -329,7 +274,7 @@ export function ProductEditor({
                   disabled={!newCategoryName.trim()}
                   onClick={() => addCategory(newCategoryName)}
                 >
-                  Add
+                  {t("common.add")}
                 </Button>
               </div>
             )}
@@ -341,30 +286,20 @@ export function ProductEditor({
                 disabled={savingCategory}
                 className="text-xs font-medium text-brand-700 underline-offset-2 hover:underline disabled:opacity-60"
               >
-                + Create the section “{newCategoryName}” for this item
+                + {t("products.createSectionFor", { name: newCategoryName })}
               </button>
             )}
 
             <p className="text-xs text-ink-500">
-              Missing a section? Add it here without losing what you have typed.
+              {t("products.newCategoryHint")}
             </p>
           </div>
 
           <div className="space-y-1.5 sm:col-span-2">
             <div className="flex items-center justify-between gap-2">
               <label htmlFor="p-description" className="text-sm font-medium text-ink-800">
-                Description
+                {t("products.description")}
               </label>
-              <AiButton
-                label="Generate description"
-                task="product_description"
-                input={aiInput}
-                disabled={!name.trim()}
-                onResult={(data) => {
-                  if (data.description) setDescription(data.description);
-                  else toast("AI had nothing to add this time.", "info");
-                }}
-              />
             </div>
             <Textarea
               id="p-description"
@@ -379,15 +314,8 @@ export function ProductEditor({
           <div className="space-y-1.5 sm:col-span-2">
             <div className="flex items-center justify-between gap-2">
               <label htmlFor="p-ingredients" className="text-sm font-medium text-ink-800">
-                Ingredients
+                {t("products.ingredients")}
               </label>
-              <AiButton
-                label="Suggest ingredients"
-                task="product_ingredients"
-                input={aiInput}
-                disabled={!name.trim()}
-                onResult={(data) => setIngredientIdeas(data.ingredients)}
-              />
             </div>
             <Input
               id="p-ingredients"
@@ -396,22 +324,7 @@ export function ProductEditor({
               onChange={(e) => setIngredients(e.target.value)}
               placeholder="Chicken, lettuce, tomato, cheese, special sauce"
             />
-            <p className="text-xs text-ink-500">Separate with commas.</p>
-            <SuggestionChips
-              title="AI ingredient ideas — tap to add"
-              items={ingredientIdeas}
-              onPick={(value) => {
-                const current = ingredients
-                  .split(",")
-                  .map((s) => s.trim())
-                  .filter(Boolean);
-                if (!current.some((c) => c.toLowerCase() === value.toLowerCase())) {
-                  setIngredients([...current, value].join(", "));
-                }
-                setIngredientIdeas((list) => list.filter((i) => i !== value));
-              }}
-              onDismiss={() => setIngredientIdeas([])}
-            />
+            <p className="text-xs text-ink-500">{t("products.ingredientsHint")}</p>
           </div>
         </div>
 
@@ -419,9 +332,9 @@ export function ProductEditor({
         <div className="rounded-2xl border border-ink-200 p-4">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h3 className="text-sm font-semibold text-ink-900">Sizes &amp; prices</h3>
+              <h3 className="text-sm font-semibold text-ink-900">{t("products.sizesTitle")}</h3>
               <p className="text-xs text-ink-500">
-                One row per size or option — Small / Medium / Large, Regular / Double…
+                {t("products.sizesSub")}
               </p>
             </div>
             <Button
@@ -436,7 +349,7 @@ export function ProductEditor({
               }
             >
               <Icon.plus className="size-3.5" />
-              Add size
+              {t("products.addSize")}
             </Button>
           </div>
 
@@ -451,7 +364,7 @@ export function ProductEditor({
                   className="min-w-0 flex-1 rounded-xl border border-ink-200 px-3 py-2 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
                 />
                 <div className="flex items-center rounded-xl border border-ink-200 focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-100">
-                  <span className="pl-3 text-sm text-ink-500">{symbol}</span>
+                  <span className="ps-3 text-sm text-ink-500">{symbol}</span>
                   <input
                     aria-label={`Size ${index + 1} price`}
                     type="number"
@@ -491,7 +404,7 @@ export function ProductEditor({
 
         {/* --- image --- */}
         <div>
-          <p className="mb-2 text-sm font-medium text-ink-800">Product photo</p>
+          <p className="mb-2 text-sm font-medium text-ink-800">{t("products.photo")}</p>
           <ImagePicker
             restaurantId={restaurant.id}
             kind="product"
@@ -505,17 +418,17 @@ export function ProductEditor({
         </div>
 
         <label className="flex items-center gap-3 rounded-xl border border-ink-200 p-3">
-          <Switch checked={isActive} onChange={setIsActive} label="Visible on the menu" />
+          <Switch checked={isActive} onChange={setIsActive} label={t("categories.visibleOnMenu")} />
           <span className="text-sm text-ink-700">
-            {isActive ? "Visible on the public menu" : "Hidden from the public menu"}
+            {isActive ? t("categories.visibleOnMenu") : t("categories.hiddenFromMenu")}
           </span>
         </label>
 
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
+            {t("common.cancel")}
           </Button>
-          <SubmitButton>{product ? "Save changes" : "Add product"}</SubmitButton>
+          <SubmitButton>{product ? t("common.saveChanges") : t("products.add")}</SubmitButton>
         </div>
       </form>
 

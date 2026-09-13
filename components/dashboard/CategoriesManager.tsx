@@ -3,13 +3,11 @@
 import { useActionState, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  createCategoriesBulkAction,
   deleteCategoryAction,
   saveCategoryAction,
   toggleCategoryAction,
 } from "@/lib/actions/categories";
 import { moveCategoryAction } from "@/lib/actions/products";
-import { AiButton } from "@/components/ai/AiAssist";
 import { Button } from "@/components/ui/Button";
 import { ConfirmButton } from "@/components/ui/ConfirmDialog";
 import { EmptyState } from "@/components/ui/Card";
@@ -20,6 +18,7 @@ import { SmartImage } from "@/components/ui/SmartImage";
 import { Modal } from "@/components/ui/Modal";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { useToast } from "@/components/ui/Toast";
+import { useT } from "@/components/i18n/I18nProvider";
 import type { Category, Restaurant } from "@/lib/types";
 
 export function CategoriesManager({
@@ -33,11 +32,9 @@ export function CategoriesManager({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const t = useT();
   const [editing, setEditing] = useState<Category | null | "new">(null);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
   const [pending, startTransition] = useTransition();
-
-  const existingNames = new Set(categories.map((c) => c.name.toLowerCase()));
 
   function run(fn: () => Promise<{ ok: boolean; message?: string } | null>) {
     startTransition(async () => {
@@ -52,52 +49,16 @@ export function CategoriesManager({
       <div className="flex flex-wrap items-center gap-2">
         <Button onClick={() => setEditing("new")}>
           <Icon.plus className="size-4" />
-          Add category
+          {t("categories.add")}
         </Button>
-        <AiButton
-          label="Suggest sections with AI"
-          task="categories"
-          input={() => ({
-            restaurantName: restaurant.name,
-            restaurantType: restaurant.restaurant_type ?? "",
-            language: restaurant.language,
-            categories: categories.map((c) => c.name).join(", "),
-          })}
-          onResult={(data) => {
-            const fresh = data.categorySuggestions.filter(
-              (n) => !existingNames.has(n.toLowerCase())
-            );
-            if (fresh.length === 0) {
-              toast("AI had no new sections to suggest — your menu already covers them.", "info");
-              return;
-            }
-            setSuggestions(fresh);
-          }}
-          className="h-10 px-3.5 text-sm"
-        />
       </div>
-
-      {suggestions.length > 0 && (
-        <SuggestionsPanel
-          suggestions={suggestions}
-          onClose={() => setSuggestions([])}
-          onAdd={(names) =>
-            run(async () => {
-              const result = await createCategoriesBulkAction(names);
-              setSuggestions([]);
-              return result;
-            })
-          }
-          pending={pending}
-        />
-      )}
 
       {categories.length === 0 ? (
         <EmptyState
           icon="🗂️"
-          title="No categories yet"
-          description="Categories are the sections of your menu — Breakfast, Burgers, Drinks, Desserts."
-          action={<Button onClick={() => setEditing("new")}>Add your first category</Button>}
+          title={t("categories.emptyTitle")}
+          description={t("categories.emptyBody")}
+          action={<Button onClick={() => setEditing("new")}>{t("categories.emptyCta")}</Button>}
         />
       ) : (
         <ul className="space-y-2">
@@ -140,7 +101,7 @@ export function CategoriesManager({
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium text-ink-900">{category.name}</p>
                 <p className="truncate text-xs text-ink-500">
-                  {productCounts[category.id] ?? 0} products
+                  {productCounts[category.id] ?? 0} {t("common.products")}
                   {category.description ? ` · ${category.description}` : ""}
                 </p>
               </div>
@@ -186,64 +147,6 @@ export function CategoriesManager({
   );
 }
 
-function SuggestionsPanel({
-  suggestions,
-  onAdd,
-  onClose,
-  pending,
-}: {
-  suggestions: string[];
-  onAdd: (names: string[]) => void;
-  onClose: () => void;
-  pending: boolean;
-}) {
-  const [selected, setSelected] = useState<string[]>(suggestions);
-
-  return (
-    <div className="rounded-2xl border border-brand-200 bg-brand-50/70 p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-semibold text-brand-900">AI suggested sections</p>
-        <button type="button" onClick={onClose} className="text-xs text-brand-800 hover:underline">
-          Dismiss
-        </button>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {suggestions.map((name) => {
-          const active = selected.includes(name);
-          return (
-            <button
-              key={name}
-              type="button"
-              onClick={() =>
-                setSelected((s) => (active ? s.filter((n) => n !== name) : [...s, name]))
-              }
-              className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
-                active
-                  ? "border-brand-500 bg-brand-600 text-white"
-                  : "border-brand-200 bg-white text-ink-700"
-              }`}
-            >
-              {active && <Icon.check className="mr-1 inline size-3.5" />}
-              {name}
-            </button>
-          );
-        })}
-      </div>
-      <div className="mt-4 flex items-center gap-2">
-        <Button
-          size="sm"
-          disabled={selected.length === 0 || pending}
-          loading={pending}
-          onClick={() => onAdd(selected)}
-        >
-          Add {selected.length} section{selected.length === 1 ? "" : "s"}
-        </Button>
-        <span className="text-xs text-brand-900/70">Nothing is saved until you confirm.</span>
-      </div>
-    </div>
-  );
-}
-
 function CategoryModal({
   restaurant,
   category,
@@ -255,6 +158,7 @@ function CategoryModal({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const t = useT();
   const [state, formAction] = useActionState(saveCategoryAction, null);
   const [imageUrl, setImageUrl] = useState(category?.image_url ?? null);
   const [isActive, setIsActive] = useState(category?.is_active ?? true);
@@ -272,15 +176,15 @@ function CategoryModal({
     <Modal
       open
       onClose={onClose}
-      title={category ? "Edit category" : "New category"}
-      description="Categories group your products into menu sections."
+      title={category ? t("categories.editTitle") : t("categories.new")}
+      description={t("categories.modalSub")}
     >
       <form action={formAction} className="space-y-5" id="category-form">
         {category && <input type="hidden" name="id" value={category.id} />}
         <input type="hidden" name="image_url" value={imageUrl ?? ""} />
         <input type="hidden" name="is_active" value={isActive ? "on" : ""} />
 
-        <Field label="Name" htmlFor="cat-name" required error={state?.fieldErrors?.name}>
+        <Field label={t("categories.name")} htmlFor="cat-name" required error={state?.fieldErrors?.name}>
           <Input
             id="cat-name"
             name="name"
@@ -290,7 +194,7 @@ function CategoryModal({
           />
         </Field>
 
-        <Field label="Description" htmlFor="cat-description" hint="Optional — shown under the section title.">
+        <Field label={t("products.description")} htmlFor="cat-description" hint={t("categories.descriptionHint")}>
           <Textarea
             id="cat-description"
             name="description"
@@ -301,7 +205,7 @@ function CategoryModal({
         </Field>
 
         <div>
-          <p className="mb-2 text-sm font-medium text-ink-800">Section image (optional)</p>
+          <p className="mb-2 text-sm font-medium text-ink-800">{t("categories.image")}</p>
           <ImagePicker
             restaurantId={restaurant.id}
             kind="category"
@@ -312,17 +216,17 @@ function CategoryModal({
         </div>
 
         <label className="flex items-center gap-3 rounded-xl border border-ink-200 p-3">
-          <Switch checked={isActive} onChange={setIsActive} label="Visible on the menu" />
+          <Switch checked={isActive} onChange={setIsActive} label={t("categories.visibleOnMenu")} />
           <span className="text-sm text-ink-700">
-            {isActive ? "Visible on the public menu" : "Hidden from the public menu"}
+            {isActive ? t("categories.visibleOnMenu") : t("categories.hiddenFromMenu")}
           </span>
         </label>
 
         <div className="flex justify-end gap-2 pt-1">
           <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
+            {t("common.cancel")}
           </Button>
-          <SubmitButton>{category ? "Save changes" : "Add category"}</SubmitButton>
+          <SubmitButton>{category ? t("common.saveChanges") : t("categories.add")}</SubmitButton>
         </div>
       </form>
     </Modal>

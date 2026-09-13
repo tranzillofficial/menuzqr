@@ -65,6 +65,35 @@ export async function getOwnedRestaurant(): Promise<
   return { ok: true, restaurant: data as Restaurant, userId: user.id };
 }
 
+/**
+ * Resolves the caller's restaurant through membership rather than ownership,
+ * so waiter and chef accounts can act on the orders they are responsible for.
+ */
+export async function getMemberContext(): Promise<
+  | { ok: true; restaurantId: string; role: string; userId: string }
+  | { ok: false; error: ActionState }
+> {
+  const supabase = await createServerSupabase();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { ok: false, error: fail("You need to sign in first.") };
+
+  const { data } = await supabase
+    .from("restaurant_members")
+    .select("restaurant_id, role")
+    .eq("user_id", user.id)
+    .eq("is_active", true)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (!data) return { ok: false, error: fail("Create your restaurant profile first.") };
+
+  return { ok: true, restaurantId: data.restaurant_id, role: data.role, userId: user.id };
+}
+
 export async function assertAdmin(): Promise<
   { ok: true; userId: string } | { ok: false; error: ActionState }
 > {

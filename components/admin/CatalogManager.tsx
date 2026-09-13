@@ -40,13 +40,13 @@ export function CatalogManager({ items }: { items: CatalogItem[] }) {
           Add catalog item
         </Button>
         <div className="relative min-w-40 flex-1 sm:max-w-xs">
-          <Icon.search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
+          <Icon.search className="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search the catalog…"
             aria-label="Search the catalog"
-            className="h-10 w-full rounded-xl border border-ink-200 bg-white pl-9 pr-3 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
+            className="h-10 w-full rounded-xl border border-ink-200 bg-white ps-9 pe-3 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
           />
         </div>
         <span className="text-sm text-ink-500">{items.length} items</span>

@@ -6,8 +6,10 @@ import { signInAction, signUpAction } from "@/lib/actions/account";
 import { Field, Input } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { Icon } from "@/components/ui/Icons";
+import { useT } from "@/components/i18n/I18nProvider";
 
 export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: string }) {
+  const t = useT();
   const action = mode === "login" ? signInAction : signUpAction;
   const [state, formAction] = useActionState(action, null);
 
@@ -21,24 +23,24 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
       </Link>
 
       <h1 className="font-serif text-3xl text-ink-900">
-        {mode === "login" ? "Welcome back" : "Create your account"}
+        {mode === "login" ? t("auth.welcomeBack") : t("auth.createAccount")}
       </h1>
       <p className="mt-2 text-sm text-ink-500">
         {mode === "login"
-          ? "Sign in to manage your menu, tables and orders."
-          : "Build your digital menu in minutes. No card required to start."}
+          ? t("auth.loginSub")
+          : t("auth.signupSub")}
       </p>
 
       <form action={formAction} className="mt-8 space-y-4">
         {next && <input type="hidden" name="next" value={next} />}
 
         {mode === "signup" && (
-          <Field label="Your name" htmlFor="full_name">
+          <Field label={t("auth.yourName")} htmlFor="full_name">
             <Input id="full_name" name="full_name" autoComplete="name" placeholder="Ahmed Hassan" />
           </Field>
         )}
 
-        <Field label="Email" htmlFor="email" required error={state?.fieldErrors?.email}>
+        <Field label={t("auth.email")} htmlFor="email" required error={state?.fieldErrors?.email}>
           <Input
             id="email"
             name="email"
@@ -50,11 +52,11 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
         </Field>
 
         <Field
-          label="Password"
+          label={t("auth.password")}
           htmlFor="password"
           required
           error={state?.fieldErrors?.password}
-          hint={mode === "signup" ? "At least 8 characters." : undefined}
+          hint={mode === "signup" ? t("auth.passwordHint") : undefined}
         >
           <Input
             id="password"
@@ -81,23 +83,23 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
         )}
 
         <SubmitButton className="w-full" size="lg">
-          {mode === "login" ? "Sign in" : "Create account"}
+          {mode === "login" ? t("auth.signInCta") : t("auth.signUpCta")}
         </SubmitButton>
       </form>
 
       <p className="mt-6 text-center text-sm text-ink-500">
         {mode === "login" ? (
           <>
-            New to MenuzQR?{" "}
+            {t("auth.newHere")}{" "}
             <Link href="/signup" className="font-medium text-brand-700 hover:underline">
-              Create an account
+              {t("auth.signUpCta")}
             </Link>
           </>
         ) : (
           <>
-            Already have an account?{" "}
+            {t("auth.haveAccount")}{" "}
             <Link href="/login" className="font-medium text-brand-700 hover:underline">
-              Sign in
+              {t("auth.signInCta")}
             </Link>
           </>
         )}

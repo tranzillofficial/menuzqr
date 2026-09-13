@@ -64,7 +64,7 @@ export function MinimalMenu() {
                     <button
                       type="button"
                       onClick={() => openProduct(product)}
-                      className="flex w-full items-start gap-3 py-4 text-left"
+                      className="flex w-full items-start gap-3 py-4 text-start"
                     >
                       {product.image_url && (
                         <MenuImage

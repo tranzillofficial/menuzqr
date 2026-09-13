@@ -18,11 +18,13 @@ import { Icon } from "@/components/ui/Icons";
 import { Modal } from "@/components/ui/Modal";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { useToast } from "@/components/ui/Toast";
+import { useT } from "@/components/i18n/I18nProvider";
 import type { RestaurantTable } from "@/lib/types";
 
 export function TablesManager({ tables }: { tables: RestaurantTable[] }) {
   const router = useRouter();
   const toast = useToast();
+  const t = useT();
   const [editing, setEditing] = useState<RestaurantTable | null | "new">(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -40,15 +42,15 @@ export function TablesManager({ tables }: { tables: RestaurantTable[] }) {
       <div className="flex flex-wrap gap-2">
         <Button onClick={() => setEditing("new")}>
           <Icon.plus className="size-4" />
-          Add table
+          {t("tables.add")}
         </Button>
         <Button variant="secondary" onClick={() => setBulkOpen(true)}>
-          Create several at once
+          {t("tables.bulk")}
         </Button>
         {tables.length > 0 && (
           <LinkButton href="/dashboard/qr-codes" variant="secondary">
             <Icon.qr className="size-4" />
-            Print QR codes
+            {t("tables.printQr")}
           </LinkButton>
         )}
       </div>
@@ -56,9 +58,9 @@ export function TablesManager({ tables }: { tables: RestaurantTable[] }) {
       {tables.length === 0 ? (
         <EmptyState
           icon="🪑"
-          title="No tables yet"
-          description="Add a table for every seat group in your dining area. Each one gets its own QR code so you know exactly where an order came from."
-          action={<Button onClick={() => setBulkOpen(true)}>Create tables</Button>}
+          title={t("tables.emptyTitle")}
+          description={t("tables.emptyBody")}
+          action={<Button onClick={() => setBulkOpen(true)}>{t("tables.emptyCta")}</Button>}
         />
       ) : (
         <ul className="grid gap-2 sm:grid-cols-2">
@@ -74,7 +76,8 @@ export function TablesManager({ tables }: { tables: RestaurantTable[] }) {
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium text-ink-900">{table.label}</p>
                 <p className="truncate text-[11px] text-ink-400">
-                  Code <span className="font-mono tracking-wider text-ink-600">{table.qr_token}</span>
+                  {t("tables.code")}{" "}
+                  <span className="font-mono tracking-wider text-ink-600">{table.qr_token}</span>
                 </p>
               </div>
 
@@ -151,6 +154,7 @@ function TableModal({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const t = useT();
   const [state, formAction] = useActionState(saveTableAction, null);
   const [isActive, setIsActive] = useState(table?.is_active ?? true);
 
@@ -164,12 +168,12 @@ function TableModal({
   }, [state, toast, router, onClose]);
 
   return (
-    <Modal open onClose={onClose} title={table ? "Rename table" : "New table"} size="sm">
+    <Modal open onClose={onClose} title={table ? t("tables.rename") : t("tables.new")} size="sm">
       <form action={formAction} className="space-y-5">
         {table && <input type="hidden" name="id" value={table.id} />}
         <input type="hidden" name="is_active" value={isActive ? "on" : ""} />
 
-        <Field label="Table name" htmlFor="table-label" required error={state?.fieldErrors?.label}>
+        <Field label={t("tables.name")} htmlFor="table-label" required error={state?.fieldErrors?.label}>
           <Input
             id="table-label"
             name="label"
@@ -180,17 +184,17 @@ function TableModal({
         </Field>
 
         <label className="flex items-center gap-3">
-          <Switch checked={isActive} onChange={setIsActive} label="Table enabled" />
+          <Switch checked={isActive} onChange={setIsActive} label={t("tables.enabled")} />
           <span className="text-sm text-ink-700">
-            {isActive ? "Accepting orders" : "Disabled — its QR code will not open the menu"}
+            {isActive ? t("tables.acceptingOrders") : t("tables.disabledNote")}
           </span>
         </label>
 
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
+            {t("common.cancel")}
           </Button>
-          <SubmitButton>{table ? "Save" : "Add table"}</SubmitButton>
+          <SubmitButton>{table ? t("common.save") : t("tables.add")}</SubmitButton>
         </div>
       </form>
     </Modal>
@@ -208,6 +212,7 @@ function BulkModal({
   onCreate: (count: number, prefix: string) => void;
   pending: boolean;
 }) {
+  const t = useT();
   const [count, setCount] = useState(10);
   const [prefix, setPrefix] = useState("Table");
 
@@ -215,22 +220,22 @@ function BulkModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Create several tables"
-      description="We'll name them automatically and skip any that already exist."
+      title={t("tables.bulk")}
+      description={t("tables.bulkSub")}
       size="sm"
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button loading={pending} onClick={() => onCreate(count, prefix)}>
-            Create {count} tables
+            {t("tables.createN", { count })}
           </Button>
         </>
       }
     >
       <div className="space-y-4">
-        <Field label="How many tables?" htmlFor="bulk-count">
+        <Field label={t("tables.howMany")} htmlFor="bulk-count">
           <Input
             id="bulk-count"
             type="number"
@@ -240,7 +245,7 @@ function BulkModal({
             onChange={(e) => setCount(Math.min(60, Math.max(1, Number(e.target.value) || 1)))}
           />
         </Field>
-        <Field label="Name prefix" htmlFor="bulk-prefix" hint={`They will be called "${prefix} 1", "${prefix} 2"…`}>
+        <Field label={t("tables.prefix")} htmlFor="bulk-prefix" hint={`${prefix} 1, ${prefix} 2…`}>
           <Input
             id="bulk-prefix"
             value={prefix}

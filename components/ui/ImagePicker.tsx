@@ -9,6 +9,7 @@ import { Modal } from "./Modal";
 import { Icon } from "./Icons";
 import { SmartImage } from "./SmartImage";
 import { useToast } from "./Toast";
+import { useT } from "@/components/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 
 type LibraryItem = {
@@ -66,6 +67,7 @@ export function ImagePicker({
   allowLibrary?: boolean;
 }) {
   const toast = useToast();
+  const t = useT();
   const fileRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<Status>({ phase: "idle" });
   const [libraryOpen, setLibraryOpen] = useState(false);
@@ -133,7 +135,7 @@ export function ImagePicker({
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-1 text-ink-400">
             <Icon.image className="size-7" />
-            <span className="text-xs">No image</span>
+            <span className="text-xs">{t("common.no")}</span>
           </div>
         )}
 
@@ -177,7 +179,7 @@ export function ImagePicker({
           onClick={() => fileRef.current?.click()}
           disabled={busy}
         >
-          {value ? "Replace" : "Upload photo"}
+          {value ? t("common.edit") : t("common.add")}
         </Button>
         {allowLibrary && (
           <Button
@@ -187,7 +189,7 @@ export function ImagePicker({
             onClick={() => setLibraryOpen(true)}
             disabled={busy}
           >
-            Choose from library
+            {t("admin.imageLibrary")}
           </Button>
         )}
         {value && (
@@ -198,7 +200,7 @@ export function ImagePicker({
             onClick={() => onChange(null, "none")}
             disabled={busy}
           >
-            Remove
+            {t("common.remove")}
           </Button>
         )}
       </div>
@@ -233,6 +235,7 @@ function LibraryModal({
   onPick: (url: string) => void;
   seed: string;
 }) {
+  const t = useT();
   const [images, setImages] = useState<LibraryItem[] | null>(libraryCache);
   const [query, setQuery] = useState("");
   const [reloading, setReloading] = useState(false);
@@ -289,13 +292,13 @@ function LibraryModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Image library"
+      title={t("admin.imageLibrary")}
       description="Shared photos you can use on your menu — or upload your own instead."
       size="lg"
     >
       <div className="mb-4 flex gap-2">
         <div className="relative flex-1">
-          <Icon.search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
+          <Icon.search className="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -306,7 +309,7 @@ function LibraryModal({
             }}
             placeholder="Search food, drinks, desserts…"
             aria-label="Search the image library"
-            className="w-full rounded-xl border border-ink-200 bg-white py-2.5 pl-9 pr-3 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
+            className="w-full rounded-xl border border-ink-200 bg-white py-2.5 ps-9 pe-3 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
           />
         </div>
         <button
@@ -315,7 +318,7 @@ function LibraryModal({
           disabled={reloading}
           className="rounded-xl border border-ink-200 px-3 text-sm font-medium text-ink-600 hover:bg-ink-50 disabled:opacity-60"
         >
-          {reloading ? "Refreshing…" : "Refresh"}
+          {reloading ? t("common.loading") : t("common.refresh")}
         </button>
       </div>
 
@@ -347,7 +350,7 @@ function LibraryModal({
               key={img.id}
               type="button"
               onClick={() => onPick(img.url)}
-              className="group overflow-hidden rounded-xl border border-ink-200 bg-white text-left transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-brand-400"
+              className="group overflow-hidden rounded-xl border border-ink-200 bg-white text-start transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-brand-400"
             >
               <div className="relative aspect-[4/3] bg-ink-50">
                 <SmartImage src={img.url} alt={img.title} sizes="(max-width: 640px) 45vw, 200px" />
@@ -372,13 +375,14 @@ export function LibraryPickerField({
   value,
   onChange,
   seed = "",
-  label = "Choose from library",
+  label,
 }: {
   value: string | null;
   onChange: (url: string | null) => void;
   seed?: string;
   label?: string;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
 
   return (
@@ -395,11 +399,11 @@ export function LibraryPickerField({
 
       <div className="flex flex-wrap gap-2">
         <Button type="button" variant="secondary" size="sm" onClick={() => setOpen(true)}>
-          {value ? "Change image" : label}
+          {value ? t("common.edit") : (label ?? t("admin.imageLibrary"))}
         </Button>
         {value && (
           <Button type="button" variant="ghost" size="sm" onClick={() => onChange(null)}>
-            Remove
+            {t("common.remove")}
           </Button>
         )}
       </div>

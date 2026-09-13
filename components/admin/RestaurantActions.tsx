@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { setRestaurantStatusAction } from "@/lib/actions/admin";
 import { ConfirmButton } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
+import { useT } from "@/components/i18n/I18nProvider";
 import { buttonClass } from "@/components/ui/Button";
 import type { RestaurantStatus } from "@/lib/constants";
 
@@ -21,6 +22,7 @@ export function RestaurantActions({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const t = useT();
   const [pending, startTransition] = useTransition();
 
   function change(next: RestaurantStatus) {
@@ -43,7 +45,7 @@ export function RestaurantActions({
           disabled={pending}
           className={buttonClass("success", size)}
         >
-          Activate
+          {t("admin.activate")}
         </ConfirmButton>
       )}
 
@@ -56,7 +58,7 @@ export function RestaurantActions({
           disabled={pending}
           className={buttonClass("secondary", size)}
         >
-          Deactivate
+          {t("admin.deactivate")}
         </ConfirmButton>
       )}
 
@@ -69,7 +71,7 @@ export function RestaurantActions({
           disabled={pending}
           className={buttonClass("danger", size)}
         >
-          Suspend
+          {t("admin.suspend")}
         </ConfirmButton>
       )}
     </div>

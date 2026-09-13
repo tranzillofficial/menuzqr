@@ -78,38 +78,6 @@ export async function saveCategoryAction(
   return done(id ? "Category updated." : "Category added.");
 }
 
-export async function createCategoriesBulkAction(names: string[]): Promise<ActionState> {
-  const owned = await getOwnedRestaurant();
-  if (!owned.ok) return owned.error;
-  const { restaurant } = owned;
-
-  const clean = names
-    .map((n) => n.trim())
-    .filter((n) => n.length > 0 && n.length <= 60)
-    .slice(0, 20);
-
-  if (clean.length === 0) return fail("Nothing to add.");
-
-  const supabase = await createServerSupabase();
-  const { count } = await supabase
-    .from("categories")
-    .select("id", { count: "exact", head: true })
-    .eq("restaurant_id", restaurant.id);
-
-  const base = count ?? 0;
-  const { error } = await supabase.from("categories").insert(
-    clean.map((name, i) => ({
-      restaurant_id: restaurant.id,
-      name,
-      sort_order: (base + i) * 10,
-    }))
-  );
-  if (error) return fail(error.message);
-
-  revalidate(restaurant.slug);
-  return done(`${clean.length} categories added.`);
-}
-
 /**
  * Creates one category and returns it, so the product editor can add a missing
  * section inline without the owner losing the form they were filling in.

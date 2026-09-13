@@ -2,15 +2,18 @@ import type { Metadata } from "next";
 import { requireRestaurant } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/dashboard/Shell";
+import { getT } from "@/lib/i18n/server";
 import { OrdersBoard } from "@/components/dashboard/OrdersBoard";
-import { RealtimeRefresh } from "@/components/dashboard/RealtimeRefresh";
 import type { OrderWithDetails, WaiterRequest } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Orders" };
 
 export default async function OrdersPage() {
-  const restaurant = await requireRestaurant();
-  const supabase = await createServerSupabase();
+  const [restaurant, supabase, t] = await Promise.all([
+    requireRestaurant(),
+    createServerSupabase(),
+    getT(),
+  ]);
 
   const [{ data: orders }, { data: waiters }] = await Promise.all([
     supabase
@@ -29,10 +32,9 @@ export default async function OrdersPage() {
 
   return (
     <div className="mx-auto max-w-5xl">
-      <RealtimeRefresh restaurantId={restaurant.id} />
       <PageHeader
-        title="Orders"
-        description="Live table orders and waiter calls. This page updates itself."
+        title={t("orders.title")}
+        description={t("orders.sub")}
       />
       <OrdersBoard
         orders={(orders ?? []) as OrderWithDetails[]}

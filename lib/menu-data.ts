@@ -4,7 +4,12 @@ import type { MenuData, ProductWithVariants, Restaurant, RestaurantTable } from 
 
 export type PublicMenuResult =
   | { state: "not_found" }
-  | { state: "inactive"; restaurantName: string; status: Restaurant["status"] }
+  | {
+      state: "inactive";
+      restaurantName: string;
+      status: Restaurant["status"];
+      language: string;
+    }
   | { state: "ok"; data: MenuData; table: Pick<RestaurantTable, "id" | "label"> | null };
 
 /**
@@ -35,6 +40,7 @@ export const getPublicMenu = cache(async function getPublicMenu(
       state: "inactive",
       restaurantName: restaurant.name,
       status: restaurant.status,
+      language: restaurant.language,
     };
   }
 

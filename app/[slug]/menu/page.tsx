@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getPublicMenu } from "@/lib/menu-data";
 import { createAdminSupabase } from "@/lib/supabase/admin";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { MenuExperience } from "@/components/menu/MenuExperience";
 import { MenuUnavailable } from "@/components/menu/MenuUnavailable";
 
@@ -56,7 +57,13 @@ export default async function PublicMenuPage({
   if (result.state === "not_found") notFound();
 
   if (result.state === "inactive") {
-    return <MenuUnavailable restaurantName={result.restaurantName} status={result.status} />;
+    return (
+      <MenuUnavailable
+        restaurantName={result.restaurantName}
+        status={result.status}
+        language={result.language}
+      />
+    );
   }
 
   const supabase = createAdminSupabase();
@@ -66,12 +73,16 @@ export default async function PublicMenuPage({
     .eq("restaurant_id", result.data.restaurant.id)
     .maybeSingle();
 
+  // A waiter who scans the table QR while signed in can take the order
+  // themselves, even when guest ordering is switched off in settings.
+  const staffMode = await isStaffOf(result.data.restaurant.id);
+
   if (result.data.categories.length === 0) {
     return (
       <MenuUnavailable
         restaurantName={result.data.restaurant.name}
         status="active"
-        reason="This menu is still being prepared. Please check back soon."
+        language={result.data.restaurant.language}
       />
     );
   }
@@ -83,6 +94,30 @@ export default async function PublicMenuPage({
       tableToken={tableToken ?? ""}
       showPrices={settings?.show_prices ?? true}
       showIngredients={settings?.show_ingredients ?? true}
+      staffMode={staffMode}
     />
   );
+}
+
+/** Is the current visitor a signed-in member of this restaurant? */
+async function isStaffOf(restaurantId: string): Promise<boolean> {
+  try {
+    const supabase = await createServerSupabase();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    const { data } = await createAdminSupabase()
+      .from("restaurant_members")
+      .select("id")
+      .eq("restaurant_id", restaurantId)
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    return Boolean(data);
+  } catch {
+    return false;
+  }
 }

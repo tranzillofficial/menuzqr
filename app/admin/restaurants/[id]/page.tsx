@@ -7,7 +7,8 @@ import { StatusBadge } from "@/components/dashboard/ActivationPanel";
 import { Card, CardHeader, EmptyState } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icons";
 import { formatDate, formatMoney, relativeTime } from "@/lib/utils";
-import { ORDER_STATUS_LABEL, type OrderStatus } from "@/lib/constants";
+import { getT } from "@/lib/i18n/server";
+import type { TranslationKey } from "@/lib/i18n";
 import type { Restaurant } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Admin — Restaurant" };
@@ -18,13 +19,13 @@ export default async function AdminRestaurantPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createServerSupabase();
+  const [supabase, t] = await Promise.all([createServerSupabase(), getT()]);
 
   const { data } = await supabase.from("restaurants").select("*").eq("id", id).maybeSingle();
   if (!data) notFound();
   const restaurant = data as Restaurant;
 
-  const [owner, categories, products, tables, orders, actions] = await Promise.all([
+  const [owner, categories, products, tables, orders, actions, team] = await Promise.all([
     supabase.from("profiles").select("id, email, full_name").eq("id", restaurant.owner_id).maybeSingle(),
     supabase.from("categories").select("id, name, is_active").eq("restaurant_id", id).order("sort_order"),
     supabase.from("products").select("id", { count: "exact", head: true }).eq("restaurant_id", id),
@@ -41,7 +42,20 @@ export default async function AdminRestaurantPage({
       .eq("restaurant_id", id)
       .order("created_at", { ascending: false })
       .limit(10),
+    supabase
+      .from("restaurant_members")
+      .select("id, user_id, role, display_name, is_active, created_at")
+      .eq("restaurant_id", id)
+      .order("created_at", { ascending: true }),
   ]);
+
+  // `restaurant_members.user_id` references auth.users, so the emails are
+  // fetched separately rather than embedded.
+  const teamIds = (team.data ?? []).map((m) => m.user_id);
+  const { data: teamProfiles } = teamIds.length
+    ? await supabase.from("profiles").select("id, email").in("id", teamIds)
+    : { data: [] as Array<{ id: string; email: string | null }> };
+  const teamEmail = new Map((teamProfiles ?? []).map((p) => [p.id, p.email]));
 
   return (
     <div className="space-y-5">
@@ -57,14 +71,14 @@ export default async function AdminRestaurantPage({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <StatusBadge status={restaurant.status} />
+          <StatusBadge status={restaurant.status} t={t} />
           <Link
             href={`/${restaurant.slug}/menu`}
             target="_blank"
             className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-ink-200 bg-white px-3 text-[13px] font-medium text-ink-700 hover:bg-ink-50"
           >
             <Icon.external className="size-3.5" />
-            View menu
+            {t("admin.viewMenu")}
           </Link>
         </div>
       </div>
@@ -156,9 +170,38 @@ export default async function AdminRestaurantPage({
                   <li key={o.id} className="flex items-center gap-3 py-2 text-sm">
                     <span className="font-medium">#{o.order_number}</span>
                     <span className="text-ink-500">
-                      {ORDER_STATUS_LABEL[o.status as OrderStatus]}
+                      {t(`status.${o.status}` as TranslationKey)}
                     </span>
-                    <span className="ml-auto">{formatMoney(Number(o.total), o.currency)}</span>
+                    <span className="ms-auto">{formatMoney(Number(o.total), o.currency)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </Card>
+
+        <Card>
+          <CardHeader
+            title="Team accounts"
+            description="Sub-accounts this owner created. Created and managed by them, listed here for support."
+          />
+          <div className="p-5">
+            {(team.data?.length ?? 0) === 0 ? (
+              <p className="text-sm text-ink-500">No team accounts yet.</p>
+            ) : (
+              <ul className="space-y-2 text-sm">
+                {team.data!.map((m) => (
+                  <li key={m.id} className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-lg bg-ink-100 px-2 py-0.5 font-mono text-xs">
+                      {m.role}
+                    </span>
+                    <span className="font-medium text-ink-900">{m.display_name ?? "—"}</span>
+                    <span className="truncate text-ink-500">{teamEmail.get(m.user_id) ?? ""}</span>
+                    {!m.is_active && (
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
+                        disabled
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>

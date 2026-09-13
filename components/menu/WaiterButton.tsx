@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { callWaiterAction } from "@/lib/actions/orders";
 import { useMenu } from "./MenuContext";
+import { useT } from "@/components/i18n/I18nProvider";
 
 export function WaiterButton({
   slug,
@@ -13,6 +14,7 @@ export function WaiterButton({
   tableToken: string;
   variant?: "dark" | "light";
 }) {
+  const t = useT();
   const { waiterEnabled, table, itemCount, orderingEnabled } = useMenu();
   const [confirming, setConfirming] = useState(false);
   const [pending, setPending] = useState(false);
@@ -28,14 +30,14 @@ export function WaiterButton({
       <button
         type="button"
         onClick={() => setConfirming(true)}
-        className={`fixed right-4 ${bottom} z-30 flex items-center gap-2 rounded-full px-4 py-3 text-sm font-semibold shadow-lg transition-transform active:scale-95 ${
+        className={`fixed end-4 ${bottom} z-30 flex items-center gap-2 rounded-full px-4 py-3 text-sm font-semibold shadow-lg transition-transform active:scale-95 ${
           variant === "light"
             ? "bg-white text-ink-900 ring-1 ring-ink-200"
             : "bg-ink-900 text-white"
         }`}
       >
         <span aria-hidden="true">🔔</span>
-        Call waiter
+        {t("menu.callWaiter")}
       </button>
 
       {confirming && (
@@ -69,7 +71,7 @@ export function WaiterButton({
                   }}
                   className="mt-5 w-full rounded-xl bg-ink-900 px-4 py-3 text-sm font-semibold text-white"
                 >
-                  Done
+                  {t("menu.done")}
                 </button>
               </>
             ) : (
@@ -77,9 +79,9 @@ export function WaiterButton({
                 <div className="mx-auto mb-3 grid size-14 place-items-center rounded-full bg-ink-100 text-2xl">
                   🔔
                 </div>
-                <h2 className="text-base font-semibold">Call a waiter?</h2>
+                <h2 className="text-base font-semibold">{t("menu.callWaiterQ")}</h2>
                 <p className="mt-1.5 text-sm text-ink-600">
-                  We&apos;ll let the staff know that {table?.label ?? "your table"} needs help.
+                  {t("menu.callWaiterBody", { table: table?.label ?? "" })}
                 </p>
                 <div className="mt-5 flex gap-2">
                   <button
@@ -87,7 +89,7 @@ export function WaiterButton({
                     onClick={() => setConfirming(false)}
                     className="flex-1 rounded-xl border border-ink-200 px-4 py-3 text-sm font-medium text-ink-700"
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </button>
                   <button
                     type="button"
@@ -100,7 +102,7 @@ export function WaiterButton({
                     }}
                     className="flex-1 rounded-xl bg-ink-900 px-4 py-3 text-sm font-semibold text-white disabled:bg-ink-400"
                   >
-                    {pending ? "Calling…" : "Yes, call"}
+                    {pending ? t("menu.calling") : t("menu.yesCall")}
                   </button>
                 </div>
               </>

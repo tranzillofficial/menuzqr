@@ -8,12 +8,13 @@ import { Card } from "@/components/ui/Card";
 import { LinkButton } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icons";
 import { absoluteUrl, formatMoney } from "@/lib/utils";
-import { ORDER_STATUS_LABEL, type OrderStatus } from "@/lib/constants";
+import { getT } from "@/lib/i18n/server";
+import type { TranslationKey } from "@/lib/i18n";
 
 export const metadata: Metadata = { title: "Overview" };
 
 export default async function DashboardPage() {
-  const restaurant = await getMyRestaurant();
+  const [restaurant, t] = await Promise.all([getMyRestaurant(), getT()]);
 
   if (!restaurant) {
     return (
@@ -21,13 +22,12 @@ export default async function DashboardPage() {
         <span className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-brand-50 text-brand-700">
           <Icon.store className="size-7" />
         </span>
-        <h1 className="text-2xl font-semibold text-ink-900">Let&apos;s set up your restaurant</h1>
+        <h1 className="text-2xl font-semibold text-ink-900">{t("dash.setupTitle")}</h1>
         <p className="mt-2 text-sm text-ink-500">
-          Add your name, logo and menu link. It takes about a minute, and you can change everything
-          later.
+          {t("dash.setupBody")}
         </p>
         <LinkButton href="/dashboard/restaurant" size="lg" className="mt-6">
-          Create restaurant profile
+          {t("dash.setupCta")}
         </LinkButton>
       </div>
     );
@@ -75,26 +75,18 @@ export default async function DashboardPage() {
   };
 
   const checklist = [
-    { done: true, label: "Restaurant created", href: "/dashboard/restaurant" },
-    {
-      done: counts.categories > 0,
-      label: "Menu sections added",
-      href: "/dashboard/categories",
-    },
-    { done: counts.products > 0, label: "Products with prices added", href: "/dashboard/products" },
-    { done: counts.tables > 0, label: "Tables created", href: "/dashboard/tables" },
-    {
-      done: restaurant.status === "active",
-      label: "Menu activated",
-      href: "/dashboard/settings",
-    },
+    { done: true, label: t("dash.checkRestaurant"), href: "/dashboard/restaurant" },
+    { done: counts.categories > 0, label: t("dash.checkCategories"), href: "/dashboard/categories" },
+    { done: counts.products > 0, label: t("dash.checkProducts"), href: "/dashboard/products" },
+    { done: counts.tables > 0, label: t("dash.checkTables"), href: "/dashboard/tables" },
+    { done: restaurant.status === "active", label: t("dash.checkActive"), href: "/dashboard/settings" },
   ];
 
   const stats = [
-    { label: "Categories", value: counts.categories, href: "/dashboard/categories" },
-    { label: "Products", value: counts.products, href: "/dashboard/products" },
-    { label: "Tables", value: counts.tables, href: "/dashboard/tables" },
-    { label: "Open orders", value: counts.openOrders, href: "/dashboard/orders" },
+    { label: t("nav.categories"), value: counts.categories, href: "/dashboard/categories" },
+    { label: t("nav.products"), value: counts.products, href: "/dashboard/products" },
+    { label: t("nav.tables"), value: counts.tables, href: "/dashboard/tables" },
+    { label: t("dash.openOrders"), value: counts.openOrders, href: "/dashboard/orders" },
   ];
 
   return (
@@ -102,7 +94,7 @@ export default async function DashboardPage() {
       <PageHeader
         title={restaurant.name}
         description={absoluteUrl(`/${restaurant.slug}/menu`)}
-        action={<StatusBadge status={restaurant.status} />}
+        action={<StatusBadge status={restaurant.status} t={t} />}
       />
 
       <ActivationPanel restaurant={restaurant} />
@@ -114,9 +106,9 @@ export default async function DashboardPage() {
         >
           <span className="text-xl">🔔</span>
           <span className="text-sm font-medium text-brand-900">
-            {counts.waiters} table{counts.waiters > 1 ? "s are" : " is"} waiting for a waiter
+            {t("dash.waiterWaiting", { count: counts.waiters })}
           </span>
-          <Icon.chevronRight className="ml-auto size-4 text-brand-700" />
+          <Icon.chevronRight className="ms-auto size-4 rtl-flip text-brand-700" />
         </Link>
       )}
 
@@ -128,14 +120,14 @@ export default async function DashboardPage() {
             className="rounded-2xl border border-ink-200 bg-white p-4 transition-colors hover:border-ink-300 sm:p-5"
           >
             <p className="text-xs font-medium uppercase tracking-wide text-ink-500">{stat.label}</p>
-            <p className="mt-1.5 text-2xl font-semibold text-ink-900 sm:text-3xl">{stat.value}</p>
+            <p className="ltr-nums mt-1.5 text-2xl font-semibold text-ink-900 sm:text-3xl">{stat.value}</p>
           </Link>
         ))}
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <Card className="p-5">
-          <h2 className="text-base font-semibold text-ink-900">Your setup</h2>
+          <h2 className="text-base font-semibold text-ink-900">{t("dash.yourSetup")}</h2>
           <ul className="mt-4 space-y-2.5">
             {checklist.map((item) => (
               <li key={item.label}>
@@ -157,7 +149,7 @@ export default async function DashboardPage() {
                   <span className={item.done ? "text-ink-500 line-through" : "text-ink-800"}>
                     {item.label}
                   </span>
-                  <Icon.chevronRight className="ml-auto size-4 text-ink-300" />
+                  <Icon.chevronRight className="ms-auto size-4 rtl-flip text-ink-300" />
                 </Link>
               </li>
             ))}
@@ -166,14 +158,14 @@ export default async function DashboardPage() {
 
         <Card className="p-5">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold text-ink-900">Recent orders</h2>
+            <h2 className="text-base font-semibold text-ink-900">{t("dash.recentOrders")}</h2>
             <Link href="/dashboard/orders" className="text-sm text-brand-700 hover:underline">
-              View all
+              {t("dash.viewAll")}
             </Link>
           </div>
           {(recentOrders.data?.length ?? 0) === 0 ? (
             <p className="py-8 text-center text-sm text-ink-500">
-              No orders yet. They appear here the moment a guest sends one.
+              {t("dash.noOrders")}
             </p>
           ) : (
             <ul className="mt-4 divide-y divide-ink-100">
@@ -183,11 +175,11 @@ export default async function DashboardPage() {
                   <li key={order.id} className="flex items-center gap-3 py-2.5">
                     <span className="text-sm font-medium text-ink-900">#{order.order_number}</span>
                     <span className="truncate text-sm text-ink-500">{table?.label ?? "—"}</span>
-                    <span className="ml-auto text-sm font-medium text-ink-900">
-                      {formatMoney(Number(order.total), order.currency)}
+                    <span className="ms-auto text-sm font-medium text-ink-900">
+                      <span className="ltr-nums">{formatMoney(Number(order.total), order.currency)}</span>
                     </span>
                     <span className="rounded-full bg-ink-100 px-2 py-0.5 text-[11px] font-medium text-ink-600">
-                      {ORDER_STATUS_LABEL[order.status as OrderStatus]}
+                      {t(`status.${order.status}` as TranslationKey)}
                     </span>
                   </li>
                 );

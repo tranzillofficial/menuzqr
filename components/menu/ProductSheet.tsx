@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useMenu } from "./MenuContext";
 import { MenuImage } from "./MenuMedia";
 import { formatMoney, splitIngredients } from "@/lib/utils";
+import { useT } from "@/components/i18n/I18nProvider";
 
 export function ProductSheet() {
   const {
@@ -16,6 +17,7 @@ export function ProductSheet() {
     addItem,
   } = useMenu();
 
+  const t = useT();
   const [variantId, setVariantId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [note, setNote] = useState("");
@@ -63,7 +65,7 @@ export function ProductSheet() {
           type="button"
           onClick={closeProduct}
           aria-label="Close"
-          className="absolute right-3 top-3 z-10 grid size-9 place-items-center rounded-full bg-white/90 text-ink-700 shadow backdrop-blur"
+          className="absolute end-3 top-3 z-10 grid size-9 place-items-center rounded-full bg-white/90 text-ink-700 shadow backdrop-blur"
         >
           <svg viewBox="0 0 20 20" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8">
             <path d="M5 5l10 10M15 5L5 15" strokeLinecap="round" />
@@ -94,7 +96,7 @@ export function ProductSheet() {
             {showIngredients && ingredients.length > 0 && (
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-ink-400">
-                  Ingredients
+                  {t("menu.ingredients")}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {ingredients.map((item) => (
@@ -112,7 +114,7 @@ export function ProductSheet() {
             {variants.length > 0 && (
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-ink-400">
-                  {variants.length > 1 ? "Choose a size" : "Size"}
+                  {variants.length > 1 ? t("menu.chooseSize") : t("menu.size")}
                 </p>
                 <div className="mt-2 space-y-2">
                   {variants.map((v) => {
@@ -123,7 +125,7 @@ export function ProductSheet() {
                         type="button"
                         onClick={() => setVariantId(v.id)}
                         aria-pressed={selected}
-                        className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left transition-colors ${
+                        className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-start transition-colors ${
                           selected
                             ? "border-ink-900 bg-ink-900 text-white"
                             : "border-ink-200 bg-white hover:border-ink-400"
@@ -148,14 +150,14 @@ export function ProductSheet() {
                   htmlFor="item-note"
                   className="text-xs font-semibold uppercase tracking-wide text-ink-400"
                 >
-                  Special request
+                  {t("menu.specialRequest")}
                 </label>
                 <input
                   id="item-note"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   maxLength={200}
-                  placeholder="No onions, extra sauce…"
+                  placeholder={t("menu.specialPlaceholder")}
                   className="mt-2 w-full rounded-xl border border-ink-200 px-3.5 py-2.5 text-sm focus:border-ink-900 focus:outline-none"
                 />
               </div>
@@ -204,8 +206,10 @@ export function ProductSheet() {
               }}
               className="flex-1 rounded-xl bg-ink-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-ink-800"
             >
-              Add to order ·{" "}
-              {formatMoney(Number(variant.price) * quantity, currency)}
+              {t("menu.addToOrder")} ·{" "}
+              <span className="ltr-nums">
+                {formatMoney(Number(variant.price) * quantity, currency)}
+              </span>
             </button>
           </div>
         )}

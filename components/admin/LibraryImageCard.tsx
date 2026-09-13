@@ -42,7 +42,7 @@ export function LibraryImageCard({ image }: { image: LibraryImage }) {
             router.refresh();
           })
         }
-        className="absolute right-1.5 top-1.5 rounded-lg bg-white/90 p-1.5 text-ink-500 opacity-0 shadow-sm backdrop-blur transition-opacity hover:text-red-600 focus-visible:opacity-100 group-hover:opacity-100"
+        className="absolute end-1.5 top-1.5 rounded-lg bg-white/90 p-1.5 text-ink-500 opacity-0 shadow-sm backdrop-blur transition-opacity hover:text-red-600 focus-visible:opacity-100 group-hover:opacity-100"
       >
         <Icon.trash className="size-4" />
       </ConfirmButton>

@@ -2,14 +2,18 @@ import type { Metadata } from "next";
 import { requireRestaurant } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/dashboard/Shell";
+import { getT } from "@/lib/i18n/server";
 import { ProductsManager } from "@/components/dashboard/ProductsManager";
 import type { Category, ProductWithVariants } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Products" };
 
 export default async function ProductsPage() {
-  const restaurant = await requireRestaurant();
-  const supabase = await createServerSupabase();
+  const [restaurant, supabase, t] = await Promise.all([
+    requireRestaurant(),
+    createServerSupabase(),
+    getT(),
+  ]);
 
   const [{ data: categories }, { data: products }] = await Promise.all([
     supabase
@@ -28,8 +32,8 @@ export default async function ProductsPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <PageHeader
-        title="Products"
-        description="Everything on your menu, with sizes and prices."
+        title={t("products.title")}
+        description={t("products.sub")}
       />
       <ProductsManager
         restaurant={restaurant}

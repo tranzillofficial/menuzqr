@@ -17,6 +17,8 @@ import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icons";
 import { EmptyState } from "@/components/ui/Card";
 import { useToast } from "@/components/ui/Toast";
+import { useT } from "@/components/i18n/I18nProvider";
+import type { TranslationKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { QrTemplate, Restaurant, RestaurantTable } from "@/lib/types";
 
@@ -51,6 +53,7 @@ export function QrStudio({
   const tableUrl = (code: string) => `${generalUrl}?t=${encodeURIComponent(code)}`;
 
   const toast = useToast();
+  const t = useT();
   const [size, setSize] = useState<LabelSizeId>("medium");
   const [busy, setBusy] = useState(false);
 
@@ -143,8 +146,8 @@ export function QrStudio({
   if (templates.length === 0) {
     return (
       <EmptyState
-        title="No QR designs available"
-        description="Run supabase/002-upgrades.sql to install the built-in designs, or add one from the admin dashboard."
+        title={t("qr.noDesigns")}
+        description={t("qr.noDesignsBody")}
       />
     );
   }
@@ -153,26 +156,26 @@ export function QrStudio({
     <div className="space-y-8">
       {/* ---- size picker ---- */}
       <div className="print-hide flex flex-wrap items-center gap-2 rounded-2xl border border-ink-200 bg-white p-3">
-        <span className="px-1 text-sm font-medium text-ink-700">Export size</span>
+        <span className="px-1 text-sm font-medium text-ink-700">{t("qr.exportSize")}</span>
         {LABEL_SIZES.map((option) => (
           <button
             key={option.id}
             type="button"
             onClick={() => setSize(option.id)}
             className={cn(
-              "rounded-xl border px-3 py-2 text-left transition-colors",
+              "rounded-xl border px-3 py-2 text-start transition-colors",
               size === option.id
                 ? "border-brand-500 bg-brand-50 text-brand-800"
                 : "border-ink-200 text-ink-600 hover:bg-ink-50"
             )}
           >
-            <span className="block text-sm font-medium">{option.label}</span>
+            <span className="block text-sm font-medium">{t(`qr.size${option.label}` as TranslationKey)}</span>
             <span className="block text-[11px] opacity-70">{option.note}</span>
           </button>
         ))}
-        <Button variant="secondary" className="ml-auto" onClick={() => window.print()}>
+        <Button variant="secondary" className="ms-auto" onClick={() => window.print()}>
           <Icon.print className="size-4" />
-          Print sheet
+          {t("qr.printSheet")}
         </Button>
       </div>
 
@@ -180,9 +183,9 @@ export function QrStudio({
       <section>
         <div className="print-hide mb-3 flex flex-wrap items-center gap-2">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-500">
-            Counter &amp; window label
+            {t("qr.counterLabel")}
           </h2>
-          <div className="ml-auto flex flex-wrap gap-1.5">
+          <div className="ms-auto flex flex-wrap gap-1.5">
             {generalTemplates.map((t) => (
               <button
                 key={t.id}
@@ -210,15 +213,15 @@ export function QrStudio({
 
           <div className="print-hide space-y-4 rounded-2xl border border-ink-200 bg-white p-5">
             <div>
-              <h3 className="text-sm font-semibold text-ink-900">Where to use it</h3>
+              <h3 className="text-sm font-semibold text-ink-900">{t("qr.whereToUse")}</h3>
               <ul className="mt-2 space-y-1 text-sm text-ink-600">
-                <li>• Shop window, entrance and takeaway counter</li>
-                <li>• Flyers and social posts</li>
-                <li>• Anywhere the table number does not matter</li>
+                <li>• {t("qr.use1")}</li>
+                <li>• {t("qr.use2")}</li>
+                <li>• {t("qr.use3")}</li>
               </ul>
             </div>
 
-            <p className="break-all rounded-lg bg-ink-50 px-3 py-2 font-mono text-xs text-ink-500">
+            <p className="ltr-nums break-all rounded-lg bg-ink-50 px-3 py-2 font-mono text-xs text-ink-500">
               {generalUrl}
             </p>
 
@@ -229,14 +232,14 @@ export function QrStudio({
                 onClick={() => generalInput && download(generalInput, `${fileSafe(restaurant.slug)}-label`)}
               >
                 <Icon.download className="size-4" />
-                Download label
+                {t("qr.downloadLabel")}
               </Button>
               <Button
                 variant="secondary"
                 disabled={busy}
                 onClick={() => downloadPlain(generalUrl, `${fileSafe(restaurant.slug)}-qr`, "png")}
               >
-                Plain QR (PNG)
+                {t("qr.plainPng")}
               </Button>
               <Button
                 variant="ghost"
@@ -254,12 +257,12 @@ export function QrStudio({
       <section>
         <div className="print-hide mb-3 flex flex-wrap items-center gap-2">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-500">
-            Table cards
+            {t("qr.tableCards")}
           </h2>
           <Link href="/dashboard/tables" className="text-sm text-brand-700 hover:underline">
-            Manage tables
+            {t("qr.manageTables")}
           </Link>
-          <div className="ml-auto flex flex-wrap items-center gap-1.5">
+          <div className="ms-auto flex flex-wrap items-center gap-1.5">
             {tableTemplates.map((t) => (
               <button
                 key={t.id}
@@ -278,7 +281,7 @@ export function QrStudio({
             {activeTables.length > 0 && (
               <Button size="sm" variant="secondary" loading={busy} onClick={downloadAllTables}>
                 <Icon.download className="size-3.5" />
-                Download all ({activeTables.length})
+                {t("qr.downloadAll", { count: activeTables.length })}
               </Button>
             )}
           </div>
@@ -288,15 +291,15 @@ export function QrStudio({
           <div className="print-hide">
             <EmptyState
               icon="🪑"
-              title="No tables yet"
-              description="Create your tables and each one gets its own card here, ready for the print shop."
+              title={t("tables.emptyTitle")}
+              description={t("tables.emptyBody")}
               action={
                 <Link
                   href="/dashboard/tables"
                   className="inline-flex h-10 items-center gap-2 rounded-xl bg-brand-600 px-4 text-sm font-medium text-white"
                 >
                   <Icon.plus className="size-4" />
-                  Create tables
+                  {t("tables.emptyCta")}
                 </Link>
               }
             />
@@ -315,13 +318,13 @@ export function QrStudio({
                     <span className="truncate text-sm font-medium text-ink-900">{table.label}</span>
                     {!table.is_active && (
                       <span className="rounded bg-ink-100 px-1.5 py-0.5 text-[11px] text-ink-500">
-                        disabled
+                        {t("common.inactive")}
                       </span>
                     )}
                     <Button
                       size="sm"
                       variant="secondary"
-                      className="ml-auto"
+                      className="ms-auto"
                       disabled={busy || !input}
                       onClick={() =>
                         input &&

@@ -10,15 +10,17 @@ import { Button } from "@/components/ui/Button";
 import { Badge, EmptyState } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icons";
 import { useToast } from "@/components/ui/Toast";
-import { ORDER_STATUS_LABEL, type OrderStatus } from "@/lib/constants";
+import { type OrderStatus } from "@/lib/constants";
+import { useT } from "@/components/i18n/I18nProvider";
+import type { TranslationKey } from "@/lib/i18n";
 import { formatMoney, formatTime, relativeTime } from "@/lib/utils";
 import type { OrderWithDetails, WaiterRequest } from "@/lib/types";
 
-const NEXT_STATUS: Partial<Record<OrderStatus, { label: string; value: OrderStatus }>> = {
-  pending: { label: "Accept", value: "accepted" },
-  accepted: { label: "Start preparing", value: "preparing" },
-  preparing: { label: "Mark ready", value: "ready" },
-  ready: { label: "Complete", value: "completed" },
+const NEXT_STATUS: Partial<Record<OrderStatus, { label: TranslationKey; value: OrderStatus }>> = {
+  pending: { label: "orders.accept", value: "accepted" },
+  accepted: { label: "orders.startPreparing", value: "preparing" },
+  preparing: { label: "orders.markReady", value: "ready" },
+  ready: { label: "orders.complete", value: "completed" },
 };
 
 const TONE: Record<OrderStatus, "brand" | "info" | "warning" | "success" | "neutral" | "danger"> = {
@@ -41,6 +43,7 @@ export function OrdersBoard({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const t = useT();
   const [tab, setTab] = useState<"open" | "done">("open");
   const [pending, startTransition] = useTransition();
 
@@ -64,7 +67,7 @@ export function OrdersBoard({
         <section className="rounded-2xl border border-brand-300 bg-brand-50 p-4 sm:p-5">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-brand-900">
             <span className="text-base">🔔</span>
-            Waiter calls ({waiterRequests.length})
+            {t("orders.waiterCalls", { count: waiterRequests.length })}
           </h2>
           <ul className="mt-3 space-y-2">
             {waiterRequests.map((request) => (
@@ -72,20 +75,22 @@ export function OrdersBoard({
                 key={request.id}
                 className="flex flex-wrap items-center gap-3 rounded-xl bg-white px-4 py-3"
               >
+                <span className="text-base">{request.origin === "staff" ? "🛎️" : "🔔"}</span>
                 <span className="font-medium text-ink-900">
-                  {request.restaurant_tables?.label ?? "Table"}
+                  {request.restaurant_tables?.label ?? t("live.someTable")}
                 </span>
                 <span className="text-sm text-ink-500">
-                  needs a waiter · {relativeTime(request.created_at)}
+                  {request.origin === "staff" ? t("station.fromKitchen") : t("orders.needsWaiter")} ·{" "}
+                  {relativeTime(request.created_at)}
                 </span>
                 <Button
                   size="sm"
-                  className="ml-auto"
+                  className="ms-auto"
                   loading={pending}
                   onClick={() => run(() => resolveWaiterRequestAction(request.id))}
                 >
                   <Icon.check className="size-3.5" />
-                  Mark as handled
+                  {t("dash.markHandled")}
                 </Button>
               </li>
             ))}
@@ -96,8 +101,8 @@ export function OrdersBoard({
       <div className="flex gap-1 rounded-xl bg-ink-100 p-1">
         {(
           [
-            ["open", `Active (${openOrders.length})`],
-            ["done", `History (${doneOrders.length})`],
+            ["open", t("orders.tabActive", { count: openOrders.length })],
+            ["done", t("orders.tabHistory", { count: doneOrders.length })],
           ] as const
         ).map(([value, label]) => (
           <button
@@ -116,11 +121,9 @@ export function OrdersBoard({
       {shown.length === 0 ? (
         <EmptyState
           icon={tab === "open" ? "🧾" : "📦"}
-          title={tab === "open" ? "No active orders" : "No past orders yet"}
+          title={tab === "open" ? t("orders.noActive") : t("orders.noHistory")}
           description={
-            tab === "open"
-              ? "When a guest scans a table QR code and sends an order, it appears here instantly — with a sound."
-              : "Completed and cancelled orders are kept here."
+            tab === "open" ? t("orders.noActiveBody") : t("orders.noHistoryBody")
           }
         />
       ) : (
@@ -130,16 +133,16 @@ export function OrdersBoard({
             return (
               <li key={order.id} className="rounded-2xl border border-ink-200 bg-white p-4">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-base font-semibold text-ink-900">
+                  <span className="ltr-nums text-base font-semibold text-ink-900">
                     #{order.order_number}
                   </span>
                   <span className="rounded-lg bg-ink-100 px-2 py-0.5 text-xs font-medium text-ink-700">
-                    {order.restaurant_tables?.label ?? "No table"}
+                    {order.restaurant_tables?.label ?? t("orders.noTable")}
                   </span>
                   <Badge tone={TONE[order.status as OrderStatus]}>
-                    {ORDER_STATUS_LABEL[order.status as OrderStatus]}
+                    {t(`status.${order.status}` as TranslationKey)}
                   </Badge>
-                  <span className="ml-auto text-xs text-ink-400">
+                  <span className="ms-auto text-xs text-ink-400">
                     {formatTime(order.created_at)}
                   </span>
                 </div>
@@ -168,7 +171,7 @@ export function OrdersBoard({
 
                 {order.note && (
                   <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
-                    <strong>Order note:</strong> {order.note}
+                    <strong>{t("orders.orderNote")}</strong> {order.note}
                   </p>
                 )}
 
@@ -176,14 +179,14 @@ export function OrdersBoard({
                   <span className="text-sm font-semibold text-ink-900">
                     {formatMoney(Number(order.total), order.currency || currency)}
                   </span>
-                  <div className="ml-auto flex flex-wrap gap-2">
+                  <div className="ms-auto flex flex-wrap gap-2">
                     {next && (
                       <Button
                         size="sm"
                         loading={pending}
                         onClick={() => run(() => updateOrderStatusAction(order.id, next.value))}
                       >
-                        {next.label}
+                        {t(next.label)}
                       </Button>
                     )}
                     {!["completed", "cancelled"].includes(order.status) && (
@@ -193,7 +196,7 @@ export function OrdersBoard({
                         disabled={pending}
                         onClick={() => run(() => updateOrderStatusAction(order.id, "cancelled"))}
                       >
-                        Cancel
+                        {t("orders.cancel")}
                       </Button>
                     )}
                   </div>

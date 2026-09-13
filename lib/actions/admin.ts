@@ -271,3 +271,43 @@ export async function deleteCatalogItemAction(id: string): Promise<ActionState> 
   revalidatePath("/admin/catalog");
   return done("Item removed.");
 }
+
+// ------------------------------------------------------------- platform
+
+export async function savePlatformSettingsAction(
+  _prev: ActionState,
+  form: FormData
+): Promise<ActionState> {
+  const admin = await assertAdmin();
+  if (!admin.ok) return admin.error;
+
+  const whatsapp = String(form.get("support_whatsapp") ?? "").trim().slice(0, 40);
+  if (whatsapp.replace(/\D/g, "").length < 8) {
+    return fail("Enter a valid WhatsApp number in international format.");
+  }
+
+  const price = Number(String(form.get("price_usd") ?? "").trim());
+  if (!Number.isFinite(price) || price < 0) return fail("Enter a valid price.");
+
+  const supabase = await createServerSupabase();
+  const { error } = await supabase
+    .from("platform_settings")
+    .upsert(
+      {
+        id: 1,
+        support_whatsapp: whatsapp,
+        support_email: String(form.get("support_email") ?? "").trim().slice(0, 120) || null,
+        brand_name: String(form.get("brand_name") ?? "").trim().slice(0, 40) || "MenuzQR",
+        price_usd: price,
+        activation_note: String(form.get("activation_note") ?? "").trim().slice(0, 300) || null,
+      },
+      { onConflict: "id" }
+    );
+
+  if (error) return fail(error.message);
+
+  // The number appears on the landing page, every dashboard and the
+  // "menu unavailable" page, so refresh the whole tree.
+  revalidatePath("/", "layout");
+  return done("Platform settings saved.");
+}

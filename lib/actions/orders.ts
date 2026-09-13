@@ -4,8 +4,37 @@ import { revalidatePath } from "next/cache";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { ORDER_STATUSES, type OrderStatus } from "@/lib/constants";
+import { publishEvent } from "@/lib/notify";
 import type { ActionState } from "@/lib/types";
-import { done, fail, getOwnedRestaurant } from "./helpers";
+import { done, fail, getMemberContext } from "./helpers";
+
+/**
+ * A signed-in member of this restaurant, if any.
+ *
+ * Used for two things: letting a waiter place an order from a table QR even
+ * when guest ordering is switched off, and stamping who placed it.
+ */
+async function memberOf(restaurantId: string): Promise<string | null> {
+  try {
+    const supabase = await createServerSupabase();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const { data } = await createAdminSupabase()
+      .from("restaurant_members")
+      .select("user_id")
+      .eq("restaurant_id", restaurantId)
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    return data ? user.id : null;
+  } catch {
+    return null;
+  }
+}
 
 export type CartLine = {
   variantId: string;
@@ -53,7 +82,12 @@ export async function placeOrderAction(
   if (restaurant.status !== "active") {
     return { ok: false, message: "This menu is not accepting orders right now." };
   }
-  if (!restaurant.ordering_enabled) {
+
+  // When the owner turns guest ordering off, the QR code still works for the
+  // restaurant's own staff: a waiter scans the table and takes the order.
+  const staffId = await memberOf(restaurant.id);
+
+  if (!restaurant.ordering_enabled && !staffId) {
     return { ok: false, message: "Table ordering is turned off for this restaurant." };
   }
 
@@ -149,6 +183,7 @@ export async function placeOrderAction(
       note: orderNote.trim().slice(0, 400) || null,
       total,
       currency: restaurant.currency,
+      placed_by: staffId,
     })
     .select("id, order_number, public_token")
     .single();
@@ -166,7 +201,19 @@ export async function placeOrderAction(
     return { ok: false, message: "We could not send your order. Please try again." };
   }
 
+  await publishEvent({
+    id: `order.new:${order.id}`,
+    kind: "order.new",
+    restaurantId: restaurant.id,
+    orderId: order.id,
+    orderNumber: order.order_number,
+    tableLabel: table.label,
+    total,
+    currency: restaurant.currency,
+  });
+
   revalidatePath("/dashboard/orders");
+  revalidatePath("/station");
 
   return {
     ok: true,
@@ -192,7 +239,12 @@ export async function callWaiterAction(
   if (!restaurant || restaurant.status !== "active") {
     return { ok: false, message: "This menu is not available right now." };
   }
-  if (!restaurant.waiter_calls_enabled) {
+
+  // Same rule as ordering: the restaurant's own staff can still use the QR
+  // code when the owner has switched guest calls off.
+  const staffId = await memberOf(restaurant.id);
+
+  if (!restaurant.waiter_calls_enabled && !staffId) {
     return { ok: false, message: "Waiter calls are turned off for this restaurant." };
   }
 
@@ -220,45 +272,171 @@ export async function callWaiterAction(
     return { ok: true, message: `A waiter is already on the way to ${table.label}.` };
   }
 
-  const { error } = await supabase.from("waiter_requests").insert({
-    restaurant_id: restaurant.id,
-    table_id: table.id,
-  });
+  const { data: created, error } = await supabase
+    .from("waiter_requests")
+    .insert({
+      restaurant_id: restaurant.id,
+      table_id: table.id,
+      origin: "guest",
+    })
+    .select("id")
+    .single();
 
   if (error) return { ok: false, message: "Could not call the waiter. Please try again." };
 
+  await publishEvent({
+    id: `waiter:${created?.id ?? `${table.id}-${Date.now()}`}`,
+    kind: "waiter.call",
+    restaurantId: restaurant.id,
+    tableLabel: table.label,
+  });
+
   revalidatePath("/dashboard/orders");
+  revalidatePath("/station");
   return { ok: true, message: `A waiter has been called to ${table.label}.` };
 }
 
 // ---------------------------------------------------------------- staff side
 
+/**
+ * Advance an order. Any active member may do this: the kitchen moves a ticket
+ * to `preparing` and `ready`, the floor closes it as `completed`.
+ *
+ * Marking an order ready is the moment the waiter needs to know about, so it
+ * also raises a pickup request unless one is already open for that order.
+ */
 export async function updateOrderStatusAction(
   orderId: string,
   status: string
 ): Promise<ActionState> {
-  const owned = await getOwnedRestaurant();
-  if (!owned.ok) return owned.error;
+  const context = await getMemberContext();
+  if (!context.ok) return context.error;
 
   if (!ORDER_STATUSES.includes(status as OrderStatus)) return fail("Unknown status.");
 
   const supabase = await createServerSupabase();
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("orders")
     .update({ status })
     .eq("id", orderId)
-    .eq("restaurant_id", owned.restaurant.id);
+    .eq("restaurant_id", context.restaurantId)
+    .select("id, order_number, table_id, status")
+    .maybeSingle();
 
   if (error) return fail(error.message);
+  if (!updated) return fail("That order is not on your board any more.");
+
+  if (status === "ready") {
+    await raisePickup(context.restaurantId, updated.id, updated.order_number, updated.table_id, context.userId);
+  } else {
+    await publishEvent({
+      id: `order.status:${updated.id}:${status}`,
+      kind: "order.status",
+      restaurantId: context.restaurantId,
+      orderId: updated.id,
+      orderNumber: updated.order_number,
+    });
+  }
 
   revalidatePath("/dashboard/orders");
   revalidatePath("/dashboard");
+  revalidatePath("/station");
   return done("Order updated.");
 }
 
+/** The kitchen asking a waiter to come and collect a finished order. */
+export async function callWaiterForOrderAction(
+  orderId: string,
+  note?: string
+): Promise<ActionState> {
+  const context = await getMemberContext();
+  if (!context.ok) return context.error;
+
+  const admin = createAdminSupabase();
+  const { data: order } = await admin
+    .from("orders")
+    .select("id, order_number, table_id")
+    .eq("id", orderId)
+    .eq("restaurant_id", context.restaurantId)
+    .maybeSingle();
+
+  if (!order) return fail("That order is not on your board any more.");
+
+  const raised = await raisePickup(
+    context.restaurantId,
+    order.id,
+    order.order_number,
+    order.table_id,
+    context.userId,
+    note
+  );
+
+  revalidatePath("/dashboard/orders");
+  revalidatePath("/station");
+  return raised ? done("A waiter has been called.") : done("A waiter is already on the way.");
+}
+
+async function raisePickup(
+  restaurantId: string,
+  orderId: string,
+  orderNumber: number,
+  tableId: string | null,
+  userId: string,
+  note?: string
+): Promise<boolean> {
+  const admin = createAdminSupabase();
+
+  const { data: existing } = await admin
+    .from("waiter_requests")
+    .select("id")
+    .eq("order_id", orderId)
+    .eq("status", "pending")
+    .limit(1);
+
+  let requestId = existing?.[0]?.id as string | undefined;
+
+  if (!requestId) {
+    const { data: created } = await admin
+      .from("waiter_requests")
+      .insert({
+        restaurant_id: restaurantId,
+        table_id: tableId,
+        order_id: orderId,
+        origin: "staff",
+        created_by: userId,
+        note: (note ?? "").trim().slice(0, 200) || null,
+      })
+      .select("id")
+      .single();
+    requestId = created?.id;
+  }
+
+  let label: string | null = null;
+  if (tableId) {
+    const { data: table } = await admin
+      .from("restaurant_tables")
+      .select("label")
+      .eq("id", tableId)
+      .maybeSingle();
+    label = table?.label ?? null;
+  }
+
+  await publishEvent({
+    id: `waiter:${requestId ?? `${orderId}-${Date.now()}`}`,
+    kind: "waiter.pickup",
+    restaurantId,
+    orderId,
+    orderNumber,
+    tableLabel: label,
+    note: note ?? null,
+  });
+
+  return !existing || existing.length === 0;
+}
+
 export async function resolveWaiterRequestAction(requestId: string): Promise<ActionState> {
-  const owned = await getOwnedRestaurant();
-  if (!owned.ok) return owned.error;
+  const context = await getMemberContext();
+  if (!context.ok) return context.error;
 
   const supabase = await createServerSupabase();
   const { error } = await supabase
@@ -266,13 +444,14 @@ export async function resolveWaiterRequestAction(requestId: string): Promise<Act
     .update({
       status: "handled",
       handled_at: new Date().toISOString(),
-      handled_by: owned.userId,
+      handled_by: context.userId,
     })
     .eq("id", requestId)
-    .eq("restaurant_id", owned.restaurant.id);
+    .eq("restaurant_id", context.restaurantId);
 
   if (error) return fail(error.message);
 
   revalidatePath("/dashboard/orders");
+  revalidatePath("/station");
   return done("Marked as handled.");
 }

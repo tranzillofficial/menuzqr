@@ -15,6 +15,7 @@ import { EmptyState } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icons";
 import { Select, Switch } from "@/components/ui/Field";
 import { useToast } from "@/components/ui/Toast";
+import { useT } from "@/components/i18n/I18nProvider";
 import { priceRange } from "@/lib/utils";
 import type { Category, ProductWithVariants, Restaurant } from "@/lib/types";
 
@@ -29,6 +30,7 @@ export function ProductsManager({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const t = useT();
   const [editing, setEditing] = useState<ProductWithVariants | null | "new">(null);
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
@@ -62,9 +64,9 @@ export function ProductsManager({
     return (
       <EmptyState
         icon="🍔"
-        title="Add your menu sections first"
-        description="Products live inside categories. Create a few sections such as Burgers, Drinks or Desserts, then come back."
-        action={<LinkButton href="/dashboard/categories">Go to categories</LinkButton>}
+        title={t("products.needCategoriesTitle")}
+        description={t("products.needCategoriesBody")}
+        action={<LinkButton href="/dashboard/categories">{t("products.goToCategories")}</LinkButton>}
       />
     );
   }
@@ -74,45 +76,45 @@ export function ProductsManager({
       <div className="flex flex-wrap items-center gap-2">
         <Button onClick={() => setEditing("new")}>
           <Icon.plus className="size-4" />
-          Add product
+          {t("products.add")}
         </Button>
 
         <div className="relative min-w-40 flex-1 sm:max-w-xs">
-          <Icon.search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
+          <Icon.search className="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search products…"
-            aria-label="Search products"
-            className="h-10 w-full rounded-xl border border-ink-200 bg-white pl-9 pr-3 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
+            placeholder={t("products.searchPlaceholder")}
+            aria-label={t("products.searchPlaceholder")}
+            className="h-10 w-full rounded-xl border border-ink-200 bg-white ps-9 pe-3 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
           />
         </div>
 
         <Select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          aria-label="Filter by category"
+          aria-label={t("products.category")}
           className="h-10 w-auto py-0"
         >
-          <option value="all">All categories</option>
+          <option value="all">{t("products.allCategories")}</option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
             </option>
           ))}
-          <option value="uncategorised">Uncategorised</option>
+          <option value="uncategorised">{t("products.uncategorised")}</option>
         </Select>
       </div>
 
       {products.length === 0 ? (
         <EmptyState
           icon="🍽️"
-          title="No products yet"
-          description="Add your first dish or drink. You can give it several sizes, each with its own price."
-          action={<Button onClick={() => setEditing("new")}>Add your first product</Button>}
+          title={t("products.emptyTitle")}
+          description={t("products.emptyBody")}
+          action={<Button onClick={() => setEditing("new")}>{t("products.emptyCta")}</Button>}
         />
       ) : visible.length === 0 ? (
-        <EmptyState title="Nothing matches that filter" description="Try a different search or category." />
+        <EmptyState title={t("common.nothingMatched")} />
       ) : (
         <ul className="space-y-2">
           {visible.map((product) => {
@@ -159,13 +161,14 @@ export function ProductsManager({
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium text-ink-900">{product.name}</p>
                   <p className="truncate text-xs text-ink-500">
-                    {product.category_id ? categoryName[product.category_id] : "Uncategorised"} ·{" "}
-                    {product.product_variants.length} size
-                    {product.product_variants.length === 1 ? "" : "s"}
+                    {product.category_id
+                      ? categoryName[product.category_id]
+                      : t("products.uncategorised")}{" "}
+                    · {product.product_variants.length}
                   </p>
                 </div>
 
-                <p className="hidden whitespace-nowrap text-sm font-medium text-ink-900 sm:block">
+                <p className="ltr-nums hidden whitespace-nowrap text-sm font-medium text-ink-900 sm:block">
                   {priceRange(prices, restaurant.currency)}
                 </p>
 

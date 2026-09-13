@@ -2,17 +2,21 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { Icon } from "@/components/ui/Icons";
+import { LocaleSwitch } from "@/components/i18n/LocaleSwitch";
+import { getT } from "@/lib/i18n/server";
+import type { TranslationKey } from "@/lib/i18n";
 
-const NAV = [
-  { href: "/admin", label: "Restaurants" },
-  { href: "/admin/users", label: "Users" },
-  { href: "/admin/library", label: "Image library" },
-  { href: "/admin/catalog", label: "Catalog" },
-  { href: "/admin/qr-designs", label: "QR designs" },
+const NAV: Array<{ href: string; label: TranslationKey }> = [
+  { href: "/admin", label: "admin.restaurants" },
+  { href: "/admin/users", label: "admin.users" },
+  { href: "/admin/library", label: "admin.imageLibrary" },
+  { href: "/admin/catalog", label: "admin.catalog" },
+  { href: "/admin/qr-designs", label: "admin.qrDesigns" },
+  { href: "/admin/platform", label: "admin.platform" },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createServerSupabase();
+  const [supabase, t] = await Promise.all([createServerSupabase(), getT()]);
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -42,11 +46,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 href={item.href}
                 className="whitespace-nowrap rounded-lg px-3 py-1.5 text-sm text-white/70 transition-colors hover:bg-white/10 hover:text-white"
               >
-                {item.label}
+                {t(item.label)}
               </Link>
             ))}
           </nav>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ms-auto flex items-center gap-2">
+            <LocaleSwitch tone="dark" className="hidden sm:inline-flex" />
             <span className="hidden max-w-40 truncate text-xs text-white/50 sm:block" title={profile.email ?? ""}>
               {profile.email}
             </span>
@@ -54,7 +59,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               href="/dashboard"
               className="whitespace-nowrap rounded-lg border border-white/20 px-3 py-1.5 text-sm text-white/80 hover:bg-white/10"
             >
-              My dashboard
+              {t("nav.myDashboard")}
             </Link>
             <form action="/auth/signout" method="post">
               <button
@@ -62,7 +67,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 className="flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm text-white/70 transition-colors hover:bg-white/10 hover:text-white"
               >
                 <Icon.logout className="size-4" />
-                Sign out
+                {t("common.signOut")}
               </button>
             </form>
           </div>

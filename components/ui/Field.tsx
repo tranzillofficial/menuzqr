@@ -50,7 +50,7 @@ export function Textarea({ className, ...props }: ComponentProps<"textarea">) {
 
 export function Select({ className, children, ...props }: ComponentProps<"select">) {
   return (
-    <select {...props} className={cn(inputClass, "pr-8", className)}>
+    <select {...props} className={cn(inputClass, "pe-8", className)}>
       {children}
     </select>
   );
@@ -83,7 +83,9 @@ export function Switch({
       <span
         className={cn(
           "inline-block size-5 transform rounded-full bg-white shadow transition-transform",
-          checked ? "translate-x-[22px]" : "translate-x-0.5"
+          checked
+            ? "translate-x-[22px] rtl:-translate-x-[22px]"
+            : "translate-x-0.5 rtl:-translate-x-0.5"
         )}
       />
     </button>

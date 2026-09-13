@@ -97,4 +97,25 @@ export const Icon = {
   logout: (p: SVGProps<SVGSVGElement>) => (
     <svg {...base} {...p}><path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3" /><path d="M16 16l4-4-4-4" /><path d="M20 12H10" /></svg>
   ),
+  userPlus: (p: SVGProps<SVGSVGElement>) => (
+    <svg {...base} {...p}><path d="M15 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20" /><circle cx="8.5" cy="7" r="3.5" /><path d="M18 8v6M21 11h-6" /></svg>
+  ),
+  chef: (p: SVGProps<SVGSVGElement>) => (
+    <svg {...base} {...p}><path d="M7 14a4 4 0 0 1-1-7.9A3.5 3.5 0 0 1 12 4a3.5 3.5 0 0 1 6 2.1A4 4 0 0 1 17 14z" /><path d="M7 14v5a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-5" /><path d="M7 17h10" /></svg>
+  ),
+  waiter: (p: SVGProps<SVGSVGElement>) => (
+    <svg {...base} {...p}><path d="M3 18h18" /><path d="M5 18a7 7 0 0 1 14 0" /><path d="M12 8V5" /><circle cx="12" cy="4" r="1" /></svg>
+  ),
+  phone: (p: SVGProps<SVGSVGElement>) => (
+    <svg {...base} {...p}><rect x="6" y="2.5" width="12" height="19" rx="2.5" /><path d="M10.5 18.5h3" /></svg>
+  ),
+  volume: (p: SVGProps<SVGSVGElement>) => (
+    <svg {...base} {...p}><path d="M4 9.5h3L11 6v12l-4-3.5H4z" /><path d="M15 9.5a4 4 0 0 1 0 5" /><path d="M17.8 7a8 8 0 0 1 0 10" /></svg>
+  ),
+  flame: (p: SVGProps<SVGSVGElement>) => (
+    <svg {...base} {...p}><path d="M12 3s5 4 5 8a5 5 0 0 1-10 0c0-1.6.8-3 1.6-4 .3 1.2 1 1.8 1.7 1.8C12 8.8 12 6 12 3z" /><path d="M7 11a5 5 0 0 0 10 0" opacity="0" /></svg>
+  ),
+  wifi: (p: SVGProps<SVGSVGElement>) => (
+    <svg {...base} {...p}><path d="M2.5 9a15 15 0 0 1 19 0" /><path d="M6 12.5a10 10 0 0 1 12 0" /><path d="M9.5 16a5 5 0 0 1 5 0" /><circle cx="12" cy="19.5" r="1" /></svg>
+  ),
 };

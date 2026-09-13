@@ -7,6 +7,8 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { Switch } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { useToast } from "@/components/ui/Toast";
+import { useT } from "@/components/i18n/I18nProvider";
+import type { TranslationKey } from "@/lib/i18n";
 import type { Restaurant } from "@/lib/types";
 
 type Settings = {
@@ -22,31 +24,15 @@ type FeatureKey =
   | "show_prices"
   | "show_ingredients";
 
-const ROWS: Array<{ key: FeatureKey; title: string; description: string }> = [
-  {
-    key: "ordering_enabled",
-    title: "Table ordering",
-    description: "Guests who scan a table QR code can build a cart and send an order.",
-  },
-  {
-    key: "waiter_calls_enabled",
-    title: "Call waiter button",
-    description: "Shows a “Call waiter” button on the menu when opened from a table code.",
-  },
-  {
-    key: "sound_enabled",
-    title: "Notification sound",
-    description: "Play a chime on this dashboard for new orders and waiter calls.",
-  },
-  {
-    key: "show_prices",
-    title: "Show prices",
-    description: "Turn off to display the menu without prices.",
-  },
+const ROWS: Array<{ key: FeatureKey; title: TranslationKey; description: TranslationKey }> = [
+  { key: "ordering_enabled", title: "settings.ordering", description: "settings.orderingSub" },
+  { key: "waiter_calls_enabled", title: "settings.waiter", description: "settings.waiterSub" },
+  { key: "sound_enabled", title: "settings.sound", description: "settings.soundSub" },
+  { key: "show_prices", title: "settings.showPrices", description: "settings.showPricesSub" },
   {
     key: "show_ingredients",
-    title: "Show ingredients",
-    description: "Display the ingredient list under each product.",
+    title: "settings.showIngredients",
+    description: "settings.showIngredientsSub",
   },
 ];
 
@@ -59,6 +45,7 @@ export function SettingsForm({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const t = useT();
   const [state, formAction] = useActionState(updateFeatureSettingsAction, null);
 
   const [values, setValues] = useState<Record<FeatureKey, boolean>>({
@@ -79,19 +66,19 @@ export function SettingsForm({
     <form action={formAction}>
       <Card>
         <CardHeader
-          title="Menu features"
-          description="Turn features on or off for your public menu and dashboard."
+          title={t("settings.features")}
+          description={t("settings.featuresSub")}
         />
         <ul className="divide-y divide-ink-100">
           {ROWS.map((row) => (
             <li key={row.key} className="flex items-start gap-4 px-5 py-4">
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-ink-900">{row.title}</p>
-                <p className="mt-0.5 text-sm text-ink-500">{row.description}</p>
+                <p className="text-sm font-medium text-ink-900">{t(row.title)}</p>
+                <p className="mt-0.5 text-sm text-ink-500">{t(row.description)}</p>
               </div>
               <Switch
                 checked={values[row.key]}
-                label={row.title}
+                label={t(row.title)}
                 onChange={(v) => setValues((s) => ({ ...s, [row.key]: v }))}
               />
               <input type="hidden" name={row.key} value={values[row.key] ? "on" : ""} />
@@ -99,7 +86,7 @@ export function SettingsForm({
           ))}
         </ul>
         <div className="flex justify-end border-t border-ink-100 px-5 py-4">
-          <SubmitButton>Save settings</SubmitButton>
+          <SubmitButton>{t("settings.saveSettings")}</SubmitButton>
         </div>
       </Card>
     </form>

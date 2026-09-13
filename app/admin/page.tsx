@@ -6,6 +6,7 @@ import { StatusBadge } from "@/components/dashboard/ActivationPanel";
 import { Card, EmptyState } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icons";
 import { formatDate } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
 import type { Restaurant } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Admin — Restaurants" };
@@ -16,7 +17,7 @@ export default async function AdminRestaurantsPage({
   searchParams: Promise<{ q?: string; status?: string }>;
 }) {
   const { q = "", status = "" } = await searchParams;
-  const supabase = await createServerSupabase();
+  const [supabase, t] = await Promise.all([createServerSupabase(), getT()]);
 
   let query = supabase
     .from("restaurants")
@@ -52,18 +53,18 @@ export default async function AdminRestaurantsPage({
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold text-ink-900">Restaurants</h1>
+        <h1 className="text-2xl font-semibold text-ink-900">{t("admin.restaurants")}</h1>
         <p className="mt-1 text-sm text-ink-500">
-          Activate a restaurant after confirming its one-time payment on WhatsApp.
+          {t("admin.restaurantsSub")}
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          ["All", counts.total, ""],
-          ["Active", counts.active, "active"],
-          ["Pending", counts.pending, "inactive"],
-          ["Suspended", counts.suspended, "suspended"],
+          [t("admin.all"), counts.total, ""],
+          [t("activation.statusActive"), counts.active, "active"],
+          [t("activation.statusPending"), counts.pending, "inactive"],
+          [t("activation.statusSuspended"), counts.suspended, "suspended"],
         ].map(([label, value, filterValue]) => (
           <Link
             key={label as string}
@@ -73,25 +74,25 @@ export default async function AdminRestaurantsPage({
             }`}
           >
             <p className="text-xs font-medium uppercase tracking-wide text-ink-500">{label}</p>
-            <p className="mt-1 text-2xl font-semibold text-ink-900">{value}</p>
+            <p className="ltr-nums mt-1 text-2xl font-semibold text-ink-900">{value}</p>
           </Link>
         ))}
       </div>
 
       <form className="relative max-w-md">
-        <Icon.search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
+        <Icon.search className="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
         {status && <input type="hidden" name="status" value={status} />}
         <input
           name="q"
           defaultValue={q}
-          placeholder="Search by restaurant name or link…"
-          aria-label="Search restaurants"
-          className="h-10 w-full rounded-xl border border-ink-200 bg-white pl-9 pr-3 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
+          placeholder={t("admin.searchRestaurants")}
+          aria-label={t("admin.searchRestaurants")}
+          className="h-10 w-full rounded-xl border border-ink-200 bg-white ps-9 pe-3 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
         />
       </form>
 
       {restaurants.length === 0 ? (
-        <EmptyState title="No restaurants found" description="Try a different search or filter." />
+        <EmptyState title={t("admin.noRestaurants")} />
       ) : (
         <Card className="overflow-hidden">
           <ul className="divide-y divide-ink-100">
@@ -111,7 +112,7 @@ export default async function AdminRestaurantsPage({
                       {formatDate(restaurant.created_at)}
                     </p>
                   </div>
-                  <StatusBadge status={restaurant.status} />
+                  <StatusBadge status={restaurant.status} t={t} />
                   <RestaurantActions
                     restaurantId={restaurant.id}
                     restaurantName={restaurant.name}

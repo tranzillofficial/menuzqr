@@ -16,8 +16,14 @@ the table. Public menus stay locked until an admin activates the account.
    [`supabase/schema.sql`](supabase/schema.sql) and run it. Then do the same
    with [`supabase/002-upgrades.sql`](supabase/002-upgrades.sql) — short table
    codes, QR label designs, the shared product catalog, and a storage-bucket
-   check you can re-run any time.
-   Both are idempotent, so re-running them after an edit is safe. They create
+   check you can re-run any time — and finally
+   [`supabase/003-upgrades.sql`](supabase/003-upgrades.sql) — platform settings
+   (the support WhatsApp number) and the two extra menu designs — and
+   [`supabase/004-staff-realtime-push.sql`](supabase/004-staff-realtime-push.sql)
+   — staff accounts, the order/waiter-call column guards, push subscriptions,
+   and a realtime repair block that re-asserts the publication and prints what
+   it found. **Run them in order.** All four are idempotent, so re-running them
+   after an edit is safe. They create
    every table, RLS policy, trigger and storage bucket. The image library and
    the product catalog both start empty; you fill them from `/admin`.
 3. **Authentication → Sign In / Providers → Email:** enable the email provider.
@@ -39,8 +45,15 @@ Fill in:
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Project Settings → API Keys (publishable / anon) | yes |
 | `SUPABASE_SERVICE_ROLE_KEY` | Project Settings → API Keys (service_role / secret) | **no — server only** |
 | `GEMINI_API_KEY` | https://aistudio.google.com/apikey | **no — server only** |
-| `NEXT_PUBLIC_SITE_URL` | your public origin, no trailing slash — used to build QR links | yes |
-| `NEXT_PUBLIC_SUPPORT_WHATSAPP` | support number, digits only | yes |
+| `NEXT_PUBLIC_SITE_URL` | your public origin, no trailing slash — **QR codes embed this** | yes |
+| `GEMINI_MODEL` | optional, defaults to `gemini-2.0-flash` | no |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | `npx web-push generate-vapid-keys` | yes |
+| `VAPID_PRIVATE_KEY` | same command, the private half | **no — server only** |
+| `VAPID_SUBJECT` | a `mailto:` or `https:` URL, e.g. `mailto:support@menuzqr.com` | no |
+
+The VAPID pair is what lets the app wake a phone whose screen is off. Leave it
+empty and everything still works — live updates, sound and browser
+notifications — you just lose alerts while the app is closed.
 
 `.env*` is gitignored. Never prefix a secret with `NEXT_PUBLIC_`.
 
@@ -60,7 +73,29 @@ things usually block it:
    `DEV_ALLOWED_ORIGINS` in `.env.local`, and set `NEXT_PUBLIC_SITE_URL` to the
    same host so QR codes point at something your phone can reach.
 
-## 4. Make yourself an admin
+## 4. Deploy to Vercel
+
+1. Import the repository in Vercel.
+2. Add the environment variables above under **Settings → Environment Variables**.
+   `SUPABASE_SERVICE_ROLE_KEY` and `GEMINI_API_KEY` must **not** be prefixed with
+   `NEXT_PUBLIC_`.
+3. Set `NEXT_PUBLIC_SITE_URL` to your real domain (`https://menuzqr.com`), not the
+   `*.vercel.app` preview URL. Printed QR codes embed this value — if it points at a
+   preview deployment, every printed code breaks when that deployment is replaced.
+   Without it the app falls back to `NEXT_PUBLIC_VERCEL_URL`, which is fine for
+   previews and wrong for print.
+4. In Supabase → **Authentication → URL Configuration**, set the Site URL to the
+   same domain and add it to the redirect allow-list.
+5. Redeploy after changing environment variables — Next inlines the
+   `NEXT_PUBLIC_*` ones at build time.
+
+Two things worth knowing on serverless:
+
+- The AI rate limiter in `app/api/ai/route.ts` is per-instance, in memory. It is a
+  courtesy throttle, not a hard quota. Move it to a shared store if that matters.
+- `DEV_ALLOWED_ORIGINS` is only read in development; it does nothing in production.
+
+## 5. Make yourself an admin
 
 Sign up in the app, then run in the SQL editor:
 
@@ -68,7 +103,10 @@ Sign up in the app, then run in the SQL editor:
 update public.profiles set is_admin = true where email = 'you@example.com';
 ```
 
-Sign out and back in, and `/admin` is reachable.
+Sign out and back in, and `/admin` is reachable — restaurants, users, the image
+library, the product catalog, QR designs, and platform settings (the support
+WhatsApp number, the one-time price and the brand name, all editable without a
+redeploy).
 
 `is_admin` cannot be granted from the app: the `guard_profile_admin` trigger
 resets it for anyone who is not already an admin. The SQL editor is exempt
@@ -99,19 +137,95 @@ Public menu (3 themes)  ──► server action (service role, validates everyth
 |---|---|
 | `/` | marketing page |
 | `/login`, `/signup` | Supabase email + password auth |
-| `/dashboard` | owner: overview, restaurant, categories, products, tables, QR codes, orders, menu design, settings |
-| `/admin` | platform admin: restaurants, users, image library, product catalog, QR designs |
+| `/dashboard` | owner: overview, restaurant, categories, products, tables, QR codes, orders, team, menu design, settings |
+| `/station` | waiter and kitchen accounts: a phone-first board of live tickets and calls |
+| `/disabled` | dead end for a staff account the owner has switched off |
+| `/admin` | platform admin: restaurants, users, image library, product catalog, QR designs, platform settings |
 | `/<slug>/menu` | the public menu — **only renders when the restaurant is `active`** |
 | `/<slug>/menu?t=<code>` | same menu plus table context: cart, ordering, call waiter |
 | `/api/ai` | authenticated, rate-limited Gemini proxy (`GET` reports whether it is configured) |
 | `/api/library` | cached shared image library |
 | `/api/catalog` | cached shared product catalog |
 
+### Staff accounts
+
+The owner creates sub-accounts at `/dashboard/staff`: a display name they
+choose, an email and a password. Those are real Supabase users tied to the
+restaurant by a `restaurant_members` row.
+
+| Role | Lands on | Sees | Cannot |
+|---|---|---|---|
+| `owner` | `/dashboard` | everything | — |
+| `chef` | `/station` | new orders, marks them preparing → ready, calls a waiter for pickup | menu, settings, billing, team |
+| `waiter` | `/station` | waiter calls, kitchen pickups, orders ready to serve | menu, settings, billing, team |
+
+Two things back this up rather than hidden routes: the RLS policies key off
+membership (`owns_restaurant`), and a `before update` trigger on `orders` pins
+every column except `status` for non-managers — so a waiter cannot rewrite a
+total by calling PostgREST directly, only move a ticket along.
+
+Switching an account off revokes access on the next request: `owns_restaurant`
+checks `is_active`, so RLS stops returning rows immediately.
+
+If the owner turns guest ordering off in settings, the table QR still works for
+signed-in staff — a waiter scans the table and takes the order themselves. The
+menu shows a "staff mode" bar so it is obvious which mode you are in.
+
+### Live updates
+
+Every open screen receives events over two independent paths, de-duplicated by
+a deterministic event id so nothing is ever shown twice:
+
+1. **Broadcast** — our server actions post the event to the private Realtime
+   topic `restaurant:<uuid>` with the service role. Members may read that topic;
+   deliberately nobody but the server may write to it.
+2. **`postgres_changes`** — the classic change feed on `orders` and
+   `waiter_requests`.
+
+Two paths because either one can be silently misconfigured: the publication may
+not contain the table, or Realtime may fail to evaluate the row's RLS policy for
+a listener. Both were likely causes of the earlier "nothing appears until I
+refresh". The connection state is now visible in the UI — a dot on the
+notification bell, and a Live / Connecting / Offline chip on the station header
+— so a broken connection is never invisible again.
+
+Who gets alerted:
+
+| Event | Owner | Kitchen | Waiter |
+|---|---|---|---|
+| new order | ✓ | ✓ | |
+| order marked ready | ✓ | | ✓ |
+| guest calls a waiter | ✓ | | ✓ |
+| kitchen calls a waiter for pickup | ✓ | | ✓ |
+
+Each alert plays `public/notification-sound.mp3`, vibrates the phone where the
+browser supports it, and raises a system notification. The sound element is
+unlocked on the first tap anywhere in the app, because browsers refuse to play
+audio before a user gesture.
+
+### Installing it as an app
+
+`app/manifest.ts` plus `public/sw.js` make the dashboard and the station screen
+installable. **Settings → Alerts and notifications** has one card for all of it:
+connection state, sound (with a test button), notification permission,
+background push, and the install button.
+
+Worth knowing:
+
+- On iPhone, web push only works once the site has been added to the Home
+  Screen. The card says so when it detects iOS.
+- A push notification cannot carry a custom sound — the phone plays its own
+  system sound. When a tab *is* open, the service worker messages the page and
+  our own chime plays.
+- The service worker deliberately does not cache pages. A stale order board
+  would be worse than no order board; only the alert assets are cached.
+
 ### Data model
 
 `profiles · restaurants · restaurant_members · restaurant_settings · categories ·
 products · product_variants · restaurant_tables · orders · order_items ·
-waiter_requests · admin_actions · menu_images · qr_templates · catalog_items`
+waiter_requests · admin_actions · menu_images · qr_templates · catalog_items ·
+platform_settings`
 
 Prices live on **`product_variants`**, never on `products` — every product has one
 or more sizes (Small / Medium / Large, Regular / Double…), each with its own price.
@@ -144,22 +258,44 @@ migration. Today the UI creates exactly one per user.
 - `SUPABASE_SERVICE_ROLE_KEY` and `GEMINI_API_KEY` are only ever read in modules
   that `import "server-only"`.
 
-### Menu themes
+### Menu designs
 
-`restaurants.menu_theme` is `elegant` | `modern` | `minimal`. One data layer,
-three renderers in `components/menu/themes/`. Switching a theme never touches
-categories, products, sizes or prices. To add a fourth: add the id to
-`MENU_THEMES` in `lib/constants.ts`, the `menu_theme` check constraint in
-`schema.sql`, and a component to the `THEMES` map in `MenuExperience.tsx`.
+`restaurants.menu_theme` is one of `elegant` · `modern` · `minimal` · `noir` ·
+`market`. One data layer, five renderers in `components/menu/themes/`. Switching
+a design never touches categories, products, sizes or prices.
 
-### AI assistance
+To add another: add the id to `MENU_THEMES` in `lib/constants.ts`, to the
+`menu_theme` check constraint in SQL, `theme.<id>.*` to **both** dictionaries,
+and a component to the `THEMES` map in `MenuExperience.tsx`.
 
-Optional everywhere. Gemini is called only from `/api/ai`, only for a signed-in
-user, at most 15 requests per minute per user, only on an explicit button press —
-never on keystrokes. Responses are requested as structured JSON and validated
-before display. Nothing is saved until the owner accepts a suggestion. If
-`GEMINI_API_KEY` is unset the buttons simply report that AI is unavailable and
-the rest of the app is unaffected.
+### Languages
+
+The interface ships in English and Arabic, with full RTL. `lib/i18n/en.ts` is the
+source dictionary and `lib/i18n/ar.ts` is typed as a complete mirror of it — a key
+missing from Arabic is a **compile error**, not an English word leaking into an
+Arabic page.
+
+- The visitor's choice lives in the `mz_locale` cookie; the switcher is in the
+  dashboard sidebar, the account menu, and the landing header and footer.
+- The **public menu** is different: its chrome follows the restaurant's own
+  `language` setting, not the visitor's, because the guest is reading that
+  restaurant's menu.
+- Menu content itself is never translated. The owner writes each product once, in
+  whichever language they prefer.
+- Layout mirrors through CSS logical properties (`ms-`, `pe-`, `start-`, `end-`),
+  so there is no second stylesheet to maintain.
+
+### Smart product suggestions
+
+There is **no AI writing** in the product editor. Instead an admin fills the
+shared catalog at `/admin/catalog` with real, reviewed items — name, description,
+ingredients, photo, suggested section and sizes. When an owner starts typing a
+product name, close matches appear under the field; one tap fills the form and
+they edit anything before saving. Deterministic, instant, and free.
+
+`lib/ai.ts` and `/api/ai` are still in the tree (server-side only, key never
+exposed) but nothing in the UI calls them. Delete both if you do not plan to
+bring AI back.
 
 ### Images
 

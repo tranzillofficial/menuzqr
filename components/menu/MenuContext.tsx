@@ -27,6 +27,7 @@ type MenuContextValue = {
   currency: string;
   showPrices: boolean;
   showIngredients: boolean;
+  staffMode: boolean;
   table: { id: string; label: string } | null;
   orderingEnabled: boolean;
   waiterEnabled: boolean;
@@ -57,12 +58,14 @@ export function MenuProvider({
   table,
   showPrices,
   showIngredients,
+  staffMode = false,
   children,
 }: {
   data: MenuData;
   table: { id: string; label: string } | null;
   showPrices: boolean;
   showIngredients: boolean;
+  staffMode?: boolean;
   children: ReactNode;
 }) {
   const [items, setItems] = useState<CartItem[]>([]);
@@ -110,8 +113,11 @@ export function MenuProvider({
       showPrices,
       showIngredients,
       table,
-      orderingEnabled: data.restaurant.ordering_enabled && Boolean(table),
-      waiterEnabled: data.restaurant.waiter_calls_enabled && Boolean(table),
+      // A signed-in waiter or cook can still take an order from a table even
+      // when the owner has switched guest ordering off.
+      orderingEnabled: (data.restaurant.ordering_enabled || staffMode) && Boolean(table),
+      waiterEnabled: (data.restaurant.waiter_calls_enabled || staffMode) && Boolean(table),
+      staffMode,
       items,
       itemCount,
       total,
@@ -131,6 +137,7 @@ export function MenuProvider({
     table,
     showPrices,
     showIngredients,
+    staffMode,
     addItem,
     setQuantity,
     removeItem,

@@ -23,8 +23,10 @@
   --color-ink-800: #292524;
   --color-ink-900: #1c1917;
 
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-playfair), ui-serif, Georgia, serif;
+  /* The Arabic face is listed first so Arabic glyphs always come from Cairo,
+     while latin text still falls through to Geist. */
+  --font-sans: var(--font-geist-sans), var(--font-arabic), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-playfair), var(--font-arabic), ui-serif, Georgia, serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
@@ -41,6 +43,35 @@ body {
 body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+}
+
+/* ---- Arabic / RTL ---------------------------------------------------- */
+[dir="rtl"] body,
+[lang="ar"] body {
+  font-family: var(--font-arabic), var(--font-sans);
+  /* Cairo runs small next to Geist at the same px size. */
+  letter-spacing: 0;
+}
+
+[dir="rtl"] .font-serif,
+[lang="ar"] .font-serif {
+  font-family: var(--font-arabic), var(--font-serif);
+  font-weight: 700;
+}
+
+/* Numbers, prices, codes and URLs stay left-to-right inside Arabic text. */
+[dir="rtl"] .ltr-nums,
+[dir="rtl"] .font-mono,
+[dir="rtl"] .tabular-nums {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* A handful of components position things with physical sides for visual
+   reasons (a QR panel, a print sheet). Everything else uses logical
+   properties so it mirrors automatically. */
+[dir="rtl"] .rtl-flip {
+  transform: scaleX(-1);
 }
 
 ::selection {

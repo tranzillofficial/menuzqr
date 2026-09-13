@@ -43,6 +43,23 @@ const nextConfig: NextConfig = {
           },
         ],
   },
+  async headers() {
+    return [
+      {
+        // The service worker must never be served stale, and it needs to
+        // control the whole origin — not just /.
+        source: "/sw.js",
+        headers: [
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Service-Worker-Allowed", value: "/" },
+        ],
+      },
+      {
+        source: "/notification-sound.:ext(mp3|ogg)",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

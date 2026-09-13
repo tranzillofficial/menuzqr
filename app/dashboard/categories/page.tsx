@@ -2,14 +2,18 @@ import type { Metadata } from "next";
 import { requireRestaurant } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/dashboard/Shell";
+import { getT } from "@/lib/i18n/server";
 import { CategoriesManager } from "@/components/dashboard/CategoriesManager";
 import type { Category } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Categories" };
 
 export default async function CategoriesPage() {
-  const restaurant = await requireRestaurant();
-  const supabase = await createServerSupabase();
+  const [restaurant, supabase, t] = await Promise.all([
+    requireRestaurant(),
+    createServerSupabase(),
+    getT(),
+  ]);
 
   const [{ data: categories }, { data: products }] = await Promise.all([
     supabase
@@ -31,8 +35,8 @@ export default async function CategoriesPage() {
   return (
     <div className="mx-auto max-w-4xl">
       <PageHeader
-        title="Categories"
-        description="The sections of your menu, in the order guests see them."
+        title={t("categories.title")}
+        description={t("categories.sub")}
       />
       <CategoriesManager
         restaurant={restaurant}
