@@ -23,9 +23,12 @@ const UNFILED = "__unfiled__";
 export function CatalogBrowser({
   categories,
   items,
+  currency,
 }: {
   categories: CatalogCategory[];
   items: CatalogItem[];
+  /** The restaurant's own currency — the suggestion may be quoted in another. */
+  currency: string;
 }) {
   const t = useT();
   const toast = useToast();
@@ -35,6 +38,10 @@ export function CatalogBrowser({
   const [query, setQuery] = useState("");
   const [activeSection, setActiveSection] = useState<string>("all");
   const [picked, setPicked] = useState<Set<string>>(new Set());
+  // What the owner will actually charge. Seeded from the suggestion so the
+  // box is never empty, but it is theirs to change before anything is copied.
+  const [prices, setPrices] = useState<Record<string, string>>({});
+  const [publishNow, setPublishNow] = useState(false);
 
   const sections = useMemo(() => {
     const withItems = categories.filter((category) =>
@@ -82,31 +89,44 @@ export function CatalogBrowser({
       }));
   }, [visible, sections.withItems, categories, t]);
 
-  function toggle(id: string) {
+  function seedPrice(item: CatalogItem) {
+    setPrices((prev) =>
+      prev[item.id] !== undefined
+        ? prev
+        : { ...prev, [item.id]: item.suggested_price ? String(item.suggested_price) : "" }
+    );
+  }
+
+  function toggle(item: CatalogItem) {
+    seedPrice(item);
     setPicked((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(item.id)) next.delete(item.id);
+      else next.add(item.id);
       return next;
     });
   }
 
-  function toggleSection(ids: string[]) {
+  function toggleSection(sectionItems: CatalogItem[]) {
+    for (const item of sectionItems) seedPrice(item);
     setPicked((prev) => {
       const next = new Set(prev);
-      const allPicked = ids.every((id) => next.has(id));
-      for (const id of ids) {
-        if (allPicked) next.delete(id);
-        else next.add(id);
+      const allPicked = sectionItems.every((item) => next.has(item.id));
+      for (const item of sectionItems) {
+        if (allPicked) next.delete(item.id);
+        else next.add(item.id);
       }
       return next;
     });
   }
 
   function copy() {
-    const ids = [...picked];
+    const chosen = [...picked].map((id) => ({
+      id,
+      price: Number(prices[id] ?? ""),
+    }));
     startTransition(async () => {
-      const result = await importCatalogItemsAction(ids);
+      const result = await importCatalogItemsAction(chosen, publishNow);
       if (!result.ok) {
         toast(result.message ?? t("common.somethingWrong"), "error");
         return;
@@ -173,8 +193,7 @@ export function CatalogBrowser({
         <EmptyState title={t("common.nothingMatched")} description={t("catalog.tryAnother")} />
       ) : (
         grouped.map((section) => {
-          const ids = section.items.map((item) => item.id);
-          const allPicked = ids.every((id) => picked.has(id));
+          const allPicked = section.items.every((item) => picked.has(item.id));
 
           return (
             <section key={section.id}>
@@ -187,7 +206,7 @@ export function CatalogBrowser({
                 </span>
                 <button
                   type="button"
-                  onClick={() => toggleSection(ids)}
+                  onClick={() => toggleSection(section.items)}
                   className="ms-auto text-xs font-medium text-brand-700 underline-offset-2 hover:underline"
                 >
                   {allPicked ? t("catalog.clearSection") : t("catalog.selectSection")}
@@ -197,22 +216,27 @@ export function CatalogBrowser({
               <ul className="grid gap-2.5 sm:grid-cols-2">
                 {section.items.map((item) => {
                   const selected = picked.has(item.id);
-                  const prices = item.variants
-                    .map((variant) => variant.price)
-                    .filter((price): price is number => typeof price === "number" && price > 0);
+                  const guide = item.suggested_price;
+                  const range =
+                    item.price_min && item.price_max
+                      ? `${item.price_min}–${item.price_max}`
+                      : null;
 
                   return (
-                    <li key={item.id}>
+                    <li
+                      key={item.id}
+                      className={cn(
+                        "rounded-2xl border bg-white transition-colors",
+                        selected
+                          ? "border-brand-400 ring-2 ring-brand-100"
+                          : "border-ink-200 hover:border-ink-300"
+                      )}
+                    >
                       <button
                         type="button"
-                        onClick={() => toggle(item.id)}
+                        onClick={() => toggle(item)}
                         aria-pressed={selected}
-                        className={cn(
-                          "flex w-full items-center gap-3 rounded-2xl border bg-white p-3 text-start transition-colors",
-                          selected
-                            ? "border-brand-400 ring-2 ring-brand-100"
-                            : "border-ink-200 hover:border-ink-300"
-                        )}
+                        className="flex w-full items-center gap-3 p-3 text-start"
                       >
                         <span className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-ink-100">
                           <SmartImage src={item.image_url} alt="" sizes="128px" />
@@ -227,10 +251,16 @@ export function CatalogBrowser({
                               {item.description}
                             </span>
                           )}
-                          {item.variants.length > 0 && (
-                            <span className="mt-1 block truncate text-[11px] text-ink-400">
-                              {item.variants.map((variant) => variant.name).join(" · ")}
-                              {prices.length > 0 && ` · ${t("catalog.priceHint")}`}
+                          {(guide || item.variants.length > 0) && (
+                            <span className="ltr-nums mt-1 block truncate text-[11px] text-ink-400">
+                              {item.variants.length > 0 &&
+                                `${item.variants.map((variant) => variant.name).join(" · ")} · `}
+                              {guide
+                                ? t("catalog.suggested", {
+                                    price: `${guide} ${item.suggested_currency ?? ""}`.trim(),
+                                  })
+                                : t("catalog.priceHint")}
+                              {range ? ` (${range})` : ""}
                             </span>
                           )}
                         </span>
@@ -247,6 +277,29 @@ export function CatalogBrowser({
                           <Icon.check className="size-4" />
                         </span>
                       </button>
+
+                      {/* The price box only appears once the dish is picked —
+                          84 always-visible inputs would be a wall of noise. */}
+                      {selected && (
+                        <label className="flex items-center gap-2 border-t border-ink-100 px-3 py-2.5">
+                          <span className="text-xs font-medium text-ink-600">
+                            {t("catalog.yourPrice")}
+                          </span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            inputMode="decimal"
+                            value={prices[item.id] ?? ""}
+                            onChange={(event) =>
+                              setPrices((prev) => ({ ...prev, [item.id]: event.target.value }))
+                            }
+                            placeholder={guide ? String(guide) : "0"}
+                            className="ltr-nums h-9 w-28 rounded-lg border border-ink-200 px-2.5 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
+                          />
+                          <span className="text-xs text-ink-400">{currency}</span>
+                        </label>
+                      )}
                     </li>
                   );
                 })}
@@ -265,8 +318,19 @@ export function CatalogBrowser({
               <p className="text-sm font-semibold text-ink-900">
                 {t("catalog.selected", { count: picked.size })}
               </p>
-              <p className="truncate text-xs text-ink-500">{t("catalog.draftHint")}</p>
+              <p className="truncate text-xs text-ink-500">
+                {publishNow ? t("catalog.publishHint") : t("catalog.draftHint")}
+              </p>
             </div>
+            <label className="hidden shrink-0 items-center gap-2 text-xs text-ink-600 sm:flex">
+              <input
+                type="checkbox"
+                checked={publishNow}
+                onChange={(event) => setPublishNow(event.target.checked)}
+                className="size-4 rounded border-ink-300 text-brand-600 focus:ring-brand-200"
+              />
+              {t("catalog.publishNow")}
+            </label>
             <Button
               variant="secondary"
               size="sm"

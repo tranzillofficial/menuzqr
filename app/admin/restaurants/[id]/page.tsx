@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { RestaurantActions } from "@/components/admin/RestaurantActions";
+import { PosControls } from "@/components/admin/PosControls";
 import { StatusBadge } from "@/components/dashboard/ActivationPanel";
 import { Card, CardHeader, EmptyState } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icons";
@@ -177,6 +178,22 @@ export default async function AdminRestaurantPage({
                 ))}
               </ul>
             )}
+          </div>
+        </Card>
+
+        <Card>
+          <CardHeader
+            title="POS subscription"
+            description="Sold separately from the menu. Activate it here once payment lands."
+          />
+          <div className="p-5">
+            <PosControls
+              restaurantId={restaurant.id}
+              status={restaurant.pos_status}
+              plan={restaurant.pos_plan}
+              expiresAt={restaurant.pos_expires_at}
+              couponCode={restaurant.coupon_code}
+            />
           </div>
         </Card>
 

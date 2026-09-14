@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { Icon } from "@/components/ui/Icons";
 import { LocaleSwitch } from "@/components/i18n/LocaleSwitch";
 import { useT } from "@/components/i18n/I18nProvider";
 import type { TranslationKey } from "@/lib/i18n";
+import { useDrawer } from "@/components/ui/useDrawer";
 import { cn } from "@/lib/utils";
 
 const NAV: Array<{
@@ -19,6 +20,7 @@ const NAV: Array<{
   { href: "/admin/users", label: "admin.users", icon: Icon.users },
   { href: "/admin/catalog", label: "admin.catalog", icon: Icon.burger },
   { href: "/admin/library", label: "admin.imageLibrary", icon: Icon.image },
+  { href: "/admin/coupons", label: "admin.coupons", icon: Icon.sparkles },
   { href: "/admin/qr-designs", label: "admin.qrDesigns", icon: Icon.qr },
   { href: "/admin/platform", label: "admin.platform", icon: Icon.settings },
 ];
@@ -34,11 +36,8 @@ export function AdminShell({ children, email }: { children: ReactNode; email: st
   const t = useT();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-
-  // Close the drawer when navigating, so a tap never leaves it hanging open.
-  useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
+  const close = useCallback(() => setOpen(false), []);
+  useDrawer(open, close, pathname);
 
   const isActive = (href: string, exact?: boolean) =>
     exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
@@ -54,6 +53,7 @@ export function AdminShell({ children, email }: { children: ReactNode; email: st
             onClick={() => setOpen((value) => !value)}
             aria-label={t("admin.menu")}
             aria-expanded={open}
+            aria-controls="mz-admin-drawer"
             className="-ms-1 rounded-lg p-2 text-white/80 hover:bg-white/10 lg:hidden"
           >
             <Icon.menu className="size-5" />
@@ -114,19 +114,25 @@ export function AdminShell({ children, email }: { children: ReactNode; email: st
 
       {/* Drawer — phone and tablet */}
       {open && (
-        <div className="fixed inset-0 z-40 lg:hidden">
+        <div
+          id="mz-admin-drawer"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Admin navigation"
+          className="fixed inset-0 z-40 lg:hidden"
+        >
           <div
             className="absolute inset-0 bg-ink-900/50"
-            onClick={() => setOpen(false)}
+            onClick={close}
             aria-hidden="true"
           />
-          <nav className="absolute inset-y-0 start-0 flex w-72 max-w-[85vw] flex-col gap-1 bg-ink-900 p-3 text-white shadow-xl">
+          <nav className="animate-slide-in absolute inset-y-0 start-0 flex w-72 max-w-[85vw] flex-col gap-1 overflow-y-auto bg-ink-900 p-3 text-white shadow-xl">
             <div className="flex items-center gap-2 px-2 pb-3 pt-1">
               <Icon.shield className="size-5" />
               <span className="font-semibold">MenuzQR Admin</span>
               <button
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={close}
                 aria-label={t("common.close")}
                 className="ms-auto rounded-lg p-1.5 text-white/70 hover:bg-white/10"
               >

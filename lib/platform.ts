@@ -8,7 +8,14 @@ export type PlatformSettings = {
   supportWhatsappUrl: string;
   supportWhatsappDisplay: string;
   supportEmail: string | null;
+  /** One-time fee for the QR menu + designs. */
   priceUsd: number;
+  /** What that same one-time fee costs alongside a POS subscription. */
+  menuBundleUsd: number;
+  posMonthlyUsd: number;
+  posYearlyUsd: number;
+  /** POS is built but not shipped yet; this flips when it is. */
+  posEnabled: boolean;
   brandName: string;
   activationNote: string | null;
 };
@@ -19,6 +26,10 @@ const FALLBACK: PlatformSettings = {
   supportWhatsappDisplay: "+20 109 496 3553",
   supportEmail: null,
   priceUsd: 20,
+  menuBundleUsd: 8,
+  posMonthlyUsd: 2,
+  posYearlyUsd: 20,
+  posEnabled: false,
   brandName: "MenuzQR",
   activationNote: null,
 };
@@ -45,7 +56,9 @@ export const getPlatformSettings = cache(async (): Promise<PlatformSettings> => 
     const supabase = createAdminSupabase();
     const { data } = await supabase
       .from("platform_settings")
-      .select("support_whatsapp, support_email, price_usd, brand_name, activation_note")
+      .select(
+        "support_whatsapp, support_email, price_usd, brand_name, activation_note, menu_bundle_usd, pos_monthly_usd, pos_yearly_usd, pos_enabled"
+      )
       .eq("id", 1)
       .maybeSingle();
 
@@ -60,6 +73,10 @@ export const getPlatformSettings = cache(async (): Promise<PlatformSettings> => 
       supportWhatsappDisplay: displayNumber(raw, digits),
       supportEmail: data.support_email ?? null,
       priceUsd: Number(data.price_usd ?? FALLBACK.priceUsd),
+      menuBundleUsd: Number(data.menu_bundle_usd ?? FALLBACK.menuBundleUsd),
+      posMonthlyUsd: Number(data.pos_monthly_usd ?? FALLBACK.posMonthlyUsd),
+      posYearlyUsd: Number(data.pos_yearly_usd ?? FALLBACK.posYearlyUsd),
+      posEnabled: Boolean(data.pos_enabled ?? FALLBACK.posEnabled),
       brandName: data.brand_name || FALLBACK.brandName,
       activationNote: data.activation_note ?? null,
     };

@@ -22,7 +22,7 @@ export async function setRestaurantStatusAction(
 
   const { data: current } = await supabase
     .from("restaurants")
-    .select("id, slug, activated_at")
+    .select("id, slug, activated_at, coupon_code")
     .eq("id", restaurantId)
     .maybeSingle();
 
@@ -37,6 +37,10 @@ export async function setRestaurantStatusAction(
 
   const { error } = await supabase.from("restaurants").update(patch).eq("id", restaurantId);
   if (error) return fail(error.message);
+
+  if (status === "active") {
+    await redeemCoupon(restaurantId, current.coupon_code ?? null, "menu");
+  }
 
   await supabase.from("admin_actions").insert({
     restaurant_id: restaurantId,
@@ -319,6 +323,14 @@ export async function moveCatalogCategoryAction(
   return done();
 }
 
+/** An empty money field means "no guidance", not zero. */
+function optionalMoney(form: FormData, key: string): number | null {
+  const raw = String(form.get(key) ?? "").trim();
+  if (!raw) return null;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed >= 0 ? Math.round(parsed * 100) / 100 : null;
+}
+
 export async function saveCatalogItemAction(
   _prev: ActionState,
   form: FormData
@@ -340,6 +352,11 @@ export async function saveCatalogItemAction(
     // deliberately absent here — sending it would let a stale form value
     // overwrite the real label.
     category_id: categoryId || null,
+    suggested_price: optionalMoney(form, "suggested_price"),
+    price_min: optionalMoney(form, "price_min"),
+    price_max: optionalMoney(form, "price_max"),
+    suggested_currency:
+      String(form.get("suggested_currency") ?? "").trim().toUpperCase().slice(0, 8) || "EGP",
     cuisine: String(form.get("cuisine") ?? "").trim().slice(0, 60) || null,
     image_url: sanitiseImageUrl(String(form.get("image_url") ?? "").trim() || null),
     variants: parseCatalogVariants(String(form.get("variants") ?? "")),
@@ -376,6 +393,202 @@ export async function deleteCatalogItemAction(id: string): Promise<ActionState> 
   return done("Item removed.");
 }
 
+// -------------------------------------------------------------- coupons
+
+export async function saveCouponAction(
+  _prev: ActionState,
+  form: FormData
+): Promise<ActionState> {
+  const admin = await assertAdmin();
+  if (!admin.ok) return admin.error;
+
+  const id = String(form.get("id") ?? "").trim();
+  const code = String(form.get("code") ?? "").trim().toUpperCase().slice(0, 24);
+  const kind = String(form.get("kind") ?? "percent");
+  const value = Number(String(form.get("value") ?? "").trim());
+  const appliesTo = String(form.get("applies_to") ?? "both");
+  const maxRaw = String(form.get("max_redemptions") ?? "").trim();
+  const expiresRaw = String(form.get("expires_at") ?? "").trim();
+
+  if (!/^[A-Z0-9_-]{3,24}$/.test(code)) {
+    return fail("Please check the form.", {
+      code: "3–24 characters: letters, digits, - or _.",
+    });
+  }
+  if (kind !== "percent" && kind !== "fixed") return fail("Pick a discount type.");
+  if (!Number.isFinite(value) || value <= 0) {
+    return fail("Please check the form.", { value: "Enter an amount above zero." });
+  }
+  if (kind === "percent" && value > 100) {
+    return fail("Please check the form.", { value: "A percentage cannot exceed 100." });
+  }
+  if (!["menu", "pos", "both"].includes(appliesTo)) return fail("Pick what it applies to.");
+
+  const maxRedemptions = maxRaw ? Math.max(1, Math.floor(Number(maxRaw))) : null;
+  if (maxRaw && !Number.isFinite(Number(maxRaw))) {
+    return fail("Please check the form.", { max_redemptions: "Enter a whole number." });
+  }
+
+  const payload = {
+    code,
+    kind,
+    value,
+    applies_to: appliesTo,
+    max_redemptions: maxRedemptions,
+    // `type="date"` gives "2026-01-31", which Date reads as UTC midnight at the
+    // START of that day — so the stated last day was already dead. End of day.
+    expires_at: parseEndOfDay(expiresRaw),
+    note: String(form.get("note") ?? "").trim().slice(0, 200) || null,
+    is_active: form.get("is_active") !== "off",
+  };
+
+  const supabase = await createServerSupabase();
+  const { error } = id
+    ? await supabase.from("coupons").update(payload).eq("id", id)
+    : await supabase.from("coupons").insert({ ...payload, created_by: admin.userId });
+
+  if (error) {
+    if (/duplicate key|unique/i.test(error.message)) {
+      return fail("That code already exists.", { code: "Already used." });
+    }
+    return fail(error.message);
+  }
+
+  revalidatePath("/admin/coupons");
+  return done(id ? "Coupon updated." : "Coupon created.");
+}
+
+function parseEndOfDay(raw: string): string | null {
+  if (!raw) return null;
+  const parsed = new Date(`${raw}T23:59:59.999Z`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
+export async function deleteCouponAction(id: string): Promise<ActionState> {
+  const admin = await assertAdmin();
+  if (!admin.ok) return admin.error;
+
+  const supabase = await createServerSupabase();
+  const { error } = await supabase.from("coupons").delete().eq("id", id);
+  if (error) return fail(error.message);
+
+  revalidatePath("/admin/coupons");
+  return done("Coupon removed.");
+}
+
+// ------------------------------------------------------------------ POS
+
+/**
+ * Turning POS on or off for a restaurant. Admin-only on both sides: the
+ * action checks, and a database trigger refuses these columns to anyone else.
+ */
+export async function setPosStatusAction(
+  restaurantId: string,
+  status: string,
+  plan: string | null
+): Promise<ActionState> {
+  const admin = await assertAdmin();
+  if (!admin.ok) return admin.error;
+
+  if (!["none", "requested", "active", "expired", "cancelled"].includes(status)) {
+    return fail("Unknown status.");
+  }
+  if (plan && plan !== "monthly" && plan !== "yearly") return fail("Unknown plan.");
+
+  const supabase = await createServerSupabase();
+  const { data: current } = await supabase
+    .from("restaurants")
+    .select("pos_started_at, pos_expires_at, coupon_code")
+    .eq("id", restaurantId)
+    .maybeSingle();
+
+  const now = new Date();
+
+  // Renewing early must not throw away time already paid for, so a new term
+  // starts at the current expiry while that is still in the future.
+  const currentExpiry = current?.pos_expires_at ? new Date(current.pos_expires_at) : null;
+  const from = status === "active" && currentExpiry && currentExpiry > now ? currentExpiry : now;
+
+  // Whole days rather than setMonth/setFullYear: adding a month to 31 January
+  // lands on 3 March, which quietly gives service away.
+  const expires = new Date(from);
+  expires.setUTCDate(expires.getUTCDate() + (plan === "monthly" ? 30 : 365));
+
+  const patch: Record<string, unknown> = {
+    pos_status: status,
+    pos_plan: status === "active" ? (plan ?? "yearly") : plan,
+  };
+
+  if (status === "active") {
+    patch.pos_started_at = current?.pos_started_at ?? now.toISOString();
+    patch.pos_expires_at = expires.toISOString();
+  }
+  // Ending a subscription keeps the dates: when it started and when it ran out
+  // is exactly what you want to look at afterwards.
+
+  const { error } = await supabase.from("restaurants").update(patch).eq("id", restaurantId);
+
+  if (error) return fail(error.message);
+
+  if (status === "active") {
+    await redeemCoupon(restaurantId, current?.coupon_code ?? null, "pos");
+  }
+
+  await supabase.from("admin_actions").insert({
+    restaurant_id: restaurantId,
+    admin_id: admin.userId,
+    action: `pos:${status}`,
+    notes: plan ? `plan=${plan}` : null,
+  });
+
+  revalidatePath(`/admin/restaurants/${restaurantId}`);
+  revalidatePath("/dashboard/billing");
+  return done(status === "active" ? "POS activated." : "POS updated.");
+}
+
+/**
+ * Books a coupon against a restaurant, once per product.
+ *
+ * Called at the moment money is confirmed — an admin switching something on —
+ * because that is the only point at which a redemption is real. The unique
+ * constraint on (coupon, restaurant, product) makes a repeat call a no-op, so
+ * re-activating does not burn another use.
+ */
+async function redeemCoupon(
+  restaurantId: string,
+  code: string | null,
+  appliedTo: "menu" | "pos"
+): Promise<void> {
+  if (!code) return;
+
+  try {
+    const supabase = await createServerSupabase();
+    const { data: coupon } = await supabase
+      .from("coupons")
+      .select("id, redeemed_count")
+      .ilike("code", code.trim())
+      .maybeSingle();
+
+    if (!coupon) return;
+
+    const { error } = await supabase.from("coupon_redemptions").insert({
+      coupon_id: coupon.id,
+      restaurant_id: restaurantId,
+      applied_to: appliedTo,
+    });
+
+    // Already booked for this product — leave the counter alone.
+    if (error) return;
+
+    await supabase
+      .from("coupons")
+      .update({ redeemed_count: (Number(coupon.redeemed_count) || 0) + 1 })
+      .eq("id", coupon.id);
+  } catch {
+    // Never let bookkeeping block an activation the admin just authorised.
+  }
+}
+
 // ------------------------------------------------------------- platform
 
 export async function savePlatformSettingsAction(
@@ -393,6 +606,19 @@ export async function savePlatformSettingsAction(
   const price = Number(String(form.get("price_usd") ?? "").trim());
   if (!Number.isFinite(price) || price < 0) return fail("Enter a valid price.");
 
+  const money = (field: string, fallback: number) => {
+    const raw = String(form.get(field) ?? "").trim();
+    if (!raw) return fallback;
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+  };
+
+  const bundle = money("menu_bundle_usd", 8);
+  const posMonthly = money("pos_monthly_usd", 2);
+  const posYearly = money("pos_yearly_usd", 20);
+
+  if (bundle > price) return fail("The bundle price cannot be higher than the full price.");
+
   const supabase = await createServerSupabase();
   const { error } = await supabase
     .from("platform_settings")
@@ -403,6 +629,10 @@ export async function savePlatformSettingsAction(
         support_email: String(form.get("support_email") ?? "").trim().slice(0, 120) || null,
         brand_name: String(form.get("brand_name") ?? "").trim().slice(0, 40) || "MenuzQR",
         price_usd: price,
+        menu_bundle_usd: bundle,
+        pos_monthly_usd: posMonthly,
+        pos_yearly_usd: posYearly,
+        pos_enabled: form.get("pos_enabled") === "on",
         activation_note: String(form.get("activation_note") ?? "").trim().slice(0, 300) || null,
       },
       { onConflict: "id" }

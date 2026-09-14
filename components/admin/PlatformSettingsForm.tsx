@@ -17,6 +17,10 @@ export function PlatformSettingsForm({
     support_email: string | null;
     brand_name: string;
     price_usd: number;
+    menu_bundle_usd: number;
+    pos_monthly_usd: number;
+    pos_yearly_usd: number;
+    pos_enabled: boolean;
     activation_note: string | null;
   };
 }) {
@@ -79,6 +83,59 @@ export function PlatformSettingsForm({
               defaultValue={String(settings.price_usd)}
             />
           </Field>
+
+          <Field
+            label={t("admin.menuBundleUsd")}
+            htmlFor="menu_bundle_usd"
+            hint={t("admin.menuBundleHint")}
+          >
+            <Input
+              id="menu_bundle_usd"
+              name="menu_bundle_usd"
+              type="number"
+              min={0}
+              step="1"
+              dir="ltr"
+              defaultValue={String(settings.menu_bundle_usd)}
+            />
+          </Field>
+
+          <Field label={t("admin.posMonthlyUsd")} htmlFor="pos_monthly_usd">
+            <Input
+              id="pos_monthly_usd"
+              name="pos_monthly_usd"
+              type="number"
+              min={0}
+              step="1"
+              dir="ltr"
+              defaultValue={String(settings.pos_monthly_usd)}
+            />
+          </Field>
+
+          <Field label={t("admin.posYearlyUsd")} htmlFor="pos_yearly_usd">
+            <Input
+              id="pos_yearly_usd"
+              name="pos_yearly_usd"
+              type="number"
+              min={0}
+              step="1"
+              dir="ltr"
+              defaultValue={String(settings.pos_yearly_usd)}
+            />
+          </Field>
+
+          <label className="flex items-start gap-3 rounded-xl border border-ink-200 p-3 sm:col-span-2">
+            <input
+              type="checkbox"
+              name="pos_enabled"
+              defaultChecked={settings.pos_enabled}
+              className="mt-0.5 size-4 rounded border-ink-300 text-brand-600 focus:ring-brand-200"
+            />
+            <span className="min-w-0">
+              <span className="block text-sm font-medium text-ink-800">{t("admin.posEnabled")}</span>
+              <span className="block text-xs text-ink-500">{t("admin.posEnabledHint")}</span>
+            </span>
+          </label>
 
           <Field
             label={t("admin.activationNote")}

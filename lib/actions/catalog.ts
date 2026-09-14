@@ -22,10 +22,21 @@ export type ImportResult = {
 
 type CatalogRow = Pick<
   CatalogItem,
-  "id" | "name" | "description" | "ingredients" | "image_url" | "variants" | "category_id" | "category_name"
+  | "id"
+  | "name"
+  | "description"
+  | "ingredients"
+  | "image_url"
+  | "variants"
+  | "category_id"
+  | "category_name"
+  | "suggested_price"
 > & {
   catalog_categories: { id: string; name: string } | { id: string; name: string }[] | null;
 };
+
+/** What the owner picked, and what they chose to charge for it. */
+export type ImportPick = { id: string; price?: number };
 
 /**
  * Copies dishes from the shared menu into the signed-in owner's own menu.
@@ -46,11 +57,27 @@ type CatalogRow = Pick<
  * Runs as the signed-in user, not the service role: RLS is a second gate
  * behind the ownership check, the same way every other owner action works.
  */
-export async function importCatalogItemsAction(itemIds: string[]): Promise<ImportResult> {
+export async function importCatalogItemsAction(
+  picks: ImportPick[],
+  publishNow = false
+): Promise<ImportResult> {
   const owned = await getOwnedRestaurant();
   if (!owned.ok) return { ok: false, message: owned.error?.message ?? "Sign in first." };
 
-  const ids = [...new Set((itemIds ?? []).filter((id) => typeof id === "string" && UUID.test(id)))];
+  // Prices arrive from the browser, so they are clamped here rather than
+  // trusted: the shared menu's figure is only ever a suggestion.
+  const priceById = new Map<string, number>();
+  for (const pick of picks ?? []) {
+    if (!pick || typeof pick.id !== "string" || !UUID.test(pick.id)) continue;
+    const price = Number(pick.price);
+    if (Number.isFinite(price) && price >= 0) {
+      priceById.set(pick.id, Math.min(999999, Math.round(price * 100) / 100));
+    } else {
+      priceById.set(pick.id, Number.NaN);
+    }
+  }
+
+  const ids = [...priceById.keys()];
   if (ids.length === 0) return { ok: false, message: "Pick at least one dish." };
   if (ids.length > MAX_IMPORT) {
     return { ok: false, message: `You can copy up to ${MAX_IMPORT} dishes at a time.` };
@@ -62,7 +89,7 @@ export async function importCatalogItemsAction(itemIds: string[]): Promise<Impor
   const { data: rawItems, error: readError } = await supabase
     .from("catalog_items")
     .select(
-      "id, name, description, ingredients, image_url, variants, category_id, category_name, catalog_categories(id, name)"
+      "id, name, description, ingredients, image_url, variants, category_id, category_name, suggested_price, catalog_categories(id, name)"
     )
     .in("id", ids)
     .eq("is_active", true);
@@ -106,12 +133,23 @@ export async function importCatalogItemsAction(itemIds: string[]): Promise<Impor
 
   // --- plan the copy before writing anything ----------------------------
   type Planned = {
+    /** The catalog item it came from, so the chosen price can be found again. */
+    id: string;
     name: string;
     sectionName: string | null;
     description: string | null;
     ingredients: string | null;
     image: string | null;
     variants: Array<{ name: string; price: number }>;
+  };
+
+  // A dish only goes straight onto the public menu when the owner asked for
+  // that AND actually priced it. Publishing something at zero because a box
+  // was ticked is not a mistake worth allowing.
+  const priceFor = (id: string, fallback: number | null) => {
+    const chosen = priceById.get(id);
+    if (chosen !== undefined && Number.isFinite(chosen)) return chosen;
+    return Number(fallback) || 0;
   };
 
   const planned: Planned[] = [];
@@ -137,13 +175,20 @@ export async function importCatalogItemsAction(itemIds: string[]): Promise<Impor
       if (!categoryByName.has(sectionKey)) missingSections.set(sectionKey, sectionName);
     }
 
+    const price = priceFor(item.id, item.suggested_price);
+    const variants = readVariants(item.variants);
+
     planned.push({
+      id: item.id,
       name,
       sectionName,
       description: item.description?.slice(0, 400) ?? null,
       ingredients: item.ingredients?.slice(0, 300) ?? null,
       image: sanitiseImageUrl(item.image_url),
-      variants: readVariants(item.variants),
+      // The shared menu's own sizes win when it has them, because those carry
+      // the shape (Small / Medium / Large). Otherwise one variant at the
+      // price the owner just typed.
+      variants: variants.length > 0 ? variants : [{ name: "Regular", price }],
     });
   }
 
@@ -217,8 +262,7 @@ export async function importCatalogItemsAction(itemIds: string[]): Promise<Impor
         image_url: entry.image,
         image_source: entry.image ? "library" : "none",
         sort_order: productOrder++,
-        // Hidden until the owner has set real prices — see the note above.
-        is_active: false,
+        is_active: publishNow && priceFor(entry.id, null) > 0,
       }))
     )
     .select("id, name");

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { Icon } from "@/components/ui/Icons";
 import { cn } from "@/lib/utils";
 import { NotificationCenter } from "./NotificationCenter";
@@ -10,6 +10,7 @@ import { useT } from "@/components/i18n/I18nProvider";
 import { LocaleSwitch } from "@/components/i18n/LocaleSwitch";
 import type { TranslationKey } from "@/lib/i18n";
 import { AccountMenu } from "./AccountMenu";
+import { useDrawer } from "@/components/ui/useDrawer";
 
 const NAV: Array<{
   href: string;
@@ -26,6 +27,8 @@ const NAV: Array<{
   { href: "/dashboard/qr-codes", label: "nav.qrCodes", icon: Icon.qr },
   { href: "/dashboard/orders", label: "nav.orders", icon: Icon.receipt },
   { href: "/dashboard/staff", label: "nav.staff", icon: Icon.users },
+  { href: "/dashboard/pos", label: "nav.pos", icon: Icon.receipt },
+  { href: "/dashboard/billing", label: "nav.billing", icon: Icon.sparkles },
   { href: "/dashboard/design", label: "nav.design", icon: Icon.palette },
   { href: "/dashboard/settings", label: "nav.settings", icon: Icon.settings },
 ];
@@ -46,6 +49,8 @@ export function DashboardShell({
   const pathname = usePathname();
   const t = useT();
   const [open, setOpen] = useState(false);
+  const close = useCallback(() => setOpen(false), []);
+  useDrawer(open, close, pathname);
 
   const isActive = (href: string, exact?: boolean) =>
     exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
@@ -98,6 +103,7 @@ export function DashboardShell({
           onClick={() => setOpen((v) => !v)}
           aria-label="Toggle navigation"
           aria-expanded={open}
+          aria-controls="mz-dashboard-drawer"
           className="rounded-lg p-1.5 text-ink-600 hover:bg-ink-100"
         >
           <Icon.menu className="size-5" />
@@ -112,48 +118,23 @@ export function DashboardShell({
       </div>
 
       <div className="mx-auto flex max-w-[1400px]">
-        {/* Sidebar */}
-        <aside
-          className={cn(
-            "fixed inset-y-0 start-0 z-40 w-64 shrink-0 border-e border-ink-200 bg-white p-4 transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0",
-            open ? "translate-x-0" : "-translate-x-full rtl:translate-x-full"
-          )}
-        >
-          <div className="flex h-full flex-col">
-            <Link href="/dashboard" className="mb-6 flex items-center gap-2 px-2 pt-1">
-              <span className="grid size-8 place-items-center rounded-lg bg-brand-600 text-white">
-                <Icon.qr className="size-4.5" />
-              </span>
-              <span className="font-semibold text-ink-900">MenuzQR</span>
-            </Link>
-
-            {nav}
-
-            <div className="mt-auto space-y-2 border-t border-ink-100 pt-3">
-              <LocaleSwitch className="w-full justify-center" />
-              <p className="truncate px-3 text-xs text-ink-400" title={userEmail}>
-                {userEmail}
-              </p>
-              <form action="/auth/signout" method="post">
-                <button
-                  type="submit"
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
-                >
-                  <Icon.logout className="size-4.5" />
-                  {t("common.signOut")}
-                </button>
-              </form>
-            </div>
-          </div>
-        </aside>
-
-        {open && (
-          <div
-            className="fixed inset-0 z-30 bg-ink-900/30 lg:hidden"
-            onClick={() => setOpen(false)}
-            aria-hidden="true"
+        {/*
+          Desktop sidebar and mobile drawer are two separate elements on
+          purpose. They used to be one, toggled with `-translate-x-full
+          rtl:translate-x-full` and un-toggled with `lg:translate-x-0` — but
+          Tailwind emits the `rtl:` rule AFTER the `lg:` media query, so in
+          Arabic the desktop sidebar kept `translate: 100%` and sat 256px off
+          the right edge of the screen. Measured on the deployed CSS, not
+          guessed. Splitting them means no variant ever has to out-rank
+          another.
+        */}
+        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-e border-ink-200 bg-white p-4 lg:block">
+          <SidebarBody
+            nav={nav}
+            userEmail={userEmail}
+            signOutLabel={t("common.signOut")}
           />
-        )}
+        </aside>
 
         {/* Content */}
         <div className="min-w-0 flex-1">
@@ -163,6 +144,85 @@ export function DashboardShell({
           </div>
           <main className="px-4 py-6 sm:px-6 lg:px-8">{children}</main>
         </div>
+      </div>
+
+      {/* Mobile drawer */}
+      {open && (
+        <div
+          id="mz-dashboard-drawer"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Navigation"
+          className="fixed inset-0 z-40 lg:hidden"
+        >
+          <div
+            className="absolute inset-0 bg-ink-900/40"
+            onClick={close}
+            aria-hidden="true"
+          />
+          <aside className="animate-slide-in absolute inset-y-0 start-0 w-72 max-w-[85vw] overflow-y-auto border-e border-ink-200 bg-white p-4">
+            <SidebarBody
+              nav={nav}
+              userEmail={userEmail}
+              signOutLabel={t("common.signOut")}
+              onClose={close}
+            />
+          </aside>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Shared by the desktop sidebar and the mobile drawer. */
+function SidebarBody({
+  nav,
+  userEmail,
+  signOutLabel,
+  onClose,
+}: {
+  nav: ReactNode;
+  userEmail: string;
+  signOutLabel: string;
+  onClose?: () => void;
+}) {
+  return (
+    <div className="flex h-full flex-col">
+      <div className="mb-6 flex items-center gap-2 px-2 pt-1">
+        <Link href="/dashboard" className="flex min-w-0 items-center gap-2" onClick={onClose}>
+          <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-brand-600 text-white">
+            <Icon.qr className="size-4.5" />
+          </span>
+          <span className="truncate font-semibold text-ink-900">MenuzQR</span>
+        </Link>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close navigation"
+            className="ms-auto rounded-lg p-1.5 text-ink-500 hover:bg-ink-100"
+          >
+            <Icon.plus className="size-5 rotate-45" />
+          </button>
+        )}
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto">{nav}</div>
+
+      <div className="mt-auto space-y-2 border-t border-ink-100 pt-3">
+        <LocaleSwitch className="w-full justify-center" />
+        <p className="truncate px-3 text-xs text-ink-400" title={userEmail}>
+          {userEmail}
+        </p>
+        <form action="/auth/signout" method="post">
+          <button
+            type="submit"
+            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+          >
+            <Icon.logout className="size-4.5" />
+            {signOutLabel}
+          </button>
+        </form>
       </div>
     </div>
   );

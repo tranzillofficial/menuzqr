@@ -11,7 +11,9 @@ export default async function AdminPlatformPage() {
 
   const { data, error } = await supabase
     .from("platform_settings")
-    .select("support_whatsapp, support_email, brand_name, price_usd, activation_note")
+    .select(
+      "support_whatsapp, support_email, brand_name, price_usd, activation_note, menu_bundle_usd, pos_monthly_usd, pos_yearly_usd, pos_enabled"
+    )
     .eq("id", 1)
     .maybeSingle();
 

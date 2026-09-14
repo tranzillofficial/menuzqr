@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 let lockCount = 0;
 let lockedFrom = "";
 
-function lockScroll() {
+export function lockScroll() {
   if (lockCount === 0) {
     lockedFrom = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -20,7 +20,7 @@ function lockScroll() {
   lockCount += 1;
 }
 
-function unlockScroll() {
+export function unlockScroll() {
   lockCount = Math.max(0, lockCount - 1);
   if (lockCount === 0) document.body.style.overflow = lockedFrom;
 }

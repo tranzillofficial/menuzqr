@@ -95,15 +95,26 @@ export async function ActivationPanel({ restaurant }: { restaurant: Restaurant }
             {platform.supportWhatsappDisplay}
           </p>
         </div>
-        <a
-          href={platform.supportWhatsappUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#25D366] px-4 text-sm font-semibold text-white shadow-sm hover:brightness-95"
-        >
-          <Icon.whatsapp className="size-4" />
-          {t("activation.contactSupport")}
-        </a>
+        <div className="flex flex-wrap gap-2">
+          {!suspended && (
+            <Link
+              href="/dashboard/billing"
+              className="inline-flex h-10 items-center gap-2 rounded-xl bg-ink-900 px-4 text-sm font-semibold text-white hover:bg-ink-800"
+            >
+              <Icon.sparkles className="size-4" />
+              {t("activation.seePlans")}
+            </Link>
+          )}
+          <a
+            href={platform.supportWhatsappUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#25D366] px-4 text-sm font-semibold text-white shadow-sm hover:brightness-95"
+          >
+            <Icon.whatsapp className="size-4" />
+            {t("activation.contactSupport")}
+          </a>
+        </div>
       </div>
     </div>
   );

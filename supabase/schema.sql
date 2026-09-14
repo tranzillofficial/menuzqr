@@ -5,6 +5,12 @@
 --
 --  It is idempotent: safe to re-run after edits.
 --
+--  ONE CAVEAT: this file recreates `guard_restaurant_admin_columns`, and
+--  006-plans-and-coupons.sql replaces that same function with a version that
+--  also pins the pos_* columns. If you ever re-run this file on a database
+--  that already has 006, re-run 006 afterwards — otherwise owners regain the
+--  ability to write their own POS subscription state.
+--
 --  Contents
 --    1.  Extensions & helper functions
 --    2.  Tables

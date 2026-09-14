@@ -28,7 +28,13 @@ export default async function SettingsPage() {
     .maybeSingle();
 
   const rows: Array<[string, string, boolean?]> = [
-    [t("settings.planName"), `${platform.brandName} — $${platform.priceUsd} ${t("settings.oneTime")}`, true],
+    [
+      t("settings.planName"),
+      `${platform.brandName} — $${
+        restaurant.pos_status === "active" ? platform.menuBundleUsd : platform.priceUsd
+      } ${t("settings.oneTime")}`,
+      true,
+    ],
     [
       t("settings.paymentStatus"),
       restaurant.payment_status === "paid" ? t("settings.paid") : t("settings.awaiting"),

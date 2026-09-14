@@ -9,7 +9,7 @@ import type { CatalogCategory, CatalogItem } from "@/lib/types";
 export const metadata: Metadata = { title: "Ready-made menu" };
 
 export default async function DashboardCatalogPage() {
-  const [, supabase, t] = await Promise.all([
+  const [membership, supabase, t] = await Promise.all([
     requireManager("/dashboard/catalog"),
     createServerSupabase(),
     getT(),
@@ -45,6 +45,7 @@ export default async function DashboardCatalogPage() {
       <CatalogBrowser
         categories={(categories ?? []) as CatalogCategory[]}
         items={normalised}
+        currency={membership.restaurant.currency}
       />
     </div>
   );

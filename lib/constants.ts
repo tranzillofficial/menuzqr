@@ -61,6 +61,18 @@ export const MIN_STAFF_PASSWORD = 8;
 export const RESTAURANT_STATUSES = ["inactive", "active", "suspended"] as const;
 export type RestaurantStatus = (typeof RESTAURANT_STATUSES)[number];
 
+/**
+ * POS is sold separately from the menu.
+ *
+ * `requested` is the only transition an owner can make themselves — it is
+ * them raising a hand. An admin moves it to `active` once payment lands.
+ */
+export const POS_STATUSES = ["none", "requested", "active", "expired", "cancelled"] as const;
+export type PosStatus = (typeof POS_STATUSES)[number];
+
+export const POS_PLANS = ["monthly", "yearly"] as const;
+export type PosPlan = (typeof POS_PLANS)[number];
+
 export const CURRENCIES = [
   { code: "USD", symbol: "$" },
   { code: "EGP", symbol: "E£" },

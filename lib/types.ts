@@ -1,4 +1,11 @@
-import type { MemberRole, MenuThemeId, OrderStatus, RestaurantStatus } from "./constants";
+import type {
+  MemberRole,
+  MenuThemeId,
+  OrderStatus,
+  PosPlan,
+  PosStatus,
+  RestaurantStatus,
+} from "./constants";
 
 export type Profile = {
   id: string;
@@ -31,6 +38,11 @@ export type Restaurant = {
   payment_status: string | null;
   subscription_type: string | null;
   price_cents: number;
+  pos_status: PosStatus;
+  pos_plan: PosPlan | null;
+  pos_started_at: string | null;
+  pos_expires_at: string | null;
+  coupon_code: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -207,11 +219,36 @@ export type CatalogItem = {
   category_name: string | null;
   image_url: string | null;
   variants: CatalogVariant[];
+  /** A starting figure, never a price. The owner types their own at import. */
+  suggested_price: number | null;
+  price_min: number | null;
+  price_max: number | null;
+  /** Currency the guidance above is quoted in — the restaurant's own may differ. */
+  suggested_currency: string | null;
   keywords: string[];
   cuisine: string | null;
   is_active: boolean;
   sort_order: number;
 };
+
+export type Coupon = {
+  id: string;
+  code: string;
+  kind: "percent" | "fixed";
+  value: number;
+  applies_to: "menu" | "pos" | "both";
+  max_redemptions: number | null;
+  redeemed_count: number;
+  expires_at: string | null;
+  is_active: boolean;
+  note: string | null;
+  created_at: string;
+};
+
+/** What `preview_coupon` hands back — never the whole coupon row. */
+export type CouponPreview =
+  | { valid: true; kind: "percent" | "fixed"; value: number; appliesTo: "menu" | "pos" | "both" }
+  | { valid: false; reason: string };
 
 export type AdminAction = {
   id: string;

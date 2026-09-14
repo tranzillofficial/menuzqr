@@ -272,8 +272,14 @@ function ItemList({
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate font-medium text-ink-900">{item.name}</p>
-            <p className="truncate text-xs text-ink-500">
-              {[item.cuisine, item.variants.map((v) => v.name).join(" · ")]
+            <p className="ltr-nums truncate text-xs text-ink-500">
+              {[
+                item.suggested_price
+                  ? `~${item.suggested_price} ${item.suggested_currency ?? ""}`.trim()
+                  : null,
+                item.cuisine,
+                item.variants.map((v) => v.name).join(" · "),
+              ]
                 .filter(Boolean)
                 .join(" — ") || "—"}
             </p>
@@ -485,6 +491,56 @@ function CatalogItemModal({
               name="ingredients"
               defaultValue={item?.ingredients ?? ""}
               placeholder="Chicken, lettuce, tomato, cheese"
+            />
+          </Field>
+
+          <Field
+            label="Suggested price"
+            htmlFor="c-suggested"
+            hint="Shown to restaurants at import and pre-filled into their price box. Never applied on its own."
+          >
+            <Input
+              id="c-suggested"
+              name="suggested_price"
+              type="number"
+              min="0"
+              step="0.01"
+              dir="ltr"
+              defaultValue={item?.suggested_price ?? ""}
+            />
+          </Field>
+
+          <Field label="Currency of the guidance" htmlFor="c-currency" hint="e.g. EGP.">
+            <Input
+              id="c-currency"
+              name="suggested_currency"
+              maxLength={8}
+              dir="ltr"
+              defaultValue={item?.suggested_currency ?? "EGP"}
+            />
+          </Field>
+
+          <Field label="Typical low" htmlFor="c-pmin">
+            <Input
+              id="c-pmin"
+              name="price_min"
+              type="number"
+              min="0"
+              step="0.01"
+              dir="ltr"
+              defaultValue={item?.price_min ?? ""}
+            />
+          </Field>
+
+          <Field label="Typical high" htmlFor="c-pmax">
+            <Input
+              id="c-pmax"
+              name="price_max"
+              type="number"
+              min="0"
+              step="0.01"
+              dir="ltr"
+              defaultValue={item?.price_max ?? ""}
             />
           </Field>
 
