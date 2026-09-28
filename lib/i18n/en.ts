@@ -98,7 +98,7 @@ export const en = {
   "landing.step2": "Add sections, products, sizes and prices",
   "landing.step3": "Pick a menu design and create your tables",
   "landing.step4": "Generate and print your QR codes",
-  "landing.step5": "Send ${price} on WhatsApp — we switch your menu live",
+  "landing.step5": "Contact our team on WhatsApp to arrange your ${price} payment and manual activation",
 
   "landing.pricingLabel": "Simple pricing",
   "landing.pricingUnit": "one-time",
@@ -120,7 +120,7 @@ export const en = {
     "Any time, from your phone. The printed QR codes never change — only what they open.",
   "landing.faq3Q": "What happens after I pay?",
   "landing.faq3A":
-    "Message us on WhatsApp and we activate your account by hand, usually within the hour. Your menu goes live immediately.",
+    "Contact our team on WhatsApp for payment instructions. We manually activate your account after confirming receipt of payment.",
   "landing.faq4Q": "Can I use it in Arabic?",
   "landing.faq4A":
     "Yes. The whole dashboard works in Arabic, and you write your menu in whichever language you like.",
@@ -399,7 +399,7 @@ export const en = {
   "settings.activated": "Activated",
   "settings.menuLink": "Menu link",
   "settings.billingNote":
-    "Payments are handled manually over WhatsApp. Send your payment, message us, and we activate your menu.",
+    "Payment is currently arranged only by contacting our team on WhatsApp. Ask for payment instructions; we manually activate your menu after confirming receipt.",
   "settings.oneTime": "one-time",
 
   // ------------------------------------------------------------ public menu
@@ -642,7 +642,7 @@ export const en = {
   "plans.couponPercent": "{value}% off applied to your quote.",
   "plans.couponFixed": "${value} off applied to your quote.",
   "plans.errWrongProduct": "That code doesn't apply to this product.",
-  "plans.payNote": "Payment is manual for now: message us on WhatsApp with your quote and we switch things on, usually within the hour.",
+  "plans.payNote": "To pay, contact our team on WhatsApp with your quote. We provide payment instructions and manually activate your subscription after confirming receipt.",
   "plans.waIntro": "Hi, I'd like to set up {name} on MenuzQR.",
   "plans.waFallback": "I'd like to ask about the plans.",
   "pos.title": "POS",
