@@ -43,6 +43,10 @@ export default async function AdminPlatformPage() {
           support_email: data.support_email ?? null,
           brand_name: data.brand_name ?? "MenuzQR",
           price_usd: Number(data.price_usd ?? 20),
+          menu_bundle_usd: Number(data.menu_bundle_usd ?? 8),
+          pos_monthly_usd: Number(data.pos_monthly_usd ?? 2),
+          pos_yearly_usd: Number(data.pos_yearly_usd ?? 20),
+          pos_enabled: data.pos_enabled ?? false,
           activation_note: data.activation_note ?? null,
         }}
       />

@@ -75,7 +75,7 @@ export async function requestPosAction(plan: string, code: string): Promise<Acti
 
   revalidatePath("/dashboard/billing");
   revalidatePath("/dashboard/settings");
-  return done("Noted. Send us the payment on WhatsApp and we'll switch it on.");
+  return done("Request recorded. Contact our team on WhatsApp for payment instructions. Activation is manual after payment confirmation.");
 }
 
 export async function cancelPosRequestAction(): Promise<ActionState> {

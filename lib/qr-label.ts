@@ -180,7 +180,7 @@ export async function renderQrLabel(input: QrLabelInput): Promise<HTMLCanvasElem
     if (cta) {
       fitText(ctx, cta, cx, panelY + panel + 62 * s, 780 * s, 30 * s, 500, style.textColor);
     }
-    fitText(ctx, "menuzqr.com", cx, H - 38 * s, 400 * s, 20 * s, 500, style.accentColor);
+    fitText(ctx, "menuzqr.shop", cx, H - 38 * s, 400 * s, 20 * s, 500, style.accentColor);
     return canvas;
   }
 
@@ -214,7 +214,7 @@ export async function renderQrLabel(input: QrLabelInput): Promise<HTMLCanvasElem
     if (cta) {
       fitText(ctx, cta, cx, panelY + panel + 86 * s, 820 * s, 34 * s, 500, style.textColor);
     }
-    fitText(ctx, "Powered by menuzqr.com", cx, H - 56 * s, 520 * s, 22 * s, 500, style.accentColor);
+    fitText(ctx, "Powered by menuzqr.shop", cx, H - 56 * s, 520 * s, 22 * s, 500, style.accentColor);
     return canvas;
   }
 
@@ -257,7 +257,7 @@ export async function renderQrLabel(input: QrLabelInput): Promise<HTMLCanvasElem
   if (cta) {
     fitText(ctx, cta, cx, panelY + panel + (input.badge ? 130 * s : 96 * s), 840 * s, 34 * s, 500, style.textColor);
   }
-  fitText(ctx, "menuzqr.com", cx, H - 60 * s, 420 * s, 24 * s, 500, style.accentColor);
+  fitText(ctx, "menuzqr.shop", cx, H - 60 * s, 420 * s, 24 * s, 500, style.accentColor);
 
   return canvas;
 }

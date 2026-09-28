@@ -84,7 +84,7 @@ export function QrDesignManager({ templates }: { templates: QrTemplate[] }) {
               <QrLabelPreview
                 previewWidth={260}
                 input={{
-                  url: "https://menuzqr.com/demo/menu",
+                  url: "https://menuzqr.shop/demo/menu",
                   title: "Cairo Café",
                   subtitle: "12 Nile St",
                   badge: template.layout === "tent" ? "Table 7" : null,
@@ -284,7 +284,7 @@ function DesignModal({
           <QrLabelPreview
             previewWidth={240}
             input={{
-              url: "https://menuzqr.com/demo/menu",
+              url: "https://menuzqr.shop/demo/menu",
               title: "Cairo Café",
               subtitle: "12 Nile St",
               badge: draft.layout === "tent" ? "Table 7" : null,
