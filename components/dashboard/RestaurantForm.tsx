@@ -8,8 +8,8 @@ import { SubmitButton } from "@/components/ui/SubmitButton";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { ImagePicker } from "@/components/ui/ImagePicker";
 import { useToast } from "@/components/ui/Toast";
-import { useT } from "@/components/i18n/I18nProvider";
-import { CURRENCIES, LANGUAGES, RESTAURANT_TYPES } from "@/lib/constants";
+import { useT, useI18n } from "@/components/i18n/I18nProvider";
+import { CURRENCIES } from "@/lib/constants";
 import { slugify } from "@/lib/slug";
 import { siteOrigin } from "@/lib/utils";
 import type { Restaurant } from "@/lib/types";
@@ -18,6 +18,7 @@ export function RestaurantForm({ restaurant }: { restaurant: Restaurant | null }
   const router = useRouter();
   const toast = useToast();
   const t = useT();
+  const { locale } = useI18n();
   const isEdit = Boolean(restaurant);
 
   const [state, formAction] = useActionState(
@@ -31,9 +32,6 @@ export function RestaurantForm({ restaurant }: { restaurant: Restaurant | null }
   const [logoUrl, setLogoUrl] = useState(restaurant?.logo_url ?? null);
   const [coverUrl, setCoverUrl] = useState(restaurant?.cover_url ?? null);
 
-  useEffect(() => {
-    if (!slugTouched) setSlug(slugify(name));
-  }, [name, slugTouched]);
 
   useEffect(() => {
     if (!state) return;
@@ -57,7 +55,7 @@ export function RestaurantForm({ restaurant }: { restaurant: Restaurant | null }
               name="name"
               required
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => { setName(e.target.value); if (!slugTouched) setSlug(slugify(e.target.value)); }}
               placeholder="Cairo Café"
             />
           </Field>
@@ -86,20 +84,6 @@ export function RestaurantForm({ restaurant }: { restaurant: Restaurant | null }
             />
           </Field>
 
-          <Field label={t("restaurant.type")} htmlFor="restaurant_type" className="sm:col-span-2">
-            <Select
-              id="restaurant_type"
-              name="restaurant_type"
-              defaultValue={restaurant?.restaurant_type ?? ""}
-            >
-              <option value="">{t("restaurant.typePlaceholder")}</option>
-              {RESTAURANT_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </Select>
-          </Field>
 
           <Field label={t("restaurant.description")} htmlFor="description" className="sm:col-span-2">
             <Textarea
@@ -107,7 +91,7 @@ export function RestaurantForm({ restaurant }: { restaurant: Restaurant | null }
               name="description"
               defaultValue={restaurant?.description ?? ""}
               maxLength={280}
-              placeholder="Specialty coffee and all-day brunch in the heart of downtown."
+              placeholder={locale === "ar" ? "وصف مختصر لمطعمك أو كافيهك" : "A short introduction to your restaurant"}
             />
           </Field>
 
@@ -131,7 +115,7 @@ export function RestaurantForm({ restaurant }: { restaurant: Restaurant | null }
           </Field>
 
           <Field label={t("restaurant.currency")} htmlFor="currency">
-            <Select id="currency" name="currency" defaultValue={restaurant?.currency ?? "USD"}>
+            <Select id="currency" name="currency" defaultValue={restaurant?.currency ?? (locale === "ar" ? "EGP" : "USD")}>
               {CURRENCIES.map((c) => (
                 <option key={c.code} value={c.code}>
                   {c.code} ({c.symbol})
@@ -140,15 +124,7 @@ export function RestaurantForm({ restaurant }: { restaurant: Restaurant | null }
             </Select>
           </Field>
 
-          <Field label={t("restaurant.menuLanguage")} htmlFor="language">
-            <Select id="language" name="language" defaultValue={restaurant?.language ?? "en"}>
-              {LANGUAGES.map((l) => (
-                <option key={l.code} value={l.code}>
-                  {l.label}
-                </option>
-              ))}
-            </Select>
-          </Field>
+          <input type="hidden" name="language" value={restaurant?.language ?? locale} />
         </div>
       </Card>
 
@@ -179,11 +155,7 @@ export function RestaurantForm({ restaurant }: { restaurant: Restaurant | null }
             </div>
           </div>
         </Card>
-      ) : (
-        <p className="rounded-xl bg-ink-100 px-4 py-3 text-sm text-ink-600">
-          {t("restaurant.saveFirst")}
-        </p>
-      )}
+      ) : null}
 
       <input type="hidden" name="logo_url" value={logoUrl ?? ""} />
       <input type="hidden" name="cover_url" value={coverUrl ?? ""} />

@@ -192,3 +192,16 @@ body {
     margin: 12mm;
   }
 }
+
+@media print {
+  body * { visibility: hidden !important; }
+  #pos-receipt, #pos-receipt * { visibility: visible !important; }
+  #pos-receipt { display: block !important; position: absolute; inset: 0 auto auto 0; width: 72mm; padding: 3mm; color: black; background: white; font-size: 12px; }
+  #pos-receipt h1 { font-size: 20px; text-align: center; }
+  #pos-receipt div { display: flex; justify-content: space-between; gap: 10px; margin: 8px 0; }
+}
+
+html { scroll-behavior: smooth; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+[lang="ar"] h1, [lang="ar"] h2 { letter-spacing: 0; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }

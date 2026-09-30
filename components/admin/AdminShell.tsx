@@ -29,7 +29,7 @@ const NAV: Array<{
  * Admin chrome.
  *
  * The old header crammed six links, an email, a language switch and two
- * buttons onto one row — unusable on a phone. Now: a compact bar with a real
+ * buttons onto one row. unusable on a phone. Now: a compact bar with a real
  * drawer under `lg`, and the full inline nav only where there is room for it.
  */
 export function AdminShell({ children, email }: { children: ReactNode; email: string }) {
@@ -112,7 +112,7 @@ export function AdminShell({ children, email }: { children: ReactNode; email: st
         </div>
       </header>
 
-      {/* Drawer — phone and tablet */}
+      {/* Drawer. phone and tablet */}
       {open && (
         <div
           id="mz-admin-drawer"

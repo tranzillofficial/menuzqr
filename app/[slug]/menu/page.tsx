@@ -6,7 +6,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { MenuExperience } from "@/components/menu/MenuExperience";
 import { MenuUnavailable } from "@/components/menu/MenuUnavailable";
 
-// Activation status is live state — never serve this page from a static cache.
+// Activation status is live state. never serve this page from a static cache.
 export const dynamic = "force-dynamic";
 
 type Params = { slug: string };
@@ -26,16 +26,16 @@ export async function generateMetadata({
 
   if (result.state === "not_found") return { title: "Menu not found" };
   if (result.state === "inactive") {
-    return { title: `${result.restaurantName} — menu unavailable`, robots: { index: false } };
+    return { title: `${result.restaurantName}. menu unavailable`, robots: { index: false } };
   }
 
   const { restaurant } = result.data;
   return {
-    title: `${restaurant.name} — Menu`,
+    title: `${restaurant.name}. Menu`,
     description:
       restaurant.description ?? `Browse the menu at ${restaurant.name}, powered by MenuzQR.`,
     openGraph: {
-      title: `${restaurant.name} — Menu`,
+      title: `${restaurant.name}. Menu`,
       description: restaurant.description ?? undefined,
       images: restaurant.cover_url ? [restaurant.cover_url] : undefined,
     },

@@ -8,7 +8,7 @@ import { supabaseServiceKey, supabaseUrl } from "./supabase/env";
  *
  * This is the second delivery path, next to `postgres_changes`. Change-data
  * capture depends on the publication being right *and* on Realtime being able
- * to evaluate the row's RLS policy for every listener — two things that fail
+ * to evaluate the row's RLS policy for every listener. two things that fail
  * silently when they are misconfigured. A broadcast is sent by us, explicitly,
  * so an open dashboard still lights up while that is being sorted out.
  *

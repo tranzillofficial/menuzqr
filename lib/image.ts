@@ -64,7 +64,7 @@ function renameTo(name: string, mimeType: string) {
  * Downscales and re-encodes an image in the browser before it is uploaded.
  *
  * Falls back to the original file whenever anything is unsupported or the
- * re-encoded result would not actually be smaller — so an upload never fails
+ * re-encoded result would not actually be smaller. so an upload never fails
  * because compression did.
  */
 export async function compressImage(

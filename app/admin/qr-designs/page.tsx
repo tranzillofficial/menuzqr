@@ -3,7 +3,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { QrDesignManager } from "@/components/admin/QrDesignManager";
 import type { QrTemplate } from "@/lib/types";
 
-export const metadata: Metadata = { title: "Admin — QR designs" };
+export const metadata: Metadata = { title: "Admin. QR designs" };
 
 export default async function AdminQrDesignsPage() {
   const supabase = await createServerSupabase();

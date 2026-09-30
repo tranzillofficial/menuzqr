@@ -13,6 +13,14 @@ export function PlatformSettingsForm({
   settings,
 }: {
   settings: {
+    price_egp: number;
+    original_price_egp: number;
+    original_price_usd: number;
+    pos_monthly_egp: number;
+    pos_yearly_egp: number;
+    pos_trial_days: number;
+    offer_enabled: boolean;
+    demo_restaurant_slug: string;
     support_whatsapp: string;
     support_email: string | null;
     brand_name: string;
@@ -72,6 +80,9 @@ export function PlatformSettingsForm({
             <Input id="brand_name" name="brand_name" defaultValue={settings.brand_name} />
           </Field>
 
+          {([['price_egp','سعر المنيو بالجنيه'],['original_price_egp','السعر قبل العرض بالجنيه'],['original_price_usd','السعر قبل العرض بالدولار'],['pos_monthly_egp','الكاشير شهري بالجنيه'],['pos_yearly_egp','الكاشير سنوي بالجنيه'],['pos_trial_days','أيام الكاشير المجانية']] as const).map(([name,label]) => <Field key={name} label={label} htmlFor={name}><Input id={name} name={name} type="number" min={0} step="1" defaultValue={settings[name]} /></Field>)}
+          <label className="flex gap-2"><input type="checkbox" name="offer_enabled" defaultChecked={settings.offer_enabled} />تفعيل العرض لفترة محدودة</label>
+          <Field label="رابط المنيو التجريبي" htmlFor="demo_restaurant_slug"><Input id="demo_restaurant_slug" name="demo_restaurant_slug" defaultValue={settings.demo_restaurant_slug} /></Field>
           <Field label={t("admin.priceUsd")} htmlFor="price_usd">
             <Input
               id="price_usd"
@@ -84,21 +95,7 @@ export function PlatformSettingsForm({
             />
           </Field>
 
-          <Field
-            label={t("admin.menuBundleUsd")}
-            htmlFor="menu_bundle_usd"
-            hint={t("admin.menuBundleHint")}
-          >
-            <Input
-              id="menu_bundle_usd"
-              name="menu_bundle_usd"
-              type="number"
-              min={0}
-              step="1"
-              dir="ltr"
-              defaultValue={String(settings.menu_bundle_usd)}
-            />
-          </Field>
+          <input type="hidden" name="menu_bundle_usd" value={settings.price_usd} />
 
           <Field label={t("admin.posMonthlyUsd")} htmlFor="pos_monthly_usd">
             <Input

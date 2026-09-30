@@ -8,7 +8,8 @@ import { AlertsCard } from "@/components/pwa/AlertsCard";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icons";
 import { getPlatformSettings } from "@/lib/platform";
-import { getT } from "@/lib/i18n/server";
+import { localizedPricing } from "@/lib/pricing";
+import { getT, getLocale } from "@/lib/i18n/server";
 import { formatDate } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -27,10 +28,11 @@ export default async function SettingsPage() {
     .eq("restaurant_id", restaurant.id)
     .maybeSingle();
 
+  const pricing = localizedPricing(platform, await getLocale());
   const rows: Array<[string, string, boolean?]> = [
     [
       t("settings.planName"),
-      `${platform.brandName} — $${
+      `${platform.brandName}. $${
         restaurant.pos_status === "active" ? platform.menuBundleUsd : platform.priceUsd
       } ${t("settings.oneTime")}`,
       true,

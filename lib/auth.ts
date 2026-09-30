@@ -1,16 +1,17 @@
 import "server-only";
+import { cache } from "react";
 
 import { redirect } from "next/navigation";
 import { createServerSupabase } from "./supabase/server";
 import type { Profile, Restaurant } from "./types";
 
-export async function getUser() {
+export const getUser = cache(async function getUser() {
   const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   return user;
-}
+});
 
 export async function requireUser() {
   const user = await getUser();
@@ -18,7 +19,7 @@ export async function requireUser() {
   return user;
 }
 
-export async function getProfile(): Promise<Profile | null> {
+export const getProfile = cache(async function getProfile(): Promise<Profile | null> {
   const supabase = await createServerSupabase();
   const {
     data: { user },
@@ -32,7 +33,7 @@ export async function getProfile(): Promise<Profile | null> {
     .maybeSingle();
 
   return (data as Profile | null) ?? null;
-}
+});
 
 export async function requireAdmin(): Promise<Profile> {
   const profile = await getProfile();
@@ -42,7 +43,7 @@ export async function requireAdmin(): Promise<Profile> {
 }
 
 /** The restaurant owned by the signed-in user, or null if they have not created one. */
-export async function getMyRestaurant(): Promise<Restaurant | null> {
+export const getMyRestaurant = cache(async function getMyRestaurant(): Promise<Restaurant | null> {
   const supabase = await createServerSupabase();
   const {
     data: { user },
@@ -58,7 +59,7 @@ export async function getMyRestaurant(): Promise<Restaurant | null> {
     .maybeSingle();
 
   return (data as Restaurant | null) ?? null;
-}
+});
 
 /** Redirects to onboarding when the signed-in user has no restaurant yet. */
 export async function requireRestaurant(): Promise<Restaurant> {

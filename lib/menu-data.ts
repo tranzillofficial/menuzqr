@@ -1,3 +1,4 @@
+import { getUser } from "./auth";
 import { cache } from "react";
 import { createAdminSupabase } from "./supabase/admin";
 import type { MenuData, ProductWithVariants, Restaurant, RestaurantTable } from "./types";
@@ -28,14 +29,17 @@ export const getPublicMenu = cache(async function getPublicMenu(
   const { data: restaurant } = await supabase
     .from("restaurants")
     .select(
-      "id,name,slug,description,logo_url,cover_url,phone,address,currency,language,menu_theme,ordering_enabled,waiter_calls_enabled,status"
+      "id,name,slug,description,logo_url,cover_url,phone,address,currency,language,menu_theme,ordering_enabled,waiter_calls_enabled,status,owner_id,activation_expires_at"
     )
     .eq("slug", slug)
     .maybeSingle();
 
   if (!restaurant) return { state: "not_found" };
 
-  if (restaurant.status !== "active") {
+  const expired = restaurant.activation_expires_at && new Date(restaurant.activation_expires_at) <= new Date();
+  const preview = restaurant.status !== "active" || Boolean(expired);
+  const user = preview ? await getUser() : null;
+  if (preview && user?.id !== restaurant.owner_id) {
     return {
       state: "inactive",
       restaurantName: restaurant.name,
@@ -44,6 +48,10 @@ export const getPublicMenu = cache(async function getPublicMenu(
     };
   }
 
+  if (preview) {
+    restaurant.ordering_enabled = false;
+    restaurant.waiter_calls_enabled = false;
+  }
   const [{ data: categories }, { data: products }] = await Promise.all([
     supabase
       .from("categories")
@@ -62,7 +70,7 @@ export const getPublicMenu = cache(async function getPublicMenu(
   ]);
 
   let table: Pick<RestaurantTable, "id" | "label"> | null = null;
-  if (tableToken) {
+  if (tableToken && !preview) {
     const { data } = await supabase
       .from("restaurant_tables")
       .select("id,label")
@@ -105,7 +113,7 @@ export const getPublicMenu = cache(async function getPublicMenu(
     state: "ok",
     table,
     data: {
-      restaurant,
+      restaurant: { id: restaurant.id, name: restaurant.name, slug: restaurant.slug, description: restaurant.description, logo_url: restaurant.logo_url, cover_url: restaurant.cover_url, phone: restaurant.phone, address: restaurant.address, currency: restaurant.currency, language: restaurant.language, menu_theme: restaurant.menu_theme, ordering_enabled: restaurant.ordering_enabled, waiter_calls_enabled: restaurant.waiter_calls_enabled },
       categories: grouped.filter((c) => c.products.length > 0),
     },
   };

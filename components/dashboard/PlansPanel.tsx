@@ -20,18 +20,19 @@ import type { CouponPreview, Restaurant } from "@/lib/types";
 type Target = "menu" | "pos";
 
 /** Everything here is quoted in USD, whatever the restaurant's own currency. */
-const money = (value: number) => formatMoney(value, "USD");
+
 
 /**
  * The two things a restaurant pays for, side by side, with the bundle offer
  * made explicit rather than buried: taking POS drops the one-time menu fee.
  *
- * Nothing here charges anyone. There is no payment gateway — the owner gets a
+ * Nothing here charges anyone. There is no payment gateway. the owner gets a
  * quote and a WhatsApp link, and an admin switches things on once paid.
  */
 export function PlansPanel({
   restaurant,
-  menuPrice,
+  currency,
+  trialDays,  menuPrice,
   menuBundlePrice,
   posMonthly,
   posYearly,
@@ -40,6 +41,8 @@ export function PlansPanel({
   whatsappDisplay,
 }: {
   restaurant: Restaurant;
+  currency: string;
+  trialDays: number;
   menuPrice: number;
   menuBundlePrice: number;
   posMonthly: number;
@@ -49,6 +52,7 @@ export function PlansPanel({
   whatsappDisplay: string;
 }) {
   const t = useT();
+  const money = (value: number) => formatMoney(Math.ceil(value), currency);
   const toast = useToast();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -59,11 +63,11 @@ export function PlansPanel({
   const [coupon, setCoupon] = useState<CouponPreview | null>(null);
 
   const menuPaid = restaurant.status === "active";
-  const posActive = restaurant.pos_status === "active";
+  const posActive = restaurant.pos_status === "active" && Boolean(restaurant.pos_expires_at && new Date(restaurant.pos_expires_at).getTime() > Date.now());
   const posRequested = restaurant.pos_status === "requested";
 
   // The bundle price follows an ACTIVE subscription and nothing else. It used
-  // to follow `requested` too — which an owner can set themselves — so the
+  // to follow `requested` too. which an owner can set themselves. so the
   // quote dropped to the bundle price on a button click, and withdrawing the
   // request afterwards left them paying $8 for a $20 product.
   const takingPos = posActive;
@@ -168,8 +172,8 @@ export function PlansPanel({
         </div>
         {!menuPaid && !takingPos && (
           <p className="border-t border-ink-100 bg-brand-50 px-5 py-3 text-sm text-brand-900">
-            <strong>{t("plans.offerTitle", { bundle: menuBundlePrice })}</strong>{" "}
-            {t("plans.offerBody", { bundle: menuBundlePrice, full: menuPrice })}
+            <strong>{t("plans.offerTitle", { days: trialDays })}</strong>{" "}
+            {t("plans.offerBody")}
           </p>
         )}
       </Card>

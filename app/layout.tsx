@@ -21,7 +21,7 @@ const cairo = Cairo({
 
 export const metadata: Metadata = {
   title: {
-    default: "MenuzQR — Digital QR menus for restaurants & cafés",
+    default: "MenuzQR. Digital QR menus for restaurants & cafés",
     template: "%s · MenuzQR",
   },
   description:

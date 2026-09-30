@@ -39,7 +39,7 @@ export function MenuExperience({
   const Theme = THEMES[data.restaurant.menu_theme] ?? ElegantMenu;
   const lightFab = data.restaurant.menu_theme === "elegant" || data.restaurant.menu_theme === "market";
 
-  // The menu's own chrome — "Add to order", "Call waiter" — follows the
+  // The menu's own chrome. "Add to order", "Call waiter". follows the
   // restaurant's chosen language, not the visitor's dashboard preference.
   const locale: Locale = isLocale(data.restaurant.language) ? data.restaurant.language : "en";
   const t = createTranslator(locale);

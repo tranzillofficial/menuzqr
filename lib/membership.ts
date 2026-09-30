@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 
 import { redirect } from "next/navigation";
 import { createServerSupabase } from "./supabase/server";
@@ -27,11 +28,11 @@ const ROLE_RANK: Record<string, number> = {
 /**
  * Resolves the signed-in user's place in a restaurant.
  *
- * Membership is the single source of truth — an owner gets a row from the
+ * Membership is the single source of truth. an owner gets a row from the
  * `handle_new_restaurant` trigger, staff get one when the owner creates them.
  * When several memberships exist the most privileged one wins.
  */
-export async function getMembership(): Promise<Membership | null> {
+export const getMembership = cache(async function getMembership(): Promise<Membership | null> {
   const supabase = await createServerSupabase();
   const {
     data: { user },
@@ -71,7 +72,7 @@ export async function getMembership(): Promise<Membership | null> {
     displayName: best.row.display_name?.trim() || user.email?.split("@")[0] || "",
     isManager: MANAGER_ROLES.includes(role),
   };
-}
+});
 
 /** Signed in, and a member of some restaurant. */
 export async function requireMembership(next = "/dashboard"): Promise<Membership> {
@@ -94,7 +95,7 @@ export async function requireMembership(next = "/dashboard"): Promise<Membership
 
   if ((count ?? 0) > 0) redirect("/disabled");
 
-  // Signed in with no membership at all — send them through onboarding.
+  // Signed in with no membership at all. send them through onboarding.
   redirect("/dashboard/restaurant");
 }
 
@@ -105,7 +106,7 @@ export async function requireManager(next = "/dashboard"): Promise<Membership> {
   return membership;
 }
 
-/** Any member — used by the station screen, which owners can also open. */
+/** Any member. used by the station screen, which owners can also open. */
 export async function requireStation(): Promise<Membership> {
   return requireMembership("/station");
 }

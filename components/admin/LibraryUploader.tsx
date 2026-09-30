@@ -168,7 +168,7 @@ export function LibraryUploader() {
           label="Licence"
           htmlFor="lib-license"
           required
-          hint="Required. e.g. “Owned by MenuzQR”, “Unsplash License”, “Purchased — Envato #123”."
+          hint="Required. e.g. “Owned by MenuzQR”, “Unsplash License”, “Purchased. Envato #123”."
           className="sm:col-span-2"
         >
           <Input id="lib-license" name="license" required placeholder="Owned by MenuzQR" />

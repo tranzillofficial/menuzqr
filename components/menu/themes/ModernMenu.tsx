@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useMenu } from "../MenuContext";
 import { MenuImage } from "../MenuMedia";
 import { CategoryNav, useActiveCategory } from "../CategoryNav";
@@ -10,7 +10,9 @@ import { formatMoney, priceRange } from "@/lib/utils";
 export function ModernMenu() {
   const { data, currency, showPrices, openProduct } = useMenu();
   const t = useT();
-  const { restaurant, categories } = data;
+  const { restaurant, categories: allCategories } = data;
+  const [query, setQuery] = useState("");
+  const categories = useMemo(() => allCategories.map(c => ({...c, products:c.products.filter(p => `${p.name} ${p.description ?? ""}`.toLowerCase().includes(query.toLowerCase()))})).filter(c => c.products.length), [allCategories, query]);
   const categoryIds = useMemo(() => categories.map((c) => c.id), [categories]);
   const active = useActiveCategory(categoryIds);
 
@@ -33,7 +35,7 @@ export function ModernMenu() {
         </div>
 
         <div className="mx-auto max-w-3xl px-4">
-          <div className="-mt-12 flex items-end gap-4">
+          <div className="relative -mt-12 flex items-end gap-4">
             {restaurant.logo_url ? (
               <MenuImage
                 src={restaurant.logo_url}
@@ -77,6 +79,8 @@ export function ModernMenu() {
       </div>
 
       <main className="mx-auto max-w-3xl px-4">
+        <input value={query} onChange={e=>setQuery(e.target.value)} aria-label={t("products.searchPlaceholder")} placeholder={t("products.searchPlaceholder")} className="mt-5 h-12 w-full rounded-2xl border border-ink-200 bg-ink-50 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-brand-200" />
+        {!categories.length && <p className="py-10 text-center text-ink-500">{t("common.nothingMatched")}</p>}
         {categories.map((category) => (
           <section key={category.id} id={category.id} className="scroll-mt-20 pt-9">
             <div className="flex items-center gap-3">
@@ -97,7 +101,7 @@ export function ModernMenu() {
                     <button
                       type="button"
                       onClick={() => openProduct(product)}
-                      className="group flex h-full w-full flex-col overflow-hidden rounded-2xl border border-ink-200 bg-white text-start transition-all hover:-translate-y-0.5 hover:border-ink-300 hover:shadow-lg"
+                      className="group flex h-full w-full flex-col overflow-hidden rounded-3xl border border-ink-100 bg-white text-start transition-all hover:-translate-y-0.5 hover:border-ink-300 hover:shadow-lg"
                     >
                       <div className="relative">
                         <MenuImage

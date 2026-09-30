@@ -10,7 +10,7 @@ export async function MenuUnavailable({
 }: {
   restaurantName: string;
   status: "inactive" | "active" | "suspended";
-  /** The restaurant's own language — the guest is reading their menu, not ours. */
+  /** The restaurant's own language. the guest is reading their menu, not ours. */
   language: string;
   reason?: string;
 }) {

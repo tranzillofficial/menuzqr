@@ -32,7 +32,7 @@ type LiveValue = {
   requestPermission: () => Promise<void>;
   dismiss: (id: string) => void;
   clear: () => void;
-  /** Plays the alert once — used to preview the sound from settings. */
+  /** Plays the alert once. used to preview the sound from settings. */
   test: () => void;
 };
 
@@ -91,7 +91,7 @@ export function LiveProvider({
     try {
       window.localStorage.setItem("mz_muted", value ? "1" : "0");
     } catch {
-      // Private mode — the in-memory value still applies for this session.
+      // Private mode. the in-memory value still applies for this session.
     }
   }, []);
 
@@ -233,7 +233,7 @@ export function LiveProvider({
           await Promise.resolve(supabase.realtime.setAuth(session.access_token));
         }
       } catch {
-        // Fall through — postgres_changes may still work for public tables.
+        // Fall through. postgres_changes may still work for public tables.
       }
       if (!live) return;
 

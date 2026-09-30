@@ -7,7 +7,7 @@ import { AdminToggle } from "@/components/admin/AdminToggle";
 import { formatDate } from "@/lib/utils";
 import { getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Admin — Users" };
+export const metadata: Metadata = { title: "Admin. Users" };
 
 export default async function AdminUsersPage({
   searchParams,

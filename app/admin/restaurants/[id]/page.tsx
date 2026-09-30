@@ -12,7 +12,7 @@ import { getT } from "@/lib/i18n/server";
 import type { TranslationKey } from "@/lib/i18n";
 import type { Restaurant } from "@/lib/types";
 
-export const metadata: Metadata = { title: "Admin — Restaurant" };
+export const metadata: Metadata = { title: "Admin. Restaurant" };
 
 export default async function AdminRestaurantPage({
   params,

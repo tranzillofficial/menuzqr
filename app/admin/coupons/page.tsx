@@ -4,7 +4,7 @@ import { CouponManager } from "@/components/admin/CouponManager";
 import { Card } from "@/components/ui/Card";
 import type { Coupon } from "@/lib/types";
 
-export const metadata: Metadata = { title: "Admin — Coupons" };
+export const metadata: Metadata = { title: "Admin. Coupons" };
 
 export default async function AdminCouponsPage() {
   const supabase = await createServerSupabase();
@@ -25,7 +25,7 @@ export default async function AdminCouponsPage() {
 
       <Card className="border-sky-200 bg-sky-50 p-4 sm:p-5">
         <p className="text-sm text-sky-900">
-          Owners never see this list — they type a code you gave them and the server checks that one
+          Owners never see this list. they type a code you gave them and the server checks that one
           code. Nothing is charged automatically: a valid code changes the quoted price, and you
           apply it when they pay over WhatsApp.
         </p>

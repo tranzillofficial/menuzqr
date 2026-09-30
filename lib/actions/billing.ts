@@ -42,7 +42,7 @@ export async function previewCouponAction(
 }
 
 /**
- * The owner raising a hand for POS. It does not grant anything — a database
+ * The owner raising a hand for POS. It does not grant anything. a database
  * trigger allows exactly this one transition and nothing else, so the plan is
  * only a note of what they asked for until an admin activates it.
  */
@@ -115,7 +115,7 @@ export async function saveMenuCouponAction(code: string): Promise<ActionState> {
 /**
  * Only a code the server itself has accepted is ever stored.
  *
- * Without this, the column is whatever the client posted — and an admin
+ * Without this, the column is whatever the client posted. and an admin
  * looking at the restaurant page would see an authoritative-looking badge for
  * a code that was never real.
  */

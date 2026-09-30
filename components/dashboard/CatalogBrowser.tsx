@@ -16,7 +16,7 @@ const UNFILED = "__unfiled__";
 
 /**
  * The ready-made menu, as an owner meets it: browse by section, tick what
- * suits the place, copy it in. Everything copied is theirs to edit — the
+ * suits the place, copy it in. Everything copied is theirs to edit. the
  * wording here is careful to say so, because the alternative reading (that
  * their menu is somehow linked to ours) would be alarming.
  */
@@ -27,7 +27,7 @@ export function CatalogBrowser({
 }: {
   categories: CatalogCategory[];
   items: CatalogItem[];
-  /** The restaurant's own currency — the suggestion may be quoted in another. */
+  /** The restaurant's own currency. the suggestion may be quoted in another. */
   currency: string;
 }) {
   const t = useT();
@@ -41,7 +41,7 @@ export function CatalogBrowser({
   // What the owner will actually charge. Seeded from the suggestion so the
   // box is never empty, but it is theirs to change before anything is copied.
   const [prices, setPrices] = useState<Record<string, string>>({});
-  const [publishNow, setPublishNow] = useState(false);
+  const [publishNow, setPublishNow] = useState(true);
 
   const sections = useMemo(() => {
     const withItems = categories.filter((category) =>
@@ -139,7 +139,7 @@ export function CatalogBrowser({
           : (result.message ?? t("catalog.nothingNew")),
         "success"
       );
-      router.refresh();
+      router.push("/dashboard/products");
     });
   }
 
@@ -309,11 +309,11 @@ export function CatalogBrowser({
         })
       )}
 
-      {/* Sticky action bar — the selection can span several sections, so the
+      {/* Sticky action bar. the selection can span several sections, so the
           count has to stay in view while scrolling. */}
       {picked.size > 0 && (
         <div className="fixed inset-x-0 bottom-0 z-30 border-t border-ink-200 bg-white/95 backdrop-blur">
-          <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
+          <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-3 px-4 py-3">
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-ink-900">
                 {t("catalog.selected", { count: picked.size })}
@@ -322,7 +322,7 @@ export function CatalogBrowser({
                 {publishNow ? t("catalog.publishHint") : t("catalog.draftHint")}
               </p>
             </div>
-            <label className="hidden shrink-0 items-center gap-2 text-xs text-ink-600 sm:flex">
+            <label className="flex shrink-0 items-center gap-2 text-xs text-ink-600">
               <input
                 type="checkbox"
                 checked={publishNow}

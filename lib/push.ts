@@ -15,8 +15,8 @@ export type PushPayload = {
 let configured: boolean | null = null;
 
 /**
- * Web push is optional. Without VAPID keys the app still works — the dashboard
- * gets live updates while it is open — it simply cannot wake a phone whose
+ * Web push is optional. Without VAPID keys the app still works. the dashboard
+ * gets live updates while it is open. it simply cannot wake a phone whose
  * screen is off. So every helper here fails soft.
  */
 export function pushConfigured(): boolean {
@@ -24,7 +24,7 @@ export function pushConfigured(): boolean {
 
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
-  const subject = process.env.VAPID_SUBJECT || "mailto:support@menuzqr.com";
+  const subject = process.env.VAPID_SUBJECT || "mailto:support@menuzqr.shop";
 
   if (!publicKey || !privateKey) {
     configured = false;

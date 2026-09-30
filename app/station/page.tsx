@@ -3,7 +3,7 @@ import { requireStation } from "@/lib/membership";
 import { createServerSupabase } from "@/lib/supabase/server";
 import type { OrderWithDetails, WaiterRequest } from "@/lib/types";
 
-// Service is live state — never serve this from a cache.
+// Service is live state. never serve this from a cache.
 export const dynamic = "force-dynamic";
 
 const OPEN_STATUSES = ["pending", "accepted", "preparing", "ready"];

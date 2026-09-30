@@ -12,7 +12,7 @@ export function PwaSetup() {
       return;
     }
     navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {
-      // An older browser, or a private window — never block the app.
+      // An older browser, or a private window. never block the app.
     });
   }, []);
 

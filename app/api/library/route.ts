@@ -6,8 +6,8 @@ import { createServerSupabase } from "@/lib/supabase/server";
  *
  * Deliberately *not* held in the Next data cache: a stale entry there is
  * invisible and looks exactly like "the admin added images and nobody can see
- * them". Freshness is handled by HTTP caching instead — a browser reuses its
- * copy for a minute, a CDN for five — so the database still stays out of the
+ * them". Freshness is handled by HTTP caching instead. a browser reuses its
+ * copy for a minute, a CDN for five. so the database still stays out of the
  * hot path, and a hard refresh always shows the truth.
  */
 export const dynamic = "force-dynamic";

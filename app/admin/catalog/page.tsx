@@ -4,7 +4,7 @@ import { CatalogManager } from "@/components/admin/CatalogManager";
 import { Card } from "@/components/ui/Card";
 import type { CatalogCategory, CatalogItem } from "@/lib/types";
 
-export const metadata: Metadata = { title: "Admin — Shared menu" };
+export const metadata: Metadata = { title: "Admin. Shared menu" };
 
 export default async function AdminCatalogPage() {
   const supabase = await createServerSupabase();
@@ -33,7 +33,7 @@ export default async function AdminCatalogPage() {
       <div>
         <h1 className="text-xl font-semibold text-ink-900 sm:text-2xl">Shared menu</h1>
         <p className="mt-1 text-sm text-ink-500">
-          A complete menu — sections, dishes, photos — that any restaurant can copy from.
+          A complete menu. sections, dishes, photos. that any restaurant can copy from.
         </p>
       </div>
 
@@ -42,7 +42,7 @@ export default async function AdminCatalogPage() {
         <ul className="mt-2 space-y-1.5 text-sm text-sky-900">
           <li>
             <strong>Browse and copy.</strong> At <code>/dashboard/catalog</code> an owner ticks the
-            dishes they want and copies them into their own menu — sections, photos, descriptions
+            dishes they want and copies them into their own menu. sections, photos, descriptions
             and sizes included. Everything copied is theirs to rename, reprice or delete.
           </li>
           <li>

@@ -134,7 +134,7 @@ export async function deleteAssetIfOwned(url: string | null | undefined, restaur
 }
 
 /**
- * Accepts only public URLs from our own Supabase Storage buckets — a restaurant
+ * Accepts only public URLs from our own Supabase Storage buckets. a restaurant
  * asset or a shared library image. Anything else (an external hotlink pasted
  * into a form, a javascript: URL) is dropped.
  */

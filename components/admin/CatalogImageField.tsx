@@ -15,7 +15,7 @@ import { useT } from "@/components/i18n/I18nProvider";
 /**
  * Picture field for the shared menu.
  *
- * Upload straight from here — every file is downscaled and re-encoded to WebP
+ * Upload straight from here. every file is downscaled and re-encoded to WebP
  * in the browser before it reaches storage, because these photos are copied by
  * every restaurant that uses the shared menu, so their weight is multiplied
  * across the whole platform. The saving is shown, not assumed.

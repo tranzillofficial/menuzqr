@@ -89,7 +89,7 @@ function CatalogRow({
         <p className="truncate text-xs text-ink-500">
           {[item.category_name, item.variants.map((v) => v.name).join(" · ")]
             .filter(Boolean)
-            .join(" — ") || item.description}
+            .join(". ") || item.description}
         </p>
       </div>
       <span className="shrink-0 rounded-lg bg-brand-50 px-2 py-1 text-[11px] font-medium text-brand-700">

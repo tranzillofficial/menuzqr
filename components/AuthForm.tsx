@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { signInAction, signUpAction } from "@/lib/actions/account";
 import { Field, Input } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
@@ -10,6 +10,7 @@ import { useT } from "@/components/i18n/I18nProvider";
 
 export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: string }) {
   const t = useT();
+  const [email, setEmail] = useState("");
   const action = mode === "login" ? signInAction : signUpAction;
   const [state, formAction] = useActionState(action, null);
 
@@ -45,6 +46,8 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
             id="email"
             name="email"
             type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
             required
             autoComplete="email"
             placeholder="you@restaurant.com"

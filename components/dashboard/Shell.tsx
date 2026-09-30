@@ -18,6 +18,7 @@ const NAV: Array<{
   icon: (typeof Icon)[keyof typeof Icon];
   exact?: boolean;
 }> = [
+  { href: "/dashboard/pos", label: "nav.pos", icon: Icon.receipt },
   { href: "/dashboard", label: "nav.overview", icon: Icon.home, exact: true },
   { href: "/dashboard/restaurant", label: "nav.restaurant", icon: Icon.store },
   { href: "/dashboard/categories", label: "nav.categories", icon: Icon.grid },
@@ -27,7 +28,6 @@ const NAV: Array<{
   { href: "/dashboard/qr-codes", label: "nav.qrCodes", icon: Icon.qr },
   { href: "/dashboard/orders", label: "nav.orders", icon: Icon.receipt },
   { href: "/dashboard/staff", label: "nav.staff", icon: Icon.users },
-  { href: "/dashboard/pos", label: "nav.pos", icon: Icon.receipt },
   { href: "/dashboard/billing", label: "nav.billing", icon: Icon.sparkles },
   { href: "/dashboard/design", label: "nav.design", icon: Icon.palette },
   { href: "/dashboard/settings", label: "nav.settings", icon: Icon.settings },
@@ -121,7 +121,7 @@ export function DashboardShell({
         {/*
           Desktop sidebar and mobile drawer are two separate elements on
           purpose. They used to be one, toggled with `-translate-x-full
-          rtl:translate-x-full` and un-toggled with `lg:translate-x-0` — but
+          rtl:translate-x-full` and un-toggled with `lg:translate-x-0`. but
           Tailwind emits the `rtl:` rule AFTER the `lg:` media query, so in
           Arabic the desktop sidebar kept `translate: 100%` and sat 256px off
           the right edge of the screen. Measured on the deployed CSS, not

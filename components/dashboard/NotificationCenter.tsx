@@ -12,7 +12,7 @@ import { describeEvent } from "@/lib/events";
 
 /**
  * The bell in the dashboard header. It renders whatever the shared live stream
- * has seen — the stream itself owns the connection, the sound and the browser
+ * has seen. the stream itself owns the connection, the sound and the browser
  * notification, so nothing here fires twice when two headers are mounted at
  * once (mobile bar + desktop bar).
  */

@@ -23,7 +23,7 @@ export function priceRange(prices: number[], currency: string) {
   const min = Math.min(...prices);
   const max = Math.max(...prices);
   if (min === max) return formatMoney(min, currency);
-  return `${formatMoney(min, currency)} – ${formatMoney(max, currency)}`;
+  return `${formatMoney(min, currency)} · ${formatMoney(max, currency)}`;
 }
 
 export function formatDate(value: string | null | undefined) {
@@ -76,14 +76,7 @@ export function initials(name: string) {
  * resolving. The Vercel value is only a fallback for previews.
  */
 export function siteOrigin() {
-  const explicit = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
-  if (explicit) return explicit;
-
-  const vercel = process.env.NEXT_PUBLIC_VERCEL_URL;
-  if (vercel) return `https://${vercel.replace(/^https?:\/\//, "").replace(/\/$/, "")}`;
-
-  if (typeof window !== "undefined") return window.location.origin;
-  return "http://localhost:3000";
+  return "https://menuzqr.shop";
 }
 
 export function absoluteUrl(path: string) {

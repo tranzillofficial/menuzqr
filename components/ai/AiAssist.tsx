@@ -117,7 +117,7 @@ export function SuggestionChips({
         ))}
       </div>
       <p className="mt-2 text-[11px] text-brand-800/70">
-        AI-generated suggestions — review before saving. Not verified nutrition or allergy
+        AI-generated suggestions. review before saving. Not verified nutrition or allergy
         information.
       </p>
     </div>

@@ -5,7 +5,7 @@ import { LibraryUploader } from "@/components/admin/LibraryUploader";
 import { LibraryImageCard } from "@/components/admin/LibraryImageCard";
 import type { LibraryImage } from "@/lib/types";
 
-export const metadata: Metadata = { title: "Admin — Image library" };
+export const metadata: Metadata = { title: "Admin. Image library" };
 
 export default async function AdminLibraryPage() {
   const supabase = await createServerSupabase();
@@ -36,7 +36,7 @@ export default async function AdminLibraryPage() {
         <ul className="mt-2 space-y-1 text-sm text-amber-900">
           <li>• Only add photos you own, or stock that is explicitly cleared for commercial use.</li>
           <li>• Never add images taken from an image search, a competitor, or a restaurant&apos;s site.</li>
-          <li>• Always record the licence — it is stored with the image and is required.</li>
+          <li>• Always record the licence. it is stored with the image and is required.</li>
         </ul>
       </Card>
 

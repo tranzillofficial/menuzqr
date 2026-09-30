@@ -1,5 +1,6 @@
 "use server";
 
+import { getPlatformSettings } from "@/lib/platform";
 import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { RESTAURANT_STATUSES, type RestaurantStatus } from "@/lib/constants";
@@ -22,7 +23,7 @@ export async function setRestaurantStatusAction(
 
   const { data: current } = await supabase
     .from("restaurants")
-    .select("id, slug, activated_at, coupon_code")
+    .select("id, slug, activated_at, coupon_code, pos_started_at")
     .eq("id", restaurantId)
     .maybeSingle();
 
@@ -33,6 +34,13 @@ export async function setRestaurantStatusAction(
     patch.activated_at = current.activated_at ?? new Date().toISOString();
     patch.payment_status = "paid";
     patch.payment_method = "whatsapp_manual";
+    const platform = await getPlatformSettings();
+    if (!current.activated_at && !current.pos_started_at && platform.posEnabled && platform.posTrialDays > 0) {
+      patch.pos_status = "active";
+      patch.pos_plan = "monthly";
+      patch.pos_started_at = new Date().toISOString();
+      patch.pos_expires_at = new Date(Date.now() + platform.posTrialDays * 86400000).toISOString();
+    }
   }
 
   const { error } = await supabase.from("restaurants").update(patch).eq("id", restaurantId);
@@ -107,7 +115,7 @@ export async function addLibraryImageAction(
 
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
   if (!base || !url.startsWith(`${base}/storage/v1/object/public/menu-library/`)) {
-    return fail("Upload the image file above — external image links are not accepted.");
+    return fail("Upload the image file above. external image links are not accepted.");
   }
   if (!license) {
     return fail(
@@ -218,7 +226,7 @@ function parseCatalogVariants(raw: string): { name: string; price: number | null
     .filter(Boolean)
     .slice(0, 12)
     .map((entry) => {
-      // "Medium 11" or "Medium" — the price is only a starting hint.
+      // "Medium 11" or "Medium". the price is only a starting hint.
       const match = entry.match(/^(.*?)[\s:]+([0-9]+(?:\.[0-9]+)?)$/);
       if (match) return { name: match[1].trim().slice(0, 40), price: Number(match[2]) };
       return { name: entry.slice(0, 40), price: null };
@@ -264,7 +272,7 @@ export async function saveCatalogCategoryAction(
 }
 
 /**
- * Deleting a section never deletes its dishes — `category_id` is
+ * Deleting a section never deletes its dishes. `category_id` is
  * `on delete set null`, so they land in "Not filed yet" and can be moved.
  */
 export async function deleteCatalogCategoryAction(id: string): Promise<ActionState> {
@@ -349,7 +357,7 @@ export async function saveCatalogItemAction(
     description: String(form.get("description") ?? "").trim().slice(0, 400) || null,
     ingredients: String(form.get("ingredients") ?? "").trim().slice(0, 300) || null,
     // `category_name` is written by a trigger from the section, so it is
-    // deliberately absent here — sending it would let a stale form value
+    // deliberately absent here. sending it would let a stale form value
     // overwrite the real label.
     category_id: categoryId || null,
     suggested_price: optionalMoney(form, "suggested_price"),
@@ -436,7 +444,7 @@ export async function saveCouponAction(
     applies_to: appliesTo,
     max_redemptions: maxRedemptions,
     // `type="date"` gives "2026-01-31", which Date reads as UTC midnight at the
-    // START of that day — so the stated last day was already dead. End of day.
+    // START of that day. so the stated last day was already dead. End of day.
     expires_at: parseEndOfDay(expiresRaw),
     note: String(form.get("note") ?? "").trim().slice(0, 200) || null,
     is_active: form.get("is_active") !== "off",
@@ -549,7 +557,7 @@ export async function setPosStatusAction(
 /**
  * Books a coupon against a restaurant, once per product.
  *
- * Called at the moment money is confirmed — an admin switching something on —
+ * Called at the moment money is confirmed. an admin switching something on —
  * because that is the only point at which a redemption is real. The unique
  * constraint on (coupon, restaurant, product) makes a repeat call a no-op, so
  * re-activating does not burn another use.
@@ -577,7 +585,7 @@ async function redeemCoupon(
       applied_to: appliedTo,
     });
 
-    // Already booked for this product — leave the counter alone.
+    // Already booked for this product. leave the counter alone.
     if (error) return;
 
     await supabase
@@ -628,7 +636,15 @@ export async function savePlatformSettingsAction(
         support_whatsapp: whatsapp,
         support_email: String(form.get("support_email") ?? "").trim().slice(0, 120) || null,
         brand_name: String(form.get("brand_name") ?? "").trim().slice(0, 40) || "MenuzQR",
-        price_usd: price,
+        price_usd: Math.ceil(price),
+        price_egp: Math.ceil(money("price_egp", 800)),
+        original_price_egp: Math.ceil(money("original_price_egp", 1000)),
+        original_price_usd: Math.ceil(money("original_price_usd", 20)),
+        pos_monthly_egp: Math.ceil(money("pos_monthly_egp", 100)),
+        pos_yearly_egp: Math.ceil(money("pos_yearly_egp", 1000)),
+        pos_trial_days: Math.ceil(money("pos_trial_days", 30)),
+        offer_enabled: form.get("offer_enabled") === "on",
+        demo_restaurant_slug: String(form.get("demo_restaurant_slug") ?? "demo").trim(),
         menu_bundle_usd: bundle,
         pos_monthly_usd: posMonthly,
         pos_yearly_usd: posYearly,

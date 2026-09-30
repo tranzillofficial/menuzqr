@@ -84,7 +84,7 @@ export function QrDesignManager({ templates }: { templates: QrTemplate[] }) {
               <QrLabelPreview
                 previewWidth={260}
                 input={{
-                  url: "https://menuzqr.com/demo/menu",
+                  url: "https://menuzqr.shop/demo/menu",
                   title: "Cairo Café",
                   subtitle: "12 Nile St",
                   badge: template.layout === "tent" ? "Table 7" : null,
@@ -110,7 +110,7 @@ export function QrDesignManager({ templates }: { templates: QrTemplate[] }) {
                 </button>
                 <ConfirmButton
                   title={`Delete "${template.name}"?`}
-                  message="Restaurants using it fall back to another design. Codes already printed keep working — only the artwork changes."
+                  message="Restaurants using it fall back to another design. Codes already printed keep working. only the artwork changes."
                   confirmLabel="Delete design"
                   disabled={pending}
                   onConfirm={() =>
@@ -210,7 +210,7 @@ function DesignModal({
               >
                 {LAYOUTS.map((l) => (
                   <option key={l.id} value={l.id}>
-                    {l.label} — {l.note}
+                    {l.label}. {l.note}
                   </option>
                 ))}
               </Select>
@@ -284,7 +284,7 @@ function DesignModal({
           <QrLabelPreview
             previewWidth={240}
             input={{
-              url: "https://menuzqr.com/demo/menu",
+              url: "https://menuzqr.shop/demo/menu",
               title: "Cairo Café",
               subtitle: "12 Nile St",
               badge: draft.layout === "tent" ? "Table 7" : null,

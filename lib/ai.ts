@@ -72,7 +72,7 @@ function buildPrompt(task: AiTask, input: Record<string, string>): string {
     product_ingredients:
       "Return 4–8 likely ingredients in `ingredients`, each 1–3 words. Leave every other field empty.",
     product_full:
-      "Fill `nameSuggestions` (3 options), `description` (max 220 characters), `ingredients` (4–8 items), `categorySuggestion` (one menu section name, reuse one of the existing sections when a sensible one exists) and `variantSuggestions` (2–3 size or portion names such as Small/Medium/Large or Regular/Double — names only, never prices). Leave `categorySuggestions` empty.",
+      "Fill `nameSuggestions` (3 options), `description` (max 220 characters), `ingredients` (4–8 items), `categorySuggestion` (one menu section name, reuse one of the existing sections when a sensible one exists) and `variantSuggestions` (2–3 size or portion names such as Small/Medium/Large or Regular/Double. names only, never prices). Leave `categorySuggestions` empty.",
     categories:
       "Return 6–9 menu section names for this restaurant in `categorySuggestions`, ordered the way a customer reads a menu. Leave every other field empty.",
   };
@@ -162,7 +162,7 @@ export async function runAi(
         return { ok: false, message: "AI is busy right now. Try again in a moment." };
       }
 
-      // Surface the real reason — a bad key or a model the key cannot use are
+      // Surface the real reason. a bad key or a model the key cannot use are
       // the two things that actually go wrong, and both are fixable by the user.
       let detail = "";
       try {

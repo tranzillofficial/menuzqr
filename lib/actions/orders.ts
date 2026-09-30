@@ -54,7 +54,7 @@ const MAX_LINES = 40;
  * Runs with the service role because the customer is anonymous, so every
  * precondition is verified here: the restaurant must be activated, ordering
  * must be on, the table token must be valid, and every price is re-read from
- * the database — the client's prices are never trusted.
+ * the database. the client's prices are never trusted.
  */
 export async function placeOrderAction(
   slug: string,

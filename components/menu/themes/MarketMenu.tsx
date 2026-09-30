@@ -6,7 +6,7 @@ import { MenuImage } from "../MenuMedia";
 import { CategoryNav, useActiveCategory } from "../CategoryNav";
 import { formatMoney, priceRange, splitIngredients } from "@/lib/utils";
 
-/** Bright and playful — juice bars, dessert shops, bakeries. */
+/** Bright and playful. juice bars, dessert shops, bakeries. */
 export function MarketMenu() {
   const { data, currency, showPrices, showIngredients, openProduct } = useMenu();
   const { restaurant, categories } = data;

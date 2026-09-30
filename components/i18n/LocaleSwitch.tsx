@@ -1,7 +1,6 @@
 "use client";
 
 import { useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { setLocaleAction } from "@/lib/actions/locale";
 import { useI18n } from "./I18nProvider";
 import { LOCALES, LOCALE_LABEL } from "@/lib/i18n";
@@ -15,7 +14,6 @@ export function LocaleSwitch({
   className?: string;
 }) {
   const { locale } = useI18n();
-  const router = useRouter();
   const [pending, startTransition] = useTransition();
 
   return (
@@ -40,7 +38,6 @@ export function LocaleSwitch({
             onClick={() =>
               startTransition(async () => {
                 await setLocaleAction(option);
-                router.refresh();
               })
             }
             className={cn(

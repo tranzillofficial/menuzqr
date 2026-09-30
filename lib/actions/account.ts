@@ -77,3 +77,19 @@ export async function signOutAction() {
   revalidatePath("/", "layout");
   redirect("/login");
 }
+
+export async function changePasswordAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  const { getLocale } = await import('@/lib/i18n/server');
+  const ar = await getLocale() === 'ar';
+  const supabase = await createServerSupabase();
+  const {data:{user}} = await supabase.auth.getUser();
+  if (!user?.email) return fail(ar ? 'سجّل دخولك الأول.' : 'Please sign in.');
+  const password = str(form,'new_password');
+  if (password.length < 8 || password !== str(form,'confirm_password')) return fail(ar ? 'راجع تأكيد كلمة المرور واستخدم ٨ حروف على الأقل.' : 'Use at least 8 characters and matching passwords.');
+  const {error: verify} = await supabase.auth.signInWithPassword({email:user.email,password:str(form,'current_password')});
+  if (verify) return fail(ar ? 'كلمة المرور الحالية مش صحيحة.' : 'The current password is incorrect.');
+  const {error} = await supabase.auth.updateUser({password});
+  if (error) return fail(ar ? 'تعذر تغيير كلمة المرور. جرّب تاني.' : 'Could not change your password. Please retry.');
+  await supabase.auth.signOut({scope:'others'});
+  return done(ar ? 'تم تغيير كلمة المرور.' : 'Password updated.');
+}

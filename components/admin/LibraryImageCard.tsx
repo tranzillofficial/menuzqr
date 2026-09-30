@@ -31,7 +31,7 @@ export function LibraryImageCard({ image }: { image: LibraryImage }) {
 
       <ConfirmButton
         title={`Remove "${image.title}"?`}
-        message="It disappears from every restaurant's picker. Menus that already use it keep the image — the file itself is not deleted from storage."
+        message="It disappears from every restaurant's picker. Menus that already use it keep the image. the file itself is not deleted from storage."
         confirmLabel="Remove from library"
         disabled={pending}
         onConfirm={() =>

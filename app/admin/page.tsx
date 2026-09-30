@@ -9,7 +9,7 @@ import { formatDate } from "@/lib/utils";
 import { getT } from "@/lib/i18n/server";
 import type { Restaurant } from "@/lib/types";
 
-export const metadata: Metadata = { title: "Admin — Restaurants" };
+export const metadata: Metadata = { title: "Admin. Restaurants" };
 
 export default async function AdminRestaurantsPage({
   searchParams,

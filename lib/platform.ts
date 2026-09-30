@@ -4,6 +4,14 @@ import { cache } from "react";
 import { createAdminSupabase } from "./supabase/admin";
 
 export type PlatformSettings = {
+  priceEgp: number;
+  originalPriceEgp: number;
+  originalPriceUsd: number;
+  posMonthlyEgp: number;
+  posYearlyEgp: number;
+  posTrialDays: number;
+  offerEnabled: boolean;
+  demoRestaurantSlug: string;
   supportWhatsapp: string;
   supportWhatsappUrl: string;
   supportWhatsappDisplay: string;
@@ -21,22 +29,30 @@ export type PlatformSettings = {
 };
 
 const FALLBACK: PlatformSettings = {
+  priceEgp: 800,
+  originalPriceEgp: 1000,
+  originalPriceUsd: 20,
+  posMonthlyEgp: 100,
+  posYearlyEgp: 1000,
+  posTrialDays: 30,
+  offerEnabled: true,
+  demoRestaurantSlug: "demo",
   supportWhatsapp: "201094963553",
   supportWhatsappUrl: "https://wa.me/201094963553",
   supportWhatsappDisplay: "+20 109 496 3553",
   supportEmail: null,
-  priceUsd: 20,
+  priceUsd: 16,
   menuBundleUsd: 8,
   posMonthlyUsd: 2,
   posYearlyUsd: 20,
-  posEnabled: false,
+  posEnabled: true,
   brandName: "MenuzQR",
   activationNote: null,
 };
 
 /**
  * Shows the number the way the admin typed it. Guessing where the country code
- * ends is unreliable across countries, so we never reformat — we only fall
+ * ends is unreliable across countries, so we never reformat. we only fall
  * back to "+<digits>" when the stored value has no formatting of its own.
  */
 function displayNumber(raw: string, digits: string) {
@@ -57,7 +73,7 @@ export const getPlatformSettings = cache(async (): Promise<PlatformSettings> => 
     const { data } = await supabase
       .from("platform_settings")
       .select(
-        "support_whatsapp, support_email, price_usd, brand_name, activation_note, menu_bundle_usd, pos_monthly_usd, pos_yearly_usd, pos_enabled"
+        "*"
       )
       .eq("id", 1)
       .maybeSingle();
@@ -68,6 +84,14 @@ export const getPlatformSettings = cache(async (): Promise<PlatformSettings> => 
     const digits = raw.replace(/\D/g, "") || FALLBACK.supportWhatsapp;
 
     return {
+      priceEgp: Number(data.price_egp ?? FALLBACK.priceEgp),
+      originalPriceEgp: Number(data.original_price_egp ?? FALLBACK.originalPriceEgp),
+      originalPriceUsd: Number(data.original_price_usd ?? FALLBACK.originalPriceUsd),
+      posMonthlyEgp: Number(data.pos_monthly_egp ?? FALLBACK.posMonthlyEgp),
+      posYearlyEgp: Number(data.pos_yearly_egp ?? FALLBACK.posYearlyEgp),
+      posTrialDays: Number(data.pos_trial_days ?? FALLBACK.posTrialDays),
+      offerEnabled: data.offer_enabled ?? true,
+      demoRestaurantSlug: data.demo_restaurant_slug || "demo",
       supportWhatsapp: digits,
       supportWhatsappUrl: `https://wa.me/${digits}`,
       supportWhatsappDisplay: displayNumber(raw, digits),

@@ -17,7 +17,7 @@ type EventInput = Omit<LiveEvent, "id" | "at"> & { id?: string; at?: string };
  * Three things go out, in order of how quickly they land:
  *  1. a Realtime broadcast, for every screen that is currently open;
  *  2. a web push, for phones whose screen is off or whose tab is closed;
- *  3. nothing else — the rows themselves are the source of truth, and every
+ *  3. nothing else. the rows themselves are the source of truth, and every
  *     screen re-reads them when it wakes up.
  *
  * Never throws. A failed notification must not roll back a real order.

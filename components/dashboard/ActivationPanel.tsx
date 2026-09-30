@@ -84,18 +84,13 @@ export async function ActivationPanel({ restaurant }: { restaurant: Restaurant }
               ? t("activation.suspendedBody")
               : t("activation.pendingBody", { price: platform.priceUsd })}
           </p>
-          {platform.activationNote && !suspended && (
+          {false && platform.activationNote && !suspended && (
             <p className="mt-2 text-sm text-amber-900/80">{platform.activationNote}</p>
           )}
-          <p
-            className={`ltr-nums mt-2 text-sm font-medium ${
-              suspended ? "text-red-900" : "text-amber-900"
-            }`}
-          >
-            {platform.supportWhatsappDisplay}
-          </p>
+
         </div>
         <div className="flex flex-wrap gap-2">
+          <Link href={`/${restaurant.slug}/menu`} target="_blank" className="inline-flex h-10 items-center rounded-xl border border-ink-200 bg-white px-4 text-sm">{t("activation.openMenu")}</Link>
           {!suspended && (
             <Link
               href="/dashboard/billing"

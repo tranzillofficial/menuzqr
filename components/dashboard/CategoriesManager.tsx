@@ -124,7 +124,7 @@ export function CategoriesManager({
 
               <ConfirmButton
                 title={`Delete "${category.name}"?`}
-                message="Products in this category are kept — they simply become uncategorised."
+                message="Products in this category are kept. they simply become uncategorised."
                 confirmLabel="Delete category"
                 onConfirm={() => run(() => deleteCategoryAction(category.id))}
                 className="rounded-lg p-2 text-ink-400 hover:bg-red-50 hover:text-red-600"

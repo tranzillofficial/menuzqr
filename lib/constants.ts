@@ -64,7 +64,7 @@ export type RestaurantStatus = (typeof RESTAURANT_STATUSES)[number];
 /**
  * POS is sold separately from the menu.
  *
- * `requested` is the only transition an owner can make themselves — it is
+ * `requested` is the only transition an owner can make themselves. it is
  * them raising a hand. An admin moves it to `active` once payment lands.
  */
 export const POS_STATUSES = ["none", "requested", "active", "expired", "cancelled"] as const;
@@ -129,7 +129,7 @@ export const ACCEPTED_IMAGE_TYPES = [
   "image/avif",
 ];
 
-/** Longest edge, in pixels, kept after compression — per image role. */
+/** Longest edge, in pixels, kept after compression. per image role. */
 export const IMAGE_PRESETS = {
   logo: { maxEdge: 512, quality: 0.86 },
   cover: { maxEdge: 1600, quality: 0.78 },

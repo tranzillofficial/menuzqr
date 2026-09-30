@@ -7,7 +7,7 @@ import type { MetadataRoute } from "next";
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "MenuzQR — restaurant dashboard",
+    name: "MenuzQR. restaurant dashboard",
     short_name: "MenuzQR",
     description:
       "Run your QR menu: live orders, waiter calls and kitchen tickets on any phone or tablet.",

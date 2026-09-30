@@ -54,7 +54,7 @@ export async function createRestaurantAction(
   const { value: slug, error: slugError } = validateSlug(rawSlug);
   if (slugError) return fail(slugError, { slug: slugError });
   if (await slugIsTaken(slug)) {
-    return fail("That link is already taken.", { slug: "Already taken — try another." });
+    return fail("That link is already taken.", { slug: "Already taken. try another." });
   }
 
   const currency = str(form, "currency");
@@ -94,7 +94,7 @@ export async function updateRestaurantAction(
   const { value: slug, error: slugError } = validateSlug(str(form, "slug") || restaurant.slug);
   if (slugError) return fail(slugError, { slug: slugError });
   if (slug !== restaurant.slug && (await slugIsTaken(slug, restaurant.id))) {
-    return fail("That link is already taken.", { slug: "Already taken — try another." });
+    return fail("That link is already taken.", { slug: "Already taken. try another." });
   }
 
   const currency = str(form, "currency");

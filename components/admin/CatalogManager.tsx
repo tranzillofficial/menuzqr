@@ -77,7 +77,7 @@ export function CatalogManager({
 
   return (
     <div className="space-y-5">
-      {/* toolbar — wraps to two rows on a phone instead of overflowing */}
+      {/* toolbar. wraps to two rows on a phone instead of overflowing */}
       <div className="flex flex-wrap items-center gap-2">
         <Button
           onClick={() => {
@@ -117,7 +117,7 @@ export function CatalogManager({
         <EmptyState
           icon="📖"
           title="The shared menu is empty"
-          description="Start with a section — Breakfast, Burgers, Coffee — then add the dishes inside it. Restaurants copy whole sections into their own menu in one tap."
+          description="Start with a section. Breakfast, Burgers, Coffee. then add the dishes inside it. Restaurants copy whole sections into their own menu in one tap."
           action={<Button onClick={() => setEditingCategory("new")}>Add the first section</Button>}
         />
       ) : (
@@ -281,7 +281,7 @@ function ItemList({
                 item.variants.map((v) => v.name).join(" · "),
               ]
                 .filter(Boolean)
-                .join(" — ") || "—"}
+                .join(". ") || "—"}
             </p>
           </div>
           {!item.is_active && (
@@ -548,7 +548,7 @@ function CatalogItemModal({
             label="Sizes"
             htmlFor="c-variants"
             className="sm:col-span-2"
-            hint="Comma separated. Add a number for a starting price — “Small 8, Medium 11, Large 14”. Every restaurant sets its own."
+            hint="Comma separated. Add a number for a starting price. “Small 8, Medium 11, Large 14”. Every restaurant sets its own."
           >
             <Input
               id="c-variants"

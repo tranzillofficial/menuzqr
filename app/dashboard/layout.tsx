@@ -28,7 +28,7 @@ export default async function DashboardLayout({
 
   if (!membership) {
     // No *active* membership. If the account has a switched-off one, it is a
-    // disabled staff login — without this it would fall through to restaurant
+    // disabled staff login. without this it would fall through to restaurant
     // onboarding and quietly become the owner of a brand new restaurant.
     const { count } = await supabase
       .from("restaurant_members")

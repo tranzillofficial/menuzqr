@@ -60,20 +60,11 @@ export function ProductsManager({
     });
   }
 
-  if (categories.length === 0 && products.length === 0) {
-    return (
-      <EmptyState
-        icon="🍔"
-        title={t("products.needCategoriesTitle")}
-        description={t("products.needCategoriesBody")}
-        action={<LinkButton href="/dashboard/categories">{t("products.goToCategories")}</LinkButton>}
-      />
-    );
-  }
 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-2">
+        <LinkButton href="/dashboard/catalog" variant="secondary">{t("nav.catalog")}</LinkButton>
         <Button onClick={() => setEditing("new")}>
           <Icon.plus className="size-4" />
           {t("products.add")}

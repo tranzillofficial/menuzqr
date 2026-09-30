@@ -1,3 +1,4 @@
+import { localizedPricing } from "@/lib/pricing";
 import Image from "next/image";
 import Link from "next/link";
 import { LinkButton } from "@/components/ui/Button";
@@ -5,12 +6,14 @@ import { Icon } from "@/components/ui/Icons";
 import { LocaleSwitch } from "@/components/i18n/LocaleSwitch";
 import { getUser } from "@/lib/auth";
 import { getPlatformSettings } from "@/lib/platform";
-import { getT } from "@/lib/i18n/server";
+import { getT, getLocale } from "@/lib/i18n/server";
 import type { TranslationKey } from "@/lib/i18n";
 
 export default async function HomePage() {
   const [user, platform, t] = await Promise.all([getUser(), getPlatformSettings(), getT()]);
-  const price = platform.priceUsd;
+  const locale = await getLocale();
+  const pricing = localizedPricing(platform, locale);
+  const price = pricing.format(pricing.menu);
 
   const features: Array<{ icon: keyof typeof Icon; title: TranslationKey; body: TranslationKey }> = [
     { icon: "palette", title: "landing.f1Title", body: "landing.f1Body" },
@@ -112,13 +115,12 @@ export default async function HomePage() {
                   {t("landing.ctaPrimary")}
                 </LinkButton>
                 <LinkButton
-                  href={platform.supportWhatsappUrl}
+                  href={`/${platform.demoRestaurantSlug}/menu`}
                   variant="secondary"
                   size="lg"
-                  target="_blank"
                 >
-                  <Icon.whatsapp className="size-4" />
-                  {t("landing.ctaSecondary")}
+                  <Icon.external className="size-4" />
+                  {locale === "ar" ? "شوف المنيو التجريبي" : "Explore demo menu"}
                 </LinkButton>
               </div>
 
@@ -224,12 +226,13 @@ export default async function HomePage() {
             <div className="rounded-3xl border border-ink-200 bg-white p-7 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
               <p className="text-sm font-medium text-ink-500">{t("landing.pricingLabel")}</p>
               <p className="mt-2 flex items-baseline gap-2 font-serif text-5xl text-ink-900">
-                <span className="ltr-nums">${price}</span>
+                <span>{price}</span>
                 <span className="font-sans text-base text-ink-500">
                   {t("landing.pricingUnit")}
                 </span>
               </p>
 
+              {platform.offerEnabled && <p className="mt-3 text-sm text-brand-700"><span className="me-2 line-through text-ink-400">{pricing.format(pricing.original)}</span>{locale === "ar" ? "عرض لفترة محدودة" : "Limited time offer"}</p>}
               <ul className="mt-6 space-y-2.5 text-sm text-ink-700">
                 {perks.map((perk) => (
                   <li key={perk} className="flex items-start gap-2">
@@ -297,7 +300,7 @@ export default async function HomePage() {
  * The hero artwork: a rendered phone already carrying its own frame, shadow and
  * transparent background, so nothing is drawn around it here.
  *
- * `priority` because this is the largest element above the fold — without it
+ * `priority` because this is the largest element above the fold. without it
  * Next lazy-loads the image and the page visibly pops in.
  */
 function HeroShot({ alt }: { alt: string }) {

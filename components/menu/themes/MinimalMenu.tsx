@@ -64,15 +64,15 @@ export function MinimalMenu() {
                     <button
                       type="button"
                       onClick={() => openProduct(product)}
-                      className="flex w-full items-start gap-3 py-4 text-start"
+                      className="flex w-full items-start gap-4 rounded-2xl px-2 py-5 text-start transition-colors hover:bg-ink-50"
                     >
                       {product.image_url && (
                         <MenuImage
                           src={product.image_url}
                           alt={product.name}
-                          className="size-14 shrink-0"
-                          rounded="rounded-lg"
-                          sizes="56px"
+                          className="size-20 shrink-0"
+                          rounded="rounded-2xl"
+                          sizes="80px"
                         />
                       )}
                       <div className="min-w-0 flex-1">
@@ -84,7 +84,7 @@ export function MinimalMenu() {
                                 className="h-px min-w-4 flex-1 self-end border-b border-dotted border-ink-300"
                                 aria-hidden="true"
                               />
-                              <span className="text-[15px] font-medium tabular-nums">
+                              <span className="shrink-0 rounded-lg bg-ink-50 px-2 py-1 text-sm font-semibold tabular-nums">
                                 {product.product_variants.length === 1
                                   ? formatMoney(prices[0] ?? 0, currency)
                                   : priceRange(prices, currency)}

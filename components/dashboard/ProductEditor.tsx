@@ -69,7 +69,7 @@ export function ProductEditor({
   const [variants, setVariants] = useState<VariantDraft[]>(toDrafts(product));
 
   // Categories can be created inline, so the editor keeps its own list rather
-  // than trusting the prop — the owner must never lose a half-filled form just
+  // than trusting the prop. the owner must never lose a half-filled form just
   // because a section was missing.
   const [categoryList, setCategoryList] = useState<Category[]>(categories);
   const [newCategoryName, setNewCategoryName] = useState("");

@@ -5,7 +5,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import type { CatalogItem } from "@/lib/types";
 import { getOwnedRestaurant, sanitiseImageUrl } from "./helpers";
 
-const MAX_IMPORT = 60;
+const MAX_IMPORT = 150;
 const MAX_NAME = 90;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -50,7 +50,7 @@ export type ImportPick = { id: string; price?: number };
  * ticked a box is not a mistake worth allowing. The owner prices them, then
  * switches them on.
  *
- * The photo is the one thing that stays shared — it is a public library URL,
+ * The photo is the one thing that stays shared. it is a public library URL,
  * exactly like picking an image from the library by hand, so a thousand
  * restaurants using the same burger photo store it once.
  *
@@ -98,7 +98,7 @@ export async function importCatalogItemsAction(
 
   // A dish whose section is switched off must not come across. RLS hides the
   // category row, so the embed comes back null while `category_id` is still
-  // set — that mismatch is exactly how a hidden section is detected.
+  // set. that mismatch is exactly how a hidden section is detected.
   const items = ((rawItems ?? []) as CatalogRow[]).filter((item) => {
     if (!item.category_id) return true;
     const joined = item.catalog_categories;

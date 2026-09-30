@@ -263,7 +263,7 @@ function LibraryModal({
   const q = query.trim().toLowerCase();
 
   // The search box starts empty on purpose. The product name is used to *rank*
-  // matches to the top, never to hide everything else — an empty-looking
+  // matches to the top, never to hide everything else. an empty-looking
   // library was the single most confusing thing about the old behaviour.
   const seedWords = q ? [] : words(seed);
   const score = (img: LibraryItem) => {
@@ -293,7 +293,7 @@ function LibraryModal({
       open={open}
       onClose={onClose}
       title={t("admin.imageLibrary")}
-      description="Shared photos you can use on your menu — or upload your own instead."
+      description="Shared photos you can use on your menu. or upload your own instead."
       size="lg"
     >
       <div className="mb-4 flex gap-2">
@@ -336,7 +336,7 @@ function LibraryModal({
         </div>
       ) : images.length === 0 ? (
         <p className="py-10 text-center text-sm text-ink-500">
-          The shared library is empty for now. Upload your own photo instead — it will be
+          The shared library is empty for now. Upload your own photo instead. it will be
           optimised automatically.
         </p>
       ) : filtered.length === 0 ? (
@@ -369,7 +369,7 @@ function LibraryModal({
 
 /**
  * Library-only picker, for places that must not upload into a restaurant's
- * folder — the shared product catalog, for instance.
+ * folder. the shared product catalog, for instance.
  */
 export function LibraryPickerField({
   value,

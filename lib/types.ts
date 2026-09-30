@@ -223,7 +223,7 @@ export type CatalogItem = {
   suggested_price: number | null;
   price_min: number | null;
   price_max: number | null;
-  /** Currency the guidance above is quoted in — the restaurant's own may differ. */
+  /** Currency the guidance above is quoted in. the restaurant's own may differ. */
   suggested_currency: string | null;
   keywords: string[];
   cuisine: string | null;
@@ -245,7 +245,7 @@ export type Coupon = {
   created_at: string;
 };
 
-/** What `preview_coupon` hands back — never the whole coupon row. */
+/** What `preview_coupon` hands back. never the whole coupon row. */
 export type CouponPreview =
   | { valid: true; kind: "percent" | "fixed"; value: number; appliesTo: "menu" | "pos" | "both" }
   | { valid: false; reason: string };
