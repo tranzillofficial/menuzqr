@@ -50,7 +50,7 @@ export function SmartImage({
         onLoad={() => setLoaded(true)}
         onError={() => setFailed(true)}
         className={cn(
-          "object-cover transition-opacity duration-300",
+          "object-contain transition-opacity duration-300",
           loaded ? "opacity-100" : "opacity-0",
           className
         )}

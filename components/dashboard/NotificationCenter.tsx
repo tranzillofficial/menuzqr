@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Modal } from "@/components/ui/Modal";
+import { useToast } from "@/components/ui/Toast";
 import { Icon } from "@/components/ui/Icons";
 import { Button } from "@/components/ui/Button";
 import { resolveWaiterRequestAction, updateOrderStatusAction } from "@/lib/actions/orders";
@@ -18,6 +20,7 @@ import { describeEvent } from "@/lib/events";
  */
 export function NotificationCenter() {
   const router = useRouter();
+  const toast = useToast();
   const t = useT();
   const { events, status, muted, setMuted, permission, requestPermission, dismiss, clear } =
     useLive();
@@ -32,6 +35,8 @@ export function NotificationCenter() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label={t("dash.liveActivity")}
+        aria-expanded={open}
+        aria-haspopup="dialog"
         className={cn(
           "relative rounded-xl border border-ink-200 bg-white p-2 text-ink-600 transition-colors hover:bg-ink-50",
           unread > 0 && "animate-pulse-ring border-brand-300 text-brand-700"
@@ -57,9 +62,7 @@ export function NotificationCenter() {
       </button>
 
       {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden="true" />
-          <div className="animate-slide-up absolute end-0 z-50 mt-2 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-xl">
+        <Modal open={open} onClose={() => setOpen(false)} title={t("dash.liveActivity")} size="sm">
             <div className="flex items-center justify-between border-b border-ink-100 px-4 py-3">
               <div>
                 <p className="text-sm font-semibold text-ink-900">{t("dash.liveActivity")}</p>
@@ -99,7 +102,7 @@ export function NotificationCenter() {
               </button>
             )}
 
-            <div className="max-h-80 overflow-y-auto">
+            <div className="max-h-[60dvh] overflow-y-auto overscroll-contain break-words">
               {events.length === 0 ? (
                 <p className="px-4 py-8 text-center text-sm text-ink-500">{t("dash.noActivity")}</p>
               ) : (
@@ -130,9 +133,10 @@ export function NotificationCenter() {
                                     try {
                                       if (isWaiter) {
                                         const id = event.id.split(":")[1];
-                                        if (id) await resolveWaiterRequestAction(id);
+                                        if (id) { const result = await resolveWaiterRequestAction(id); if (!result?.ok) { toast(result?.message || "Could not update", "error"); return; } }
                                       } else if (event.orderId) {
-                                        await updateOrderStatusAction(event.orderId, "accepted");
+                                        const result = await updateOrderStatusAction(event.orderId, "accepted");
+                                        if (!result?.ok) { toast(result?.message || "Could not update", "error"); return; }
                                       }
                                       dismiss(event.id);
                                       router.refresh();
@@ -163,8 +167,7 @@ export function NotificationCenter() {
                 {t("dash.clearList")}
               </button>
             )}
-          </div>
-        </>
+        </Modal>
       )}
     </div>
   );

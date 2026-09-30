@@ -1,4 +1,5 @@
 import "server-only";
+import { staffPermissions, type StaffPermission } from "@/lib/staff-permissions";
 
 import { createServerSupabase } from "@/lib/supabase/server";
 import { createAdminSupabase } from "@/lib/supabase/admin";
@@ -70,7 +71,7 @@ export async function getOwnedRestaurant(): Promise<
  * so waiter and chef accounts can act on the orders they are responsible for.
  */
 export async function getMemberContext(): Promise<
-  | { ok: true; restaurantId: string; role: string; userId: string }
+  | { ok: true; restaurantId: string; role: string; userId: string; permissions: StaffPermission[] }
   | { ok: false; error: ActionState }
 > {
   const supabase = await createServerSupabase();
@@ -82,7 +83,7 @@ export async function getMemberContext(): Promise<
 
   const { data } = await supabase
     .from("restaurant_members")
-    .select("restaurant_id, role")
+    .select("restaurant_id, role, service_permissions")
     .eq("user_id", user.id)
     .eq("is_active", true)
     .order("created_at", { ascending: true })
@@ -91,7 +92,7 @@ export async function getMemberContext(): Promise<
 
   if (!data) return { ok: false, error: fail("Create your restaurant profile first.") };
 
-  return { ok: true, restaurantId: data.restaurant_id, role: data.role, userId: user.id };
+  return { ok: true, restaurantId: data.restaurant_id, role: data.role, userId: user.id, permissions: staffPermissions(data.role, data.service_permissions) };
 }
 
 export async function assertAdmin(): Promise<

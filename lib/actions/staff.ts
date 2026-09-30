@@ -1,5 +1,6 @@
 "use server";
 
+import { STAFF_PERMISSIONS } from "@/lib/staff-permissions";
 import { revalidatePath } from "next/cache";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -48,7 +49,7 @@ export async function listStaffAction(): Promise<StaffMember[]> {
   const admin = createAdminSupabase();
   const { data } = await admin
     .from("restaurant_members")
-    .select("id, restaurant_id, user_id, role, display_name, is_active, created_at")
+    .select("id, restaurant_id, user_id, role, service_permissions, display_name, is_active, created_at")
     .eq("restaurant_id", context.restaurantId)
     .order("created_at", { ascending: true });
 
@@ -72,6 +73,7 @@ export async function listStaffAction(): Promise<StaffMember[]> {
         restaurant_id: row.restaurant_id,
         user_id: row.user_id,
         role: row.role,
+        service_permissions: row.service_permissions,
         display_name: row.display_name,
         is_active: row.is_active,
         created_at: row.created_at,
@@ -90,7 +92,9 @@ export async function createStaffAction(
   const name = str(form, "display_name");
   const email = str(form, "email").toLowerCase();
   const password = str(form, "password");
-  const role = str(form, "role") as AssignableRole;
+  const role: AssignableRole = "staff";
+  const permissions = [...new Set(form.getAll("permissions").filter((p): p is string => typeof p === "string"))];
+  if (permissions.some(p => !STAFF_PERMISSIONS.includes(p as typeof STAFF_PERMISSIONS[number]))) return fail("Invalid permissions.");
 
   const fieldErrors: Record<string, string> = {};
   if (name.length < 2 || name.length > 60) fieldErrors.display_name = "Enter a name (2–60 characters).";
@@ -133,6 +137,7 @@ export async function createStaffAction(
     restaurant_id: context.restaurantId,
     user_id: created.user.id,
     role,
+    service_permissions: permissions,
     display_name: name,
     created_by: context.userId,
     is_active: true,
@@ -157,7 +162,9 @@ export async function updateStaffAction(
 
   const memberId = str(form, "member_id");
   const name = str(form, "display_name");
-  const role = str(form, "role") as AssignableRole;
+  const role: AssignableRole = "staff";
+  const permissions = [...new Set(form.getAll("permissions").filter((p): p is string => typeof p === "string"))];
+  if (permissions.some(p => !STAFF_PERMISSIONS.includes(p as typeof STAFF_PERMISSIONS[number]))) return fail("Invalid permissions.");
   const isActive = bool(form, "is_active");
   const password = str(form, "password");
 
@@ -186,7 +193,7 @@ export async function updateStaffAction(
 
   const { error } = await admin
     .from("restaurant_members")
-    .update({ display_name: name, role, is_active: isActive })
+    .update({ display_name: name, role, service_permissions: permissions, is_active: isActive })
     .eq("id", member.id);
 
   if (error) return fail(error.message);
@@ -218,7 +225,8 @@ export async function deleteStaffAction(memberId: string): Promise<ActionState> 
   if (member.role === "owner") return fail("The owner account cannot be removed.");
   if (member.user_id === context.userId) return fail("You cannot remove yourself.");
 
-  await admin.from("restaurant_members").delete().eq("id", member.id);
+  const { error: removeError } = await admin.from("restaurant_members").delete().eq("id", member.id);
+  if (removeError) return fail(removeError.message);
 
   // Only delete the login itself when it exists for this restaurant alone.
   const [{ count: otherMemberships }, { count: ownedRestaurants }] = await Promise.all([

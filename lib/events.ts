@@ -1,3 +1,4 @@
+import { staffPermissions, type StaffPermission } from "./staff-permissions";
 import type { MemberRole } from "./constants";
 import type { Translator } from "./i18n";
 
@@ -42,8 +43,17 @@ export const EVENT_AUDIENCE: Record<LiveEventKind, MemberRole[]> = {
   "waiter.pickup": ["owner", "manager", "waiter", "staff"],
 };
 
-export function shouldAlert(kind: LiveEventKind, role: MemberRole): boolean {
-  return EVENT_AUDIENCE[kind]?.includes(role) ?? false;
+export function shouldAlert(kind: LiveEventKind, role: MemberRole, custom?: string[] | null): boolean {
+  if (role === "owner" || role === "manager") return EVENT_AUDIENCE[kind]?.includes(role) ?? false;
+  const permissions = staffPermissions(role, custom);
+  const relevant: Record<LiveEventKind, StaffPermission[]> = {
+    "order.new": ["orders.accept", "orders.prepare"],
+    "order.ready": ["orders.complete", "calls.resolve"],
+    "order.status": [],
+    "waiter.call": ["calls.resolve"],
+    "waiter.pickup": ["calls.resolve", "orders.complete"],
+  };
+  return relevant[kind].some(p => permissions.includes(p));
 }
 
 /** Where clicking the notification should take each role. */

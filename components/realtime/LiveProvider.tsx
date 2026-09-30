@@ -60,11 +60,13 @@ export function useLive(): LiveValue {
 export function LiveProvider({
   restaurantId,
   role,
+  permissions,
   soundEnabled,
   children,
 }: {
   restaurantId: string;
   role: MemberRole;
+  permissions?: string[];
   soundEnabled: boolean;
   children: ReactNode;
 }) {
@@ -78,6 +80,8 @@ export function LiveProvider({
 
   const mutedRef = useRef(!soundEnabled);
   const roleRef = useRef<MemberRole>(role);
+  const permissionsRef = useRef(permissions);
+  permissionsRef.current = permissions;
   const seenRef = useRef<Set<string>>(new Set());
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const unlockedRef = useRef(false);
@@ -208,7 +212,7 @@ export function LiveProvider({
       setEvents((prev) => [event, ...prev].slice(0, MAX_EVENTS));
       scheduleRefresh();
 
-      if (shouldAlert(event.kind as LiveEventKind, roleRef.current)) {
+      if (shouldAlert(event.kind as LiveEventKind, roleRef.current, permissionsRef.current)) {
         chime();
         void showSystemNotification(event, roleRef.current);
       }

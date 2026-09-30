@@ -317,12 +317,13 @@ export function ProductEditor({
                 {t("products.ingredients")}
               </label>
             </div>
-            <Input
+            <Textarea
               id="p-ingredients"
               name="ingredients"
               value={ingredients}
               onChange={(e) => setIngredients(e.target.value)}
-              placeholder="Chicken, lettuce, tomato, cheese, special sauce"
+              placeholder={t("products.ingredients")}
+              maxLength={2000}
             />
             <p className="text-xs text-ink-500">{t("products.ingredientsHint")}</p>
           </div>

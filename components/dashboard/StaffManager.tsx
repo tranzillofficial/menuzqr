@@ -5,18 +5,19 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { ConfirmButton } from "@/components/ui/ConfirmDialog";
 import { Card, EmptyState } from "@/components/ui/Card";
-import { Field, Input, Select } from "@/components/ui/Field";
+import { Field, Input } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icons";
 import { Modal } from "@/components/ui/Modal";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { useToast } from "@/components/ui/Toast";
-import { useT } from "@/components/i18n/I18nProvider";
+import { useI18n, useT } from "@/components/i18n/I18nProvider";
 import {
   createStaffAction,
   deleteStaffAction,
   updateStaffAction,
 } from "@/lib/actions/staff";
-import { ASSIGNABLE_ROLES, MIN_STAFF_PASSWORD, type AssignableRole } from "@/lib/constants";
+import { MIN_STAFF_PASSWORD } from "@/lib/constants";
+import { STAFF_PERMISSIONS, PERMISSION_LABELS, staffPermissions } from "@/lib/staff-permissions";
 import { cn } from "@/lib/utils";
 import type { StaffMember } from "@/lib/types";
 
@@ -137,8 +138,6 @@ export function StaffManager({
         <StaffModal
           member={editing}
           onClose={close}
-          // Only waiter and chef are assignable today (see ASSIGNABLE_ROLES).
-          roleLabel={(role) => (role === "chef" ? t("staff.roleChef") : t("staff.roleWaiter"))}
         />
       )}
     </div>
@@ -173,15 +172,14 @@ function RemoveButton({ member }: { member: StaffMember }) {
 function StaffModal({
   member,
   onClose,
-  roleLabel,
 }: {
   member: StaffMember | "new" | null;
   onClose: () => void;
-  roleLabel: (role: AssignableRole) => string;
 }) {
   const t = useT();
   const toast = useToast();
   const router = useRouter();
+  const { locale } = useI18n();
   const isNew = member === "new";
   const existing = member && member !== "new" ? member : null;
 
@@ -234,22 +232,21 @@ function StaffModal({
         >
           <Input
             name="password"
-            type="text"
+            type="password"
             autoComplete="new-password"
             minLength={isNew ? MIN_STAFF_PASSWORD : undefined}
             required={isNew}
           />
         </Field>
 
-        <Field label={t("staff.role")} error={state?.fieldErrors?.role} required>
-          <Select name="role" defaultValue={existing?.role ?? "waiter"}>
-            {ASSIGNABLE_ROLES.map((role) => (
-              <option key={role} value={role}>
-                {roleLabel(role)}
-              </option>
-            ))}
-          </Select>
-        </Field>
+        <fieldset className="space-y-3 rounded-2xl border border-ink-200 p-4">
+          <legend className="px-2 text-sm font-semibold">{locale === 'ar' ? 'صلاحيات الحساب' : 'Account permissions'}</legend>
+          <p className="text-xs leading-6 text-ink-500">{locale === 'ar' ? 'الحساب يقدر يشوف الطلبات. اختار العمليات المسموحة ليه. من غير اختيارات هيبقى للمتابعة بس.' : 'This account can view orders. Select allowed actions. With no selections it has read-only access.'}</p>
+          {STAFF_PERMISSIONS.map(permission => <label key={permission} className="flex min-h-11 items-center gap-3 rounded-xl bg-ink-50 px-3 py-2 text-sm">
+            <input type="checkbox" name="permissions" value={permission} defaultChecked={existing ? staffPermissions(existing.role, existing.service_permissions).includes(permission) : false} className="size-4 accent-orange-600" />
+            {PERMISSION_LABELS[permission][locale]}
+          </label>)}
+        </fieldset>
 
         {existing && (
           <label className="flex items-start gap-3 rounded-xl border border-ink-200 p-3">

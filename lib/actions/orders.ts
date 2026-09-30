@@ -1,5 +1,6 @@
 "use server";
 
+import { staffPermissions, statusPermission } from "@/lib/staff-permissions";
 import { revalidatePath } from "next/cache";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -24,13 +25,13 @@ async function memberOf(restaurantId: string): Promise<string | null> {
 
     const { data } = await createAdminSupabase()
       .from("restaurant_members")
-      .select("user_id")
+      .select("user_id, role, service_permissions")
       .eq("restaurant_id", restaurantId)
       .eq("user_id", user.id)
       .eq("is_active", true)
       .maybeSingle();
 
-    return data ? user.id : null;
+    return data && staffPermissions(data.role, data.service_permissions).includes("orders.create") ? user.id : null;
   } catch {
     return null;
   }
@@ -314,7 +315,9 @@ export async function updateOrderStatusAction(
 
   if (!ORDER_STATUSES.includes(status as OrderStatus)) return fail("Unknown status.");
 
-  const supabase = await createServerSupabase();
+  const permission = statusPermission(status);
+  if ((!permission || !context.permissions.includes(permission)) && !["owner", "manager"].includes(context.role)) return fail("You do not have permission for this action.");
+  const supabase = createAdminSupabase();
   const { data: updated, error } = await supabase
     .from("orders")
     .update({ status })
@@ -352,6 +355,7 @@ export async function callWaiterForOrderAction(
   const context = await getMemberContext();
   if (!context.ok) return context.error;
 
+  if (!context.permissions.includes("orders.prepare")) return fail("You do not have permission for this action.");
   const admin = createAdminSupabase();
   const { data: order } = await admin
     .from("orders")
@@ -438,7 +442,8 @@ export async function resolveWaiterRequestAction(requestId: string): Promise<Act
   const context = await getMemberContext();
   if (!context.ok) return context.error;
 
-  const supabase = await createServerSupabase();
+  if (!context.permissions.includes("calls.resolve")) return fail("You do not have permission for this action.");
+  const supabase = createAdminSupabase();
   const { error } = await supabase
     .from("waiter_requests")
     .update({

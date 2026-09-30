@@ -85,6 +85,9 @@ export function RestaurantForm({ restaurant }: { restaurant: Restaurant | null }
           </Field>
 
 
+          <details className="sm:col-span-2 rounded-xl border border-ink-200 p-4">
+            <summary className="cursor-pointer text-sm font-medium">{locale === "ar" ? "بيانات إضافية اختيارية" : "Optional details"}</summary>
+            <div className="mt-4 grid gap-5 sm:grid-cols-2">
           <Field label={t("restaurant.description")} htmlFor="description" className="sm:col-span-2">
             <Textarea
               id="description"
@@ -124,6 +127,8 @@ export function RestaurantForm({ restaurant }: { restaurant: Restaurant | null }
             </Select>
           </Field>
 
+            </div>
+          </details>
           <input type="hidden" name="language" value={restaurant?.language ?? locale} />
         </div>
       </Card>

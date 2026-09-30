@@ -1,4 +1,5 @@
 import "server-only";
+import { staffPermissions, type StaffPermission } from "./staff-permissions";
 import { cache } from "react";
 
 import { redirect } from "next/navigation";
@@ -7,6 +8,7 @@ import { MANAGER_ROLES, type MemberRole } from "./constants";
 import type { Restaurant } from "./types";
 
 export type Membership = {
+  permissions: StaffPermission[];
   userId: string;
   email: string;
   restaurant: Restaurant;
@@ -41,7 +43,7 @@ export const getMembership = cache(async function getMembership(): Promise<Membe
 
   const { data: rows } = await supabase
     .from("restaurant_members")
-    .select("id, role, display_name, is_active, restaurant_id, restaurants(*)")
+    .select("id, role, service_permissions, display_name, is_active, restaurant_id, restaurants(*)")
     .eq("user_id", user.id)
     .eq("is_active", true)
     .order("created_at", { ascending: true });
@@ -64,6 +66,7 @@ export const getMembership = cache(async function getMembership(): Promise<Membe
   const role = best.row.role as MemberRole;
 
   return {
+    permissions: staffPermissions(role, best.row.service_permissions),
     userId: user.id,
     email: user.email ?? "",
     restaurant: best.restaurant,

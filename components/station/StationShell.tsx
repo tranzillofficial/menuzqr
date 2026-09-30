@@ -30,7 +30,7 @@ export function StationShell({
   const { status, muted, setMuted } = useLive();
 
   const roleLabel =
-    role === "chef" ? t("staff.roleChef") : role === "waiter" ? t("staff.roleWaiter") : t("staff.roleManager");
+    role === "chef" ? t("staff.roleChef") : role === "waiter" ? t("staff.roleWaiter") : role === "staff" ? t("staff.roleStaff") : t("staff.roleManager");
 
   return (
     <div className="min-h-screen bg-ink-900 text-white">

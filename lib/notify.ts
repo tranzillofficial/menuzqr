@@ -5,7 +5,7 @@ import { after } from "next/server";
 import { createAdminSupabase } from "./supabase/admin";
 import { broadcastEvent } from "./realtime-server";
 import { sendPushToUsers } from "./push";
-import { EVENT_AUDIENCE, describeEvent, eventLink, type LiveEvent, type LiveEventKind } from "./events";
+import { EVENT_AUDIENCE, shouldAlert, describeEvent, eventLink, type LiveEvent, type LiveEventKind } from "./events";
 import { createTranslator, isLocale } from "./i18n";
 import type { MemberRole } from "./constants";
 
@@ -53,7 +53,7 @@ async function pushToAudience(event: LiveEvent) {
   const [{ data: members }, { data: restaurant }] = await Promise.all([
     supabase
       .from("restaurant_members")
-      .select("user_id, role")
+      .select("user_id, role, service_permissions")
       .eq("restaurant_id", event.restaurantId)
       .eq("is_active", true)
       .in("role", roles),
@@ -64,7 +64,7 @@ async function pushToAudience(event: LiveEvent) {
       .maybeSingle(),
   ]);
 
-  const recipients = members ?? [];
+  const recipients = (members ?? []).filter(member => shouldAlert(event.kind, member.role as MemberRole, member.service_permissions));
   if (recipients.length === 0) return;
 
   const language = restaurant?.language;
