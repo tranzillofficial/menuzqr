@@ -29,6 +29,7 @@ export const ar: Record<keyof typeof en, string> = {
   "common.back": "رجوع",
   "common.next": "التالي",
   "common.preview": "معاينة",
+  "admin.demoDesign": "تصميم المنيو التجريبي",
   "common.download": "تحميل",
   "common.print": "طباعة",
   "common.refresh": "تحديث",

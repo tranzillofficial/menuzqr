@@ -28,6 +28,7 @@ export const en = {
   "common.back": "Back",
   "common.next": "Next",
   "common.preview": "Preview",
+  "admin.demoDesign": "Demo menu design",
   "common.download": "Download",
   "common.print": "Print",
   "common.refresh": "Refresh",

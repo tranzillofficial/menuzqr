@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updateMenuThemeAction } from "@/lib/actions/restaurant";
+import { updateDemoMenuThemeAction } from "@/lib/actions/admin";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icons";
 import { useT } from "@/components/i18n/I18nProvider";
@@ -150,10 +151,12 @@ export function ThemePicker({
   current,
   slug,
   isActive,
+  adminDemo = false,
 }: {
   current: MenuThemeId;
   slug: string;
   isActive: boolean;
+  adminDemo?: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -237,7 +240,9 @@ export function ThemePicker({
             loading={pending}
             onClick={() =>
               startTransition(async () => {
-                const result = await updateMenuThemeAction(selected);
+                const result = adminDemo
+                  ? await updateDemoMenuThemeAction(selected)
+                  : await updateMenuThemeAction(selected);
                 toast(result?.message ?? "Saved.", result?.ok ? "success" : "error");
                 router.refresh();
               })

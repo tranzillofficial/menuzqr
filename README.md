@@ -341,5 +341,35 @@ npm start          # serve the production build
 npm run lint       # eslint
 npm run typecheck  # tsc --noEmit
 ```
-#   m e n u z q r  
+#   m e n u z q r 
  
+ 
+# Thermal receipt printing
+
+POS sends ESC/POS raster receipts directly to an installed Windows thermal
+printer through a local bridge. It does not open the browser print dialog.
+Arabic is rendered as a bitmap, so the printer does not need an Arabic code page.
+
+1. Install the printer's Windows driver and Python 3.10 or later.
+2. In POS, open **Thermal printer setup** and download `menuzqr-print-bridge.py`.
+3. Run `py menuzqr-print-bridge.py` on the cashier computer and keep the window open.
+4. Paste the pairing code into setup, connect and choose the installed printer.
+5. Choose 58 mm (384 dots) or 80 mm (576 dots), select auto cut if supported,
+   and print a test before using real receipts. Allow browser local network
+   access if prompted. The default permitted website is `https://menuzqr.shop`.
+
+The bridge uses Python's standard library, Windows RAW spooler jobs, loopback
+only, an exact origin allowlist and a persistent per-computer pairing code.
+For local development, run `py menuzqr-print-bridge.py --origin http://localhost:3000`.
+Receipt retries reuse job IDs to prevent duplicate enqueueing while the bridge
+is running. A successful response confirms spooler acceptance, not physical
+paper output. Confirm the paper before retrying an ambiguous failure; restarting
+the bridge clears its in-memory job history. This supports ESC/POS raster receipt
+printers, not arbitrary thermal label printers or all operating systems.
+
+Run transport/raster checks with `python -m unittest discover -s tests`.
+
+Admins can select the design of the restaurant configured as the public demo at
+`/admin/demo`; the action checks admin privileges and resolves the demo slug on
+the server. POS dine-in orders use active rows from `restaurant_tables`, scoped
+to the authenticated restaurant and revalidated by the existing sale transaction.

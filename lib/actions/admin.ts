@@ -3,9 +3,25 @@
 import { getPlatformSettings } from "@/lib/platform";
 import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { RESTAURANT_STATUSES, type RestaurantStatus } from "@/lib/constants";
+import { MENU_THEME_IDS, RESTAURANT_STATUSES, type MenuThemeId, type RestaurantStatus } from "@/lib/constants";
 import type { ActionState } from "@/lib/types";
 import { assertAdmin, done, fail, sanitiseImageUrl } from "./helpers";
+
+export async function updateDemoMenuThemeAction(theme: string): Promise<ActionState> {
+  const admin = await assertAdmin();
+  if (!admin.ok) return admin.error;
+  if (!MENU_THEME_IDS.includes(theme as MenuThemeId)) return fail('Unknown menu design.');
+  const platform = await getPlatformSettings();
+  const db = await createServerSupabase();
+  const { data, error } = await db.from('restaurants').update({ menu_theme: theme })
+    .eq('slug', platform.demoRestaurantSlug).select('slug').maybeSingle();
+  if (error || !data) return fail('Could not update the configured demo menu.');
+  revalidatePath('/admin/demo');
+  revalidatePath('/dashboard/design');
+  revalidatePath(`/${data.slug}/menu`);
+  revalidatePath('/');
+  return done('Menu design updated.');
+}
 
 export async function setRestaurantStatusAction(
   restaurantId: string,

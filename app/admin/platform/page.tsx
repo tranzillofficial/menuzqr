@@ -38,6 +38,7 @@ export default async function AdminPlatformPage() {
       </div>
 
       <Link href="/dashboard/products" className="inline-flex rounded-xl bg-ink-900 px-4 py-3 text-white">إدارة منتجات المنيو التجريبي</Link>
+      <Link href="/admin/demo" className="inline-flex rounded-xl border border-ink-200 bg-white px-4 py-3">{t("admin.demoDesign")}</Link>
       <PasswordForm />
       <PlatformSettingsForm
         settings={{

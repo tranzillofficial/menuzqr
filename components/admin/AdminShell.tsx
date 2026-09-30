@@ -22,6 +22,7 @@ const NAV: Array<{
   { href: "/admin/library", label: "admin.imageLibrary", icon: Icon.image },
   { href: "/admin/coupons", label: "admin.coupons", icon: Icon.sparkles },
   { href: "/admin/qr-designs", label: "admin.qrDesigns", icon: Icon.qr },
+  { href: "/admin/demo", label: "admin.demoDesign", icon: Icon.image },
   { href: "/admin/platform", label: "admin.platform", icon: Icon.settings },
 ];
 
@@ -67,7 +68,7 @@ export function AdminShell({ children, email }: { children: ReactNode; email: st
             </span>
           </Link>
 
-          <nav className="hidden gap-1 lg:flex">
+          <nav className="hidden min-w-0 gap-1 overflow-x-auto lg:flex">
             {NAV.map((item) => (
               <Link
                 key={item.href}

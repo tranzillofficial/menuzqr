@@ -6,14 +6,16 @@ import { useI18n } from '@/components/i18n/I18nProvider';
 import { SmartImage } from '@/components/ui/SmartImage';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
-import { checkoutPos } from '@/lib/actions/pos';
+import { checkoutPos, getPosTables } from '@/lib/actions/pos';
+import { ThermalPrinter } from '@/components/dashboard/ThermalPrinter';
+import type { PosReceipt } from '@/lib/thermal-print';
 import { formatMoney, cn } from '@/lib/utils';
 import type { ProductWithVariants, Category, RestaurantTable } from '@/lib/types';
 
 type Line = { variantId: string; name: string; variant: string; price: number; quantity: number };
 
-export function PosScreen({ restaurantName, currency, products, categories, tables }: {
-  restaurantName: string; currency: string; products: ProductWithVariants[];
+export function PosScreen({ restaurantId, restaurantName, currency, products, categories, tables }: {
+  restaurantId: string; restaurantName: string; currency: string; products: ProductWithVariants[];
   categories: Category[]; tables: RestaurantTable[];
 }) {
   const { locale } = useI18n();
@@ -23,13 +25,16 @@ export function PosScreen({ restaurantName, currency, products, categories, tabl
   const [cart, setCart] = useState<Line[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [table, setTable] = useState('');
+  const [orderType, setOrderType] = useState<'takeaway' | 'dinein'>('takeaway');
+  const [availableTables, setAvailableTables] = useState<Pick<RestaurantTable, 'id' | 'label'>[]>(tables);
+  const [refreshingTables, setRefreshingTables] = useState(false);
   const [payment, setPayment] = useState<'cash' | 'card'>('cash');
   const [received, setReceived] = useState('');
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
   const [announcement, setAnnouncement] = useState('');
   const [pending, start] = useTransition();
-  const [receipt, setReceipt] = useState<{ number: number; total: number; received: number; lines: Line[] } | null>(null);
+  const [receipt, setReceipt] = useState<PosReceipt | null>(null);
   const request = useRef<string | null>(null);
   const money = (value: number) => formatMoney(value, currency);
   const total = Math.round(cart.reduce((sum, line) => sum + line.price * line.quantity, 0) * 100) / 100;
@@ -42,7 +47,6 @@ export function PosScreen({ restaurantName, currency, products, categories, tabl
   function add(product: ProductWithVariants, variant: ProductWithVariants['product_variants'][number]) {
     if (pending || !variant.is_active || !Number.isFinite(Number(variant.price))) return;
     changed();
-    setReceipt(null);
     setCart(previous => {
       const existing = previous.find(line => line.variantId === variant.id);
       return existing ? previous.map(line => line.variantId === variant.id ? { ...line, quantity: Math.min(99, line.quantity + 1) } : line)
@@ -56,22 +60,42 @@ export function PosScreen({ restaurantName, currency, products, categories, tabl
   }
   function pay() {
     if (!cart.length || pending) return;
+    if (orderType === 'dinein' && !availableTables.some(item => item.id === table)) {
+      setError(label('اختار طاولة من الطاولات المفعّلة.', 'Select an active restaurant table.')); return;
+    }
     setError('');
     start(async () => {
       try {
         request.current ??= crypto.randomUUID();
         const result = await checkoutPos({ requestId: request.current, lines: cart.map(({ variantId, quantity }) => ({ variantId, quantity })), tableId: table || null, payment, received: payment === 'cash' ? Number(received) : total, note });
         if (!result.ok) { setError(result.message); return; }
-        setReceipt({ number: result.orderNumber, total: result.total, received: result.received, lines: cart });
-        setCart([]); setReceived(''); setNote(''); setTable(''); request.current = null;
+        setReceipt(result.receipt);
+        setCart([]); setReceived(''); setNote(''); setTable(''); setCartOpen(false); request.current = null;
         setAnnouncement(label('تم حفظ الطلب', 'Order saved'));
       } catch { setError(label('تعذر الاتصال. حاول تاني بنفس الطلب.', 'Connection interrupted. Retry this order.')); }
     });
   }
 
+  async function refreshTables() {
+    if (refreshingTables || pending) return;
+    setRefreshingTables(true);
+    try {
+      const result = await getPosTables();
+      if (!result.ok) { setError(result.message); return; }
+      setAvailableTables(result.tables);
+      if (table && !result.tables.some(item => item.id === table)) { setTable(''); changed(); }
+    } catch { setError(label('تعذر تحديث الطاولات. حاول تاني.', 'Could not refresh tables. Try again.')); }
+    finally { setRefreshingTables(false); }
+  }
+
   const order = <div className="space-y-4">
     <fieldset disabled={pending} className="space-y-4">
-      <select value={table} onChange={event => { setTable(event.target.value); changed(); }} aria-label={label('نوع الطلب', 'Order type')} className="h-11 w-full rounded-xl border border-ink-200 bg-white px-3 text-sm"><option value="">{label('تيك أواي', 'Takeaway')}</option>{tables.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</select>
+      <div className="grid grid-cols-2 gap-2" aria-label={label('نوع الطلب', 'Order type')}>{(['takeaway','dinein'] as const).map(type => <button key={type} type="button" aria-pressed={orderType === type} onClick={() => { setOrderType(type); setTable(''); changed(); if (type === 'dinein') void refreshTables(); }} className={cn('rounded-xl border py-2.5 text-sm', orderType === type ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-ink-200')}>{type === 'takeaway' ? label('تيك أواي', 'Takeaway') : label('داخل المطعم', 'Dine in')}</button>)}</div>
+      {orderType === 'dinein' && <div className="space-y-2">
+        <div className="flex items-center justify-between text-sm"><span>{label('الطاولة', 'Table')} ({availableTables.length})</span><button type="button" disabled={refreshingTables} onClick={refreshTables} className="text-brand-700">{refreshingTables ? label('جاري التحديث', 'Refreshing') : label('تحديث', 'Refresh')}</button></div>
+        <select aria-label={label('اختار طاولة', 'Select a table')} value={table} onChange={event => { setTable(event.target.value); changed(); }} className="h-11 w-full rounded-xl border border-ink-200 bg-white px-3 text-sm"><option value="">{label('اختار طاولة', 'Select a table')}</option>{availableTables.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</select>
+        {!availableTables.length && <p className="text-xs text-ink-500">{label('مفيش طاولات مفعّلة.', 'No active tables.')} <Link href="/dashboard/tables" className="text-brand-700">{label('إدارة الطاولات', 'Manage tables')}</Link></p>}
+      </div>}
       {!cart.length ? <div className="rounded-xl border border-dashed border-ink-200 px-4 py-10 text-center text-sm text-ink-500">{label('اختار المنتجات وهتظهر هنا', 'Added products appear here')}</div> :
         <ul data-testid="cart-lines" className="max-h-[38dvh] space-y-2 overflow-y-auto overscroll-contain">
           {cart.map(line => <li key={line.variantId} className="rounded-xl bg-ink-50 p-3">
@@ -84,14 +108,15 @@ export function PosScreen({ restaurantName, currency, products, categories, tabl
       <div className="grid grid-cols-2 gap-2">{(['cash', 'card'] as const).map(value => <button key={value} type="button" aria-pressed={payment === value} onClick={() => { setPayment(value); changed(); }} className={cn('rounded-xl border py-2.5 text-sm', payment === value ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-ink-200')}>{value === 'cash' ? label('كاش', 'Cash') : label('بطاقة', 'Card')}</button>)}</div>
       {payment === 'cash' && <label className="block text-sm">{label('المبلغ المستلم', 'Amount received')}<input type="number" inputMode="decimal" min={total} step="0.01" value={received} onChange={event => { setReceived(event.target.value); changed(); }} className="mt-2 h-11 w-full rounded-xl border border-ink-200 px-3" /><span className="mt-2 block text-xs text-ink-500">{label('الباقي', 'Change')}: {money(Math.max(0, Number(received) - total))}</span></label>}
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
-      <Button type="button" className="w-full" size="lg" loading={pending} disabled={!cart.length || (payment === 'cash' && (!received || !Number.isFinite(Number(received)) || Number(received) < total))} onClick={pay}>{label('تأكيد الدفع', 'Confirm payment')}</Button>
+      <Button type="button" className="w-full" size="lg" loading={pending} disabled={!cart.length || refreshingTables || (orderType === 'dinein' && !availableTables.some(item => item.id === table)) || (payment === 'cash' && (!received || !Number.isFinite(Number(received)) || Number(received) < total))} onClick={pay}>{label('تأكيد الدفع', 'Confirm payment')}</Button>
     </fieldset>
-    {receipt && <div className="rounded-xl bg-emerald-50 p-4"><p role="status" className="font-semibold text-emerald-800">{label('تم حفظ الطلب', 'Order saved')} #{receipt.number}</p><Button type="button" variant="secondary" className="mt-3 w-full" onClick={() => window.print()}>{label('طباعة الفاتورة', 'Print receipt')}</Button></div>}
+    {receipt && <div className="rounded-xl bg-emerald-50 p-4"><p role="status" className="font-semibold text-emerald-800">{label('تم حفظ الطلب', 'Order saved')} #{receipt.number}</p><p className="mt-1 text-sm">{receipt.tableLabel ? `${label('الطاولة', 'Table')}: ${receipt.tableLabel}` : label('تيك أواي', 'Takeaway')}</p></div>}
   </div>;
 
   return <div className="space-y-4 pb-24 lg:pb-0">
     <header className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-xl font-semibold">{label('الكاشير', 'Point of sale')}</h1><p className="text-xs text-ink-500">{restaurantName}</p></div><Link href="/dashboard/orders" className="rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm">{label('متابعة الطلبات', 'View orders')}</Link></header>
     <p role="status" aria-live="polite" className="sr-only">{announcement}</p>
+    <ThermalPrinter restaurantId={restaurantId} restaurantName={restaurantName} currency={currency} receipt={receipt} />
     <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_310px]">
       <section className="min-w-0" aria-label={label('المنتجات', 'Products')}>
         <input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder={label('ابحث عن منتج', 'Search products')} aria-label={label('ابحث عن منتج', 'Search products')} className="h-11 w-full rounded-xl border border-ink-200 bg-white px-4 text-sm" />
