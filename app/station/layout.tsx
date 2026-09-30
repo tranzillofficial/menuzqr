@@ -23,6 +23,7 @@ export default async function StationLayout({ children }: { children: React.Reac
       <LiveProvider
         restaurantId={membership.restaurant.id}
         role={membership.role}
+        permissions={membership.permissions}
         soundEnabled={settings?.sound_enabled ?? true}
       >
         <StationShell

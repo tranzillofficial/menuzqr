@@ -176,7 +176,7 @@ export function ProductsManager({
                   aria-label={`Edit ${product.name}`}
                   className="rounded-lg p-2 text-ink-500 hover:bg-ink-100 hover:text-ink-900"
                 >
-                  <Icon.edit className="size-4" />
+                  <Icon.edit className="size-4" /><span className="text-xs">{t("common.edit")}</span>
                 </button>
 
                 <ConfirmButton

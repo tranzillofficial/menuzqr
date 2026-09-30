@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { getLocale } from "@/lib/i18n/server";
 import { StationBoard } from "@/components/station/StationBoard";
 import { requireStation } from "@/lib/membership";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -42,12 +44,18 @@ export default async function StationPage() {
       : null,
   }));
 
+  const locale = await getLocale();
+  const { data: tables } = membership.permissions.includes("orders.create") ? await supabase.from("restaurant_tables").select("id, label, qr_token").eq("restaurant_id", membership.restaurant.id).eq("is_active", true).order("label") : { data: [] };
+
   return (
+    <div className="space-y-6">
+      {membership.permissions.includes("orders.create") && <section className="rounded-2xl border border-white/15 p-4"><h2 className="mb-3 font-semibold">{locale === "ar" ? "طلب جديد لترابيزة" : "New table order"}</h2><div className="flex flex-wrap gap-2">{(tables ?? []).map(table => <Link className="rounded-xl bg-brand-600 px-4 py-3 text-sm" key={table.id} href={`/${membership.restaurant.slug}/menu?table=${table.qr_token}`}>{table.label}</Link>)}{!tables?.length && <p className="text-sm text-white/60">{locale === "ar" ? "اطلب من صاحب المطعم يضيف الترابيزات الأول." : "Ask the owner to add tables first."}</p>}</div></section>}
     <StationBoard
-      role={membership.role}
+      permissions={membership.permissions}
       orders={(orders ?? []) as OrderWithDetails[]}
       calls={calls as WaiterRequest[]}
       currency={membership.restaurant.currency}
     />
+    </div>
   );
 }

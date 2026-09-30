@@ -151,6 +151,7 @@ export type WaiterRequest = {
 
 /** A row of `restaurant_members`, joined with the account's email. */
 export type StaffMember = {
+  service_permissions: string[] | null;
   id: string;
   restaurant_id: string;
   user_id: string;

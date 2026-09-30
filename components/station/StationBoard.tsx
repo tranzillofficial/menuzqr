@@ -10,32 +10,34 @@ import {
   updateOrderStatusAction,
 } from "@/lib/actions/orders";
 import { cn, formatMoney, relativeTime } from "@/lib/utils";
-import type { MemberRole } from "@/lib/constants";
+import { statusPermission, type StaffPermission } from "@/lib/staff-permissions";
+import { createContext, useContext } from "react";
+import { useToast } from "@/components/ui/Toast";
+
+const PermissionContext = createContext<StaffPermission[]>([]);
 import type { OrderWithDetails, WaiterRequest } from "@/lib/types";
 
 type Tab = "kitchen" | "service";
 
 export function StationBoard({
-  role,
+  permissions,
   orders,
   calls,
   currency,
 }: {
-  role: MemberRole;
+  permissions: StaffPermission[];
   orders: OrderWithDetails[];
   calls: WaiterRequest[];
   currency: string;
 }) {
   const t = useT();
-  const isManager = role === "owner" || role === "manager";
-  const [tab, setTab] = useState<Tab>(role === "waiter" ? "service" : "kitchen");
-
-  const showKitchen = role === "chef" || (isManager && tab === "kitchen");
-  const showService = role === "waiter" || role === "staff" || (isManager && tab === "service");
+  const [tab, setTab] = useState<Tab>(permissions.includes("orders.prepare") ? "kitchen" : "service");
+  const showKitchen = tab === "kitchen";
+  const showService = tab === "service";
 
   return (
-    <div className="space-y-5">
-      {isManager && (
+    <PermissionContext.Provider value={permissions}><div className="space-y-5">
+      {(
         <div className="grid grid-cols-2 gap-1 rounded-2xl bg-white/5 p-1">
           {(["kitchen", "service"] as Tab[]).map((value) => (
             <button
@@ -55,7 +57,7 @@ export function StationBoard({
 
       {showService && <ServiceView calls={calls} orders={orders} currency={currency} />}
       {showKitchen && <KitchenView orders={orders} currency={currency} />}
-    </div>
+    </div></PermissionContext.Provider>
   );
 }
 
@@ -186,6 +188,8 @@ function Empty({ show, text }: { show: boolean; text: string }) {
 
 function CallCard({ call }: { call: WaiterRequest }) {
   const t = useT();
+  const permissions = useContext(PermissionContext);
+  const toast = useToast();
   const router = useRouter();
   const [pending, start] = useTransition();
 
@@ -217,12 +221,13 @@ function CallCard({ call }: { call: WaiterRequest }) {
         </div>
       </div>
 
-      <button
+      {permissions.includes("calls.resolve") && <button
         type="button"
         disabled={pending}
         onClick={() =>
           start(async () => {
-            await resolveWaiterRequestAction(call.id);
+            const result = await resolveWaiterRequestAction(call.id);
+            if (!result?.ok) toast(result?.message || "Could not update", "error");
             router.refresh();
           })
         }
@@ -230,7 +235,7 @@ function CallCard({ call }: { call: WaiterRequest }) {
       >
         <Icon.check className="size-4.5" />
         {t("station.onMyWay")}
-      </button>
+      </button>}
     </article>
   );
 }
@@ -247,6 +252,8 @@ function OrderCard({
   callWaiter?: boolean;
 }) {
   const t = useT();
+  const permissions = useContext(PermissionContext);
+  const toast = useToast();
   const router = useRouter();
   const [pending, start] = useTransition();
   const [called, setCalled] = useState(false);
@@ -291,13 +298,16 @@ function OrderCard({
       )}
 
       <div className="mt-3 flex gap-2">
-        {primary && (
+        {([...(order.status === "pending" ? [{ permission: "orders.accept", status: "accepted", label: t("dash.acceptOrder") }] : []), { permission: "orders.cancel", status: "cancelled", label: t("common.cancel") }]).filter(action => permissions.includes(action.permission as StaffPermission)).map(action => <button key={action.status} disabled={pending} className="rounded-xl bg-white/10 px-3 py-3 text-sm" onClick={() => start(async () => { const result = await updateOrderStatusAction(order.id, action.status); if (!result?.ok) toast(result?.message || "Could not update", "error"); router.refresh(); })}>{action.label}</button>)}
+
+        {primary && permissions.includes(statusPermission(primary.status)!) && (
           <button
             type="button"
             disabled={pending}
             onClick={() =>
               start(async () => {
-                await updateOrderStatusAction(order.id, primary.status);
+                const result = await updateOrderStatusAction(order.id, primary.status);
+                if (!result?.ok) toast(result?.message || "Could not update", "error");
                 router.refresh();
               })
             }
@@ -310,13 +320,14 @@ function OrderCard({
           </button>
         )}
 
-        {callWaiter && (
+        {callWaiter && permissions.includes("orders.prepare") && (
           <button
             type="button"
             disabled={pending || called}
             onClick={() =>
               start(async () => {
-                await callWaiterForOrderAction(order.id);
+                const result = await callWaiterForOrderAction(order.id);
+                if (!result?.ok) { toast(result?.message || "Could not update", "error"); return; }
                 setCalled(true);
                 router.refresh();
               })

@@ -1,3 +1,4 @@
+import { staffPermissions } from "@/lib/staff-permissions";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getPublicMenu } from "@/lib/menu-data";
@@ -110,13 +111,13 @@ async function isStaffOf(restaurantId: string): Promise<boolean> {
 
     const { data } = await createAdminSupabase()
       .from("restaurant_members")
-      .select("id")
+      .select("id, role, service_permissions")
       .eq("restaurant_id", restaurantId)
       .eq("user_id", user.id)
       .eq("is_active", true)
       .maybeSingle();
 
-    return Boolean(data);
+    return Boolean(data && staffPermissions(data.role, data.service_permissions).includes("orders.create"));
   } catch {
     return false;
   }

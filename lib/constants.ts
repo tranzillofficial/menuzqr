@@ -49,7 +49,7 @@ export type MemberRole = (typeof MEMBER_ROLES)[number];
  * the dashboard without being able to save anything. Offering a role that half
  * works is worse than not offering it.
  */
-export const ASSIGNABLE_ROLES = ["waiter", "chef"] as const;
+export const ASSIGNABLE_ROLES = ["waiter", "chef", "staff"] as const;
 export type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
 
 /** Roles that get the full dashboard. Everyone else gets /station. */

@@ -1,3 +1,4 @@
+import { SiteFooter } from "@/components/SiteFooter";
 import { localizedPricing } from "@/lib/pricing";
 import Image from "next/image";
 import Link from "next/link";
@@ -60,7 +61,7 @@ export default async function HomePage() {
             <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-brand-600 text-white">
               <Icon.qr className="size-4.5" />
             </span>
-            <span className="truncate">{platform.brandName}</span>
+            <span className="text-sm sm:text-base">{platform.brandName}</span>
           </Link>
 
           <nav className="ms-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
@@ -275,23 +276,7 @@ export default async function HomePage() {
         </section>
       </main>
 
-      <footer className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-10 text-sm text-ink-500 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <p>
-          © {new Date().getFullYear()} {platform.brandName}. {t("landing.footerRights")}
-        </p>
-        <div className="flex flex-wrap items-center gap-4">
-          <LocaleSwitch />
-          <a
-            href={platform.supportWhatsappUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 hover:text-ink-800"
-          >
-            <Icon.whatsapp className="size-4" />
-            <span className="ltr-nums">{platform.supportWhatsappDisplay}</span>
-          </a>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
