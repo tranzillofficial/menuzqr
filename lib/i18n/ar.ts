@@ -630,7 +630,7 @@ export const ar: Record<keyof typeof en, string> = {
   "plans.couponPercent": "خصم {value}% اتطبّق على السعر.",
   "plans.couponFixed": "تم تطبيق الخصم على السعر.",
   "plans.errWrongProduct": "الكود ده مش بينطبق على المنتج ده.",
-  "plans.payNote": "لإتمام الاشتراك، تواصل مع فريقنا لتأكيد بيانات الدفع والتفعيل.",
+  "plans.payNote": "كل عمليات الدفع داخل مصر أو خارجها بتتم بالتنسيق مع الدعم على واتساب. مفيش دفع مباشر داخل الموقع.",
   "plans.waIntro": "أهلاً، عايز أظبط {name} على MenuzQR.",
   "plans.waFallback": "عايز أسأل عن الباقات.",
   "pos.title": "الكاشير",
