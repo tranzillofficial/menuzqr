@@ -642,7 +642,7 @@ export const en = {
   "plans.couponPercent": "{value}% off applied to your quote.",
   "plans.couponFixed": "Your discount has been applied.",
   "plans.errWrongProduct": "That code doesn't apply to this product.",
-  "plans.payNote": "Contact our team to confirm payment details and complete your activation.",
+  "plans.payNote": "All payments, from Egypt or abroad, are arranged with support through WhatsApp. There is no direct checkout on the website.",
   "plans.waIntro": "Hi, I'd like to set up {name} on MenuzQR.",
   "plans.waFallback": "I'd like to ask about the plans.",
   "pos.title": "POS",
