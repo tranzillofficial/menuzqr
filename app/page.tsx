@@ -98,12 +98,7 @@ export default async function HomePage() {
 
           <div className="relative mx-auto grid max-w-6xl gap-14 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <div>
-              <p className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white px-3 py-1 text-xs font-medium text-brand-700">
-                <Icon.sparkles className="size-3.5" />
-                {t("landing.badge")}
-              </p>
-
-              <h1 className="mt-5 font-serif text-4xl leading-[1.1] text-ink-900 sm:text-5xl lg:text-6xl">
+              <h1 className="font-serif text-4xl leading-[1.1] text-ink-900 sm:text-5xl lg:text-6xl">
                 {t("landing.heroTitle")}
               </h1>
 
