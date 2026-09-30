@@ -8,7 +8,7 @@ import {
   toggleCategoryAction,
 } from "@/lib/actions/categories";
 import { moveCategoryAction } from "@/lib/actions/products";
-import { Button } from "@/components/ui/Button";
+import { Button, LinkButton } from "@/components/ui/Button";
 import { ConfirmButton } from "@/components/ui/ConfirmDialog";
 import { EmptyState } from "@/components/ui/Card";
 import { Field, Input, Switch, Textarea } from "@/components/ui/Field";
@@ -47,6 +47,7 @@ export function CategoriesManager({
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-2">
+        <LinkButton href="/dashboard/catalog" variant="secondary">{t("nav.catalog")}</LinkButton>
         <Button onClick={() => setEditing("new")}>
           <Icon.plus className="size-4" />
           {t("categories.add")}

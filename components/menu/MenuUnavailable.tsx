@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { getPlatformSettings } from "@/lib/platform";
 import { createTranslator, dirOf, isLocale, type Locale } from "@/lib/i18n";
 
 export async function MenuUnavailable({
@@ -14,7 +13,6 @@ export async function MenuUnavailable({
   language: string;
   reason?: string;
 }) {
-  const platform = await getPlatformSettings();
   const locale: Locale = isLocale(language) ? language : "en";
   const t = createTranslator(locale);
 
@@ -41,16 +39,7 @@ export async function MenuUnavailable({
         <p className="mt-1 text-sm text-ink-500">{t("menu.askStaff")}</p>
 
         <div className="mt-8 border-t border-ink-100 pt-6">
-          <p className="text-xs text-ink-400">{t("menu.ownerNote")}</p>
           <div className="mt-3 flex flex-col gap-2">
-            <a
-              href={platform.supportWhatsappUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex h-10 items-center justify-center rounded-xl bg-[#25D366] px-4 text-sm font-semibold text-white"
-            >
-              <span className="ltr-nums">WhatsApp {platform.supportWhatsappDisplay}</span>
-            </a>
             <Link
               href="/dashboard"
               className="inline-flex h-10 items-center justify-center rounded-xl border border-ink-200 px-4 text-sm font-medium text-ink-700"

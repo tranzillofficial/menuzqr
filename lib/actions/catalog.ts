@@ -188,7 +188,7 @@ export async function importCatalogItemsAction(
       // The shared menu's own sizes win when it has them, because those carry
       // the shape (Small / Medium / Large). Otherwise one variant at the
       // price the owner just typed.
-      variants: variants.length > 0 ? variants : [{ name: "Regular", price }],
+      variants: variants.length > 0 ? variants.map(v => ({ ...v, price: price + Math.max(0, v.price - variants[0].price) })) : [{ name: "Regular", price }],
     });
   }
 
