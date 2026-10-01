@@ -1,10 +1,9 @@
 import { SiteFooter } from "@/components/SiteFooter";
 import { localizedPricing } from "@/lib/pricing";
 import Image from "next/image";
-import Link from "next/link";
 import { LinkButton } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icons";
-import { LocaleSwitch } from "@/components/i18n/LocaleSwitch";
+import { SiteHeader } from "@/components/SiteHeader";
 import { getUser } from "@/lib/auth";
 import { getPlatformSettings } from "@/lib/platform";
 import { getT, getLocale } from "@/lib/i18n/server";
@@ -52,42 +51,7 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen bg-white">
       {/* ------------------------------------------------------------ header */}
-      <header className="sticky top-0 z-30 border-b border-ink-100 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex min-h-16 max-w-6xl flex-wrap items-center gap-2 px-4 py-2 sm:flex-nowrap sm:gap-3 sm:px-6">
-          <Link href="/" className="flex min-w-0 items-center gap-2 font-semibold text-ink-900">
-            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-brand-600 text-white">
-              <Icon.qr className="size-4.5" />
-            </span>
-            <span className="truncate text-sm min-[390px]:text-base">{platform.brandName}</span>
-          </Link>
-
-          <nav className="ms-auto flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-2">
-            <LocaleSwitch className="hidden min-[430px]:inline-flex" />
-            {user ? (
-              <LinkButton
-                href="/dashboard"
-                size="sm"
-                className="max-w-[8.5rem] shrink-0 truncate px-2.5 sm:max-w-none sm:px-3"
-              >
-                {t("landing.ctaDashboard")}
-              </LinkButton>
-            ) : (
-              <>
-                <LinkButton href="/login" variant="ghost" size="sm" className="shrink-0 px-2 sm:px-3">
-                  {t("landing.signIn")}
-                </LinkButton>
-                <LinkButton href="/signup" size="sm" className="shrink-0 px-2.5 sm:px-3">
-                  {t("landing.getStarted")}
-                </LinkButton>
-              </>
-            )}
-          </nav>
-
-          <div className="w-full min-[430px]:hidden">
-            <LocaleSwitch className="w-fit" />
-          </div>
-        </div>
-      </header>
+      <SiteHeader brandName={platform.brandName} signedIn={Boolean(user)} />
 
       <main>
         {/* -------------------------------------------------------------- hero */}
