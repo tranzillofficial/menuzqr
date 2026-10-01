@@ -118,89 +118,13 @@ export async function placeOrderAction(
     };
   }
 
-  const variantIds = [...new Set(lines.map((l) => l.variantId))];
-  const { data: variants } = await supabase
-    .from("product_variants")
-    .select("id, name, price, is_active, product_id, products(id, name, is_active, restaurant_id)")
-    .eq("restaurant_id", restaurant.id)
-    .in("id", variantIds);
-
-  const variantMap = new Map(
-    (variants ?? [])
-      .filter((v) => {
-        const product = v.products as unknown as
-          | { is_active: boolean; restaurant_id: string; name: string }
-          | null;
-        return v.is_active && product?.is_active && product.restaurant_id === restaurant.id;
-      })
-      .map((v) => [v.id, v])
-  );
-
-  const itemRows: {
-    product_id: string;
-    variant_id: string;
-    product_name: string;
-    variant_name: string;
-    unit_price: number;
-    quantity: number;
-    note: string | null;
-    line_total: number;
-  }[] = [];
-
-  let total = 0;
-
-  for (const line of lines) {
-    const variant = variantMap.get(line.variantId);
-    if (!variant) {
-      return { ok: false, message: "One of the items is no longer available. Please refresh the menu." };
-    }
-    const quantity = Math.min(Math.max(Math.floor(Number(line.quantity) || 0), 1), 99);
-    const unitPrice = Number(variant.price) || 0;
-    const lineTotal = Math.round(unitPrice * quantity * 100) / 100;
-    total += lineTotal;
-
-    const product = variant.products as unknown as { id: string; name: string };
-
-    itemRows.push({
-      product_id: product.id,
-      variant_id: variant.id,
-      product_name: product.name,
-      variant_name: variant.name,
-      unit_price: unitPrice,
-      quantity,
-      note: (line.note ?? "").trim().slice(0, 200) || null,
-      line_total: lineTotal,
-    });
-  }
-
-  total = Math.round(total * 100) / 100;
-
-  const { data: order, error: orderError } = await supabase
-    .from("orders")
-    .insert({
-      restaurant_id: restaurant.id,
-      table_id: table.id,
-      session_id: sessionId.slice(0, 64) || null,
-      note: orderNote.trim().slice(0, 400) || null,
-      total,
-      currency: restaurant.currency,
-      placed_by: staffId,
-    })
-    .select("id, order_number, public_token")
-    .single();
-
-  if (orderError || !order) {
-    return { ok: false, message: "We could not send your order. Please try again." };
-  }
-
-  const { error: itemsError } = await supabase.from("order_items").insert(
-    itemRows.map((row) => ({ ...row, order_id: order.id, restaurant_id: restaurant.id }))
-  );
-
-  if (itemsError) {
-    await supabase.from("orders").delete().eq("id", order.id);
-    return { ok: false, message: "We could not send your order. Please try again." };
-  }
+  const { data: order, error } = await supabase.rpc('create_fiscal_order', {
+    p_actor: staffId, p_restaurant: restaurant.id, p_request: null,
+    p_lines: lines, p_table: table.id, p_note: orderNote.trim().slice(0, 400),
+    p_payment: null, p_received: null, p_customer: {}, p_guest: true, p_session: sessionId.slice(0, 64),
+  });
+  if (error || !order) return { ok: false, message: 'We could not send your order. Refresh the menu and try again.' };
+  const total = Number(order.total);
 
   await publishEvent({
     id: `order.new:${order.id}`,
@@ -308,7 +232,8 @@ export async function callWaiterAction(
  */
 export async function updateOrderStatusAction(
   orderId: string,
-  status: string
+  status: string,
+  reason = ""
 ): Promise<ActionState> {
   const context = await getMemberContext();
   if (!context.ok) return context.error;
@@ -318,13 +243,10 @@ export async function updateOrderStatusAction(
   const permission = statusPermission(status);
   if ((!permission || !context.permissions.includes(permission)) && !["owner", "manager"].includes(context.role)) return fail("You do not have permission for this action.");
   const supabase = createAdminSupabase();
-  const { data: updated, error } = await supabase
-    .from("orders")
-    .update({ status })
-    .eq("id", orderId)
-    .eq("restaurant_id", context.restaurantId)
-    .select("id, order_number, table_id, status")
-    .maybeSingle();
+  const { data: updated, error } = await supabase.rpc('change_fiscal_order', {
+    p_actor: context.userId, p_restaurant: context.restaurantId, p_order: orderId,
+    p_action: status === 'cancelled' ? 'void' : status, p_reason: reason,
+  });
 
   if (error) return fail(error.message);
   if (!updated) return fail("That order is not on your board any more.");

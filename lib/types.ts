@@ -1,3 +1,4 @@
+import type { TaxSettings, VatCode, FiscalSnapshot } from "./tax";
 import type {
   MemberRole,
   MenuThemeId,
@@ -15,7 +16,7 @@ export type Profile = {
   created_at: string;
 };
 
-export type Restaurant = {
+export type Restaurant = TaxSettings & {
   id: string;
   owner_id: string;
   name: string;
@@ -60,6 +61,7 @@ export type Category = {
 };
 
 export type ProductVariant = {
+  tax?: { basePrice: number; rate: number; inclusive: boolean };
   id: string;
   restaurant_id: string;
   product_id: string;
@@ -72,6 +74,7 @@ export type ProductVariant = {
 };
 
 export type Product = {
+  vat_code: VatCode;
   id: string;
   restaurant_id: string;
   category_id: string | null;
@@ -113,6 +116,10 @@ export type OrderItem = {
 };
 
 export type Order = {
+  fiscal_snapshot: FiscalSnapshot | null;
+  fiscal_state: "unpaid" | "paid" | "refunded" | "void" | "legacy";
+  paid_at: string | null;
+  payment_method: "cash" | "card" | null;
   id: string;
   restaurant_id: string;
   table_id: string | null;

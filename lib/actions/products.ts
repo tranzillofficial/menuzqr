@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { VAT_CODES, type VatCode } from "@/lib/tax";
 import type { ActionState } from "@/lib/types";
 import {
   bool,
@@ -110,7 +111,11 @@ export async function saveProductAction(
     if (!cat) return fail("That category does not belong to your restaurant.");
   }
 
+  const vatCode = str(form, "vat_code") || "standard";
+  if (!VAT_CODES.includes(vatCode as VatCode) || (restaurant.tax_mode !== "uk" && vatCode === "reduced")) return fail("Choose a VAT category available in this market.");
+
   const payload = {
+    vat_code: vatCode,
     restaurant_id: restaurant.id,
     category_id: categoryId,
     name,

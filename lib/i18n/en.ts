@@ -602,6 +602,7 @@ export const en = {
   "catalog.draftNotice": "Copied dishes land in Products as hidden drafts with the suggested prices. Set your own prices, then switch each one on to publish it.",
 
   // ---------------------------------------------------------------- plans & POS
+  "nav.reports": "Sales reports",
   "nav.pos": "POS",
   "nav.billing": "Plans",
   "admin.coupons": "Coupons",

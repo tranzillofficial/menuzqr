@@ -1,7 +1,9 @@
+import type { FiscalSnapshot } from "./tax";
 export type PosReceipt = {
+  orderId?: string; documentNumber?: string; originalDocumentNumber?: string; currency?: string; fiscal?: FiscalSnapshot | null; paidAt?: string | null; creditNote?: boolean; creditDate?: string;
   number: number; total: number; received: number; tableLabel: string | null;
   payment: 'cash' | 'card'; createdAt: string; note: string;
-  lines: { variantId: string; name: string; variant: string; price: number; quantity: number }[];
+  lines: { variantId: string; name: string; variant: string; price: number; quantity: number; gross?: number; net?: number; vat?: number; rate?: number; code?: string }[];
 };
 export type PrinterSettings = { token: string; printer: string; width: 58 | 80; cut: boolean };
 export const DEFAULT_PRINTER: PrinterSettings = { token: '', printer: '', width: 80, cut: true };
@@ -52,19 +54,34 @@ export async function receiptRaster(receipt: PosReceipt, restaurantName: string,
   };
   const label = (arabic: string, english: string) => ar ? arabic : english;
   const money = (n: number) => `${n.toFixed(2)} ${currency}`;
-  wrap(restaurantName, true, true);
-  wrap(`${label('إيصال', 'Receipt')} #${receipt.number}`, true, true);
-  wrap(new Date(receipt.createdAt).toLocaleString(ar ? 'ar-EG' : 'en-GB'), false, true);
+  const fiscal = receipt.fiscal;
+  const sign = receipt.creditNote ? -1 : 1;
+  wrap(fiscal?.legal_name ?? restaurantName, true, true);
+  if (fiscal?.address) wrap(fiscal.address);
+  if (fiscal?.registered) wrap(`VAT / TRN: ${fiscal.vat_number}`);
+  if (fiscal?.customer?.name) { wrap(`${label('العميل', 'Customer')}: ${fiscal.customer.name}`); if(fiscal.customer.address) wrap(fiscal.customer.address); if(fiscal.customer.vat_number) wrap(`Customer VAT / TRN: ${fiscal.customer.vat_number}`); }
+  wrap(`${receipt.creditNote ? label('إشعار دائن', 'Credit note') : fiscal?.invoice_kind === 'full' || fiscal?.invoice_kind === 'simplified' ? label('فاتورة ضريبية', 'VAT invoice') : label('إيصال', 'Receipt')} ${receipt.creditNote ? `CN-${receipt.number}` : receipt.documentNumber ?? `#${receipt.number}`}`, true, true);
+  if(receipt.creditNote) wrap(`Original invoice: ${receipt.originalDocumentNumber ?? `#${receipt.number}`}`);
+  wrap(new Date(receipt.creditNote ? receipt.creditDate ?? receipt.createdAt : receipt.createdAt).toLocaleString(ar ? 'ar-EG' : 'en-GB', { timeZone: fiscal?.timezone ?? 'UTC' }), false, true);
+  if(receipt.paidAt) wrap(`${label('تاريخ التوريد', 'Supply date')}: ${new Date(receipt.paidAt).toLocaleString(ar ? 'ar-EG' : 'en-GB', { timeZone: fiscal?.timezone ?? 'UTC' })}`);
   wrap(receipt.tableLabel ? `${label('الطاولة', 'Table')}: ${receipt.tableLabel}` : label('تيك أواي', 'Takeaway'));
   rows.push({ text: '________________________', center: true });
   for (const line of receipt.lines) {
     wrap(`${line.name} ${line.variant}`, true);
-    wrap(`${line.quantity} × ${money(line.price)} = ${money(line.price * line.quantity)}`);
+    if(fiscal?.registered) wrap(`${line.code ?? ''} ${line.rate ?? 0}% | VAT ${money(sign * (line.vat ?? 0))}`);
+    if(fiscal) wrap(`${line.quantity} × ${money((line.net ?? 0) / line.quantity)} ${label('قبل VAT', 'ex VAT')}`);
+    else wrap(`${line.quantity} × ${money(line.price)}`);
+    wrap(`${label('إجمالي الصنف', 'Line total')}: ${money(sign * (line.gross ?? line.price * line.quantity))}`);
   }
   rows.push({ text: '________________________', center: true });
-  wrap(`${label('الإجمالي', 'Total')}: ${money(receipt.total)}`, true);
+  wrap(`${label('قبل الضريبة', 'Subtotal')}: ${fiscal ? money(sign * fiscal.net) : "Unknown"}`);
+  wrap(`VAT: ${fiscal ? money(sign * fiscal.vat) : "Unknown"}`);
+  wrap(`${label('الإجمالي', 'Total')}: ${money(sign * receipt.total)}`, true);
+  for(const b of fiscal?.breakdown ?? []) wrap(`${b.code} ${b.rate}% | Net ${money(sign*b.net)} | VAT ${money(sign*b.vat)} | Gross ${money(sign*b.gross)}`);
+  if(fiscal?.mode === 'saudi') wrap(label('إيصال بيع. الربط بالفوترة الإلكترونية غير مفعّل.', 'Sales receipt. Electronic invoicing is not connected.'));
+  else if(fiscal?.registered && fiscal.invoice_kind === 'receipt') wrap(label('ليس فاتورة ضريبية كاملة.', 'Not a full VAT invoice.'));
   wrap(`${label('الدفع', 'Payment')}: ${receipt.payment === 'cash' ? label('كاش', 'Cash') : label('بطاقة', 'Card')}`);
-  if (receipt.payment === 'cash') {
+  if (receipt.payment === 'cash' && !receipt.creditNote) {
     wrap(`${label('المستلم', 'Received')}: ${money(receipt.received)}`);
     wrap(`${label('الباقي', 'Change')}: ${money(receipt.received - receipt.total)}`);
   }

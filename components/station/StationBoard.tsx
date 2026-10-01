@@ -298,7 +298,7 @@ function OrderCard({
       )}
 
       <div className="mt-3 flex gap-2">
-        {([...(order.status === "pending" ? [{ permission: "orders.accept", status: "accepted", label: t("dash.acceptOrder") }] : []), { permission: "orders.cancel", status: "cancelled", label: t("common.cancel") }]).filter(action => permissions.includes(action.permission as StaffPermission)).map(action => <button key={action.status} disabled={pending} className="rounded-xl bg-white/10 px-3 py-3 text-sm" onClick={() => start(async () => { const result = await updateOrderStatusAction(order.id, action.status); if (!result?.ok) toast(result?.message || "Could not update", "error"); router.refresh(); })}>{action.label}</button>)}
+        {([...(order.status === "pending" ? [{ permission: "orders.accept", status: "accepted", label: t("dash.acceptOrder") }] : []), { permission: "orders.cancel", status: "cancelled", label: t("common.cancel") }]).filter(action => permissions.includes(action.permission as StaffPermission)).map(action => <button key={action.status} disabled={pending} className="rounded-xl bg-white/10 px-3 py-3 text-sm" onClick={() => start(async () => { const reason=action.status==='cancelled'?window.prompt(t('orders.cancel') + ': Reason'):''; if(action.status==='cancelled'&&!reason?.trim())return; const result = await updateOrderStatusAction(order.id, action.status, reason??''); if (!result?.ok) toast(result?.message || "Could not update", "error"); router.refresh(); })}>{action.label}</button>)}
 
         {primary && permissions.includes(statusPermission(primary.status)!) && (
           <button

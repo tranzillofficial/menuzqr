@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { saveProductAction } from "@/lib/actions/products";
 import { createCategoryQuickAction } from "@/lib/actions/categories";
 import { CatalogBrowser, CatalogSuggestions } from "./CatalogPicker";
-import { useT } from "@/components/i18n/I18nProvider";
+import { VAT_CODES, vatRate } from "@/lib/tax";
+import { useI18n, useT } from "@/components/i18n/I18nProvider";
 import { Button } from "@/components/ui/Button";
 import { Input, Select, Switch, Textarea } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icons";
@@ -55,6 +56,8 @@ export function ProductEditor({
   const router = useRouter();
   const toast = useToast();
   const t = useT();
+  const { locale } = useI18n();
+  const label = (ar: string, en: string) => locale === "ar" ? ar : en;
   const [state, formAction] = useActionState(saveProductAction, null);
 
   const [name, setName] = useState(product?.name ?? "");
@@ -71,17 +74,14 @@ export function ProductEditor({
   // Categories can be created inline, so the editor keeps its own list rather
   // than trusting the prop. the owner must never lose a half-filled form just
   // because a section was missing.
-  const [categoryList, setCategoryList] = useState<Category[]>(categories);
+  const [addedCategories, setAddedCategories] = useState<Category[]>([]);
+  const categoryList = [...categories, ...addedCategories.filter(c => !categories.some(existing => existing.id === c.id))];
   const [newCategoryName, setNewCategoryName] = useState("");
   const [addingCategory, setAddingCategory] = useState(false);
   const [savingCategory, startCategory] = useTransition();
 
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [suggestionsHidden, setSuggestionsHidden] = useState(false);
-
-  useEffect(() => {
-    setCategoryList(categories);
-  }, [categories]);
 
   function addCategory(name: string, thenSelect = true) {
     const clean = name.trim();
@@ -92,7 +92,7 @@ export function ProductEditor({
         toast(result.message ?? "Could not add the category.", "error");
         return;
       }
-      setCategoryList((list) =>
+      setAddedCategories((list) =>
         list.some((c) => c.id === result.category!.id)
           ? list
           : [...list, result.category as Category]
@@ -329,6 +329,12 @@ export function ProductEditor({
           </div>
         </div>
 
+        <label className="block space-y-2 text-sm font-medium">{label('تصنيف ضريبة المنتج', 'Product VAT category')}
+          <Select name="vat_code" defaultValue={product?.vat_code ?? 'standard'}>
+            {VAT_CODES.filter(code => code !== 'reduced' || restaurant.tax_mode === 'uk').map(code => <option key={code} value={code}>{code === 'exempt' ? label('معفى', 'Exempt') : code} {code !== 'exempt' ? `${vatRate(restaurant.tax_mode, true, code)}%` : ''}</option>)}
+          </Select>
+          <span className="block text-xs font-normal text-ink-500">{label('اختار التصنيف حسب طبيعة المنتج وطريقة تقديمه. الأسعار', 'Choose the category for the product and how it is supplied. Prices are')} {restaurant.prices_include_vat ? label('شاملة الضريبة.', 'VAT inclusive.') : label('قبل الضريبة؛ سعر العميل يشمل الضريبة.', 'VAT exclusive; customer prices include VAT.')}</span>
+        </label>
         {/* --- variants --- */}
         <div className="rounded-2xl border border-ink-200 p-4">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">

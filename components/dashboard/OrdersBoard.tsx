@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { FinancialControls } from "./FinancialControls";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -189,16 +191,8 @@ export function OrdersBoard({
                         {t(next.label)}
                       </Button>
                     )}
-                    {!["completed", "cancelled"].includes(order.status) && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        disabled={pending}
-                        onClick={() => run(() => updateOrderStatusAction(order.id, "cancelled"))}
-                      >
-                        {t("orders.cancel")}
-                      </Button>
-                    )}
+                    <Link className="rounded-lg border px-3 py-2 text-xs text-brand-700" href={`/dashboard/orders/${order.id}`}>Invoice / Journal</Link>
+                    <FinancialControls orderId={order.id} state={order.fiscal_state} legacyVoid={order.fiscal_state === "legacy" && !["completed","cancelled"].includes(order.status)} total={Number(order.total)} />
                   </div>
                 </div>
               </li>

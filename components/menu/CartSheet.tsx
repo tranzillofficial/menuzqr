@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useMenu } from "./MenuContext";
+import { cartLineTotal, useMenu } from "./MenuContext";
 import { placeOrderAction } from "@/lib/actions/orders";
 import { formatMoney } from "@/lib/utils";
 import { useT } from "@/components/i18n/I18nProvider";
@@ -169,7 +169,7 @@ function CartSheet({ slug, tableToken }: { slug: string; tableToken: string }) {
                       </div>
                       <div className="flex flex-col items-end gap-2">
                         <span className="text-sm font-semibold">
-                          {formatMoney(item.unitPrice * item.quantity, currency)}
+                          {formatMoney(cartLineTotal(item), currency)}
                         </span>
                         <div className="flex items-center rounded-lg border border-ink-200">
                           <button

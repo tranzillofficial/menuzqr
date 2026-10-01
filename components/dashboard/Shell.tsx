@@ -19,6 +19,7 @@ const NAV: Array<{
   exact?: boolean;
 }> = [
   { href: "/dashboard/pos", label: "nav.pos", icon: Icon.receipt },
+  { href: "/dashboard/reports", label: "nav.reports", icon: Icon.receipt },
   { href: "/dashboard", label: "nav.overview", icon: Icon.home, exact: true },
   { href: "/dashboard/restaurant", label: "nav.restaurant", icon: Icon.store },
   { href: "/dashboard/categories", label: "nav.categories", icon: Icon.grid },

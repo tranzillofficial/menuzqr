@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:tax": "node --experimental-strip-types --test tests/tax.test.mjs && node tests/fiscal-postgres.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",
@@ -20,6 +21,7 @@
     "web-push": "^3.6.7"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.3.14",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/qrcode": "^1.5.5",

@@ -1,12 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useMenu } from "./MenuContext";
+import { cartLineTotal, useMenu } from "./MenuContext";
 import { MenuImage } from "./MenuMedia";
 import { formatMoney, splitIngredients } from "@/lib/utils";
 import { useT } from "@/components/i18n/I18nProvider";
 
 export function ProductSheet() {
+  const { activeProduct } = useMenu();
+  return <ProductSheetContent key={activeProduct?.id ?? "closed"} />;
+}
+
+function ProductSheetContent() {
   const {
     activeProduct,
     closeProduct,
@@ -18,17 +23,11 @@ export function ProductSheet() {
   } = useMenu();
 
   const t = useT();
-  const [variantId, setVariantId] = useState<string | null>(null);
+  const [variantId, setVariantId] = useState<string | null>(activeProduct?.product_variants[0]?.id ?? null);
   const [quantity, setQuantity] = useState(1);
   const [note, setNote] = useState("");
 
-  useEffect(() => {
-    if (activeProduct) {
-      setVariantId(activeProduct.product_variants[0]?.id ?? null);
-      setQuantity(1);
-      setNote("");
-    }
-  }, [activeProduct]);
+
 
   useEffect(() => {
     if (!activeProduct) return;
@@ -198,6 +197,7 @@ export function ProductSheet() {
                   productName: activeProduct.name,
                   variantName: variant.name,
                   unitPrice: Number(variant.price),
+                  tax: variant.tax,
                   quantity,
                   note,
                   imageUrl: activeProduct.image_url,
@@ -208,7 +208,7 @@ export function ProductSheet() {
             >
               {t("menu.addToOrder")} ·{" "}
               <span className="ltr-nums">
-                {formatMoney(Number(variant.price) * quantity, currency)}
+                {formatMoney(cartLineTotal({unitPrice:Number(variant.price),quantity,tax:variant.tax}), currency)}
               </span>
             </button>
           </div>

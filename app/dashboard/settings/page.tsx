@@ -1,3 +1,4 @@
+import { TaxSettingsForm } from "@/components/dashboard/TaxSettingsForm";
 import type { Metadata } from "next";
 import { requireRestaurant } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -60,6 +61,7 @@ export default async function SettingsPage() {
         }}
       />
 
+      <TaxSettingsForm restaurant={restaurant} />
       <AlertsCard />
 
       <Card>

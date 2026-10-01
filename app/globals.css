@@ -205,3 +205,9 @@ html { scroll-behavior: smooth; }
 button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 [lang="ar"] h1, [lang="ar"] h2 { letter-spacing: 0; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+@media print {
+  #pos-receipt[data-report] { width: 190mm; max-width: 100%; position: static; padding: 0; }
+  #pos-receipt[data-report] div { display: block; }
+  #pos-receipt[data-report] table { font-size: 11px; }
+}

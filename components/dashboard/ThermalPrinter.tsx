@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { useToast } from '@/components/ui/Toast';
+import { recordReceiptPrint } from "@/lib/actions/fiscal";
 import { bridgeRequest, DEFAULT_PRINTER, receiptRaster, type PosReceipt, type PrinterSettings } from '@/lib/thermal-print';
 
 function subscribeSettings(callback: () => void) {
@@ -73,6 +74,7 @@ export function ThermalPrinter({ restaurantId, restaurantName, currency, receipt
       const bitmap = await receiptRaster(data, restaurantName, currency, ar, settings.width);
       await bridgeRequest(settings, '/print', { ...bitmap, printer: settings.printer, cut: settings.cut, jobId: job.current!.id });
       job.current = null;
+      if(!test && data.orderId) { const logged=await recordReceiptPrint(data.orderId,data.creditNote?'credit':'invoice','thermal'); if(!logged.ok) toast(label('الإيصال اتطبع، لكن تعذر تسجيل الطباعة في السجل.', 'Receipt printed, but the print journal could not be updated.'), 'error'); }
       toast(label('اترسل الإيصال للطابعة.', 'Receipt sent to the printer.'), 'success');
       setMessage(label('اترسل الإيصال للطابعة.', 'Receipt sent to the printer.'));
     } catch {

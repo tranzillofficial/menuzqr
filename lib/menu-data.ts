@@ -1,3 +1,4 @@
+import { displayPrice, vatRate } from "./tax";
 import { getUser } from "./auth";
 import { cache } from "react";
 import { createAdminSupabase } from "./supabase/admin";
@@ -29,7 +30,7 @@ export const getPublicMenu = cache(async function getPublicMenu(
   const { data: restaurant } = await supabase
     .from("restaurants")
     .select(
-      "id,name,slug,description,logo_url,cover_url,phone,address,currency,language,menu_theme,ordering_enabled,waiter_calls_enabled,status,owner_id,activation_expires_at"
+      "id,name,slug,description,logo_url,cover_url,phone,address,currency,language,menu_theme,ordering_enabled,waiter_calls_enabled,status,owner_id,activation_expires_at,tax_mode,vat_registered,prices_include_vat"
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -85,6 +86,7 @@ export const getPublicMenu = cache(async function getPublicMenu(
     ...p,
     product_variants: (p.product_variants ?? [])
       .filter((v) => v.is_active)
+      .map(v => ({ ...v, price: displayPrice(Number(v.price), p.vat_code, restaurant), tax: { basePrice: Number(v.price), rate: vatRate(restaurant.tax_mode,restaurant.vat_registered,p.vat_code), inclusive: restaurant.prices_include_vat } }))
       .sort((a, b) => a.sort_order - b.sort_order || a.price - b.price),
   }));
 

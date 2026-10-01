@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { taxAmounts } from "@/lib/tax";
 import type { MenuData, ProductWithVariants } from "@/lib/types";
 
 export type CartItem = {
@@ -17,10 +18,13 @@ export type CartItem = {
   productName: string;
   variantName: string;
   unitPrice: number;
+  tax?: { basePrice: number; rate: number; inclusive: boolean };
   quantity: number;
   note: string;
   imageUrl: string | null;
 };
+
+export function cartLineTotal(item: Pick<CartItem,"unitPrice"|"quantity"|"tax">) { return item.tax ? taxAmounts(item.tax.basePrice,item.quantity,item.tax.rate,item.tax.inclusive).gross : Math.round(item.unitPrice*item.quantity*100)/100; }
 
 type MenuContextValue = {
   data: MenuData;
@@ -105,7 +109,7 @@ export function MenuProvider({
   const value = useMemo<MenuContextValue>(() => {
     const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
     const total =
-      Math.round(items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0) * 100) / 100;
+      Math.round(items.reduce((sum, i) => sum + cartLineTotal(i), 0) * 100) / 100;
 
     return {
       data,
