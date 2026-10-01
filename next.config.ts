@@ -27,21 +27,24 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
     deviceSizes: [360, 420, 640, 828, 1080, 1440, 1920],
     imageSizes: [48, 64, 96, 128, 200, 256, 384],
-    remotePatterns: supabaseHost
+    remotePatterns: [
+      { protocol: "https" as const, hostname: "images.unsplash.com", pathname: "/photo-*" },
+      ...(supabaseHost
       ? [
           {
-            protocol: "https",
+            protocol: "https" as const,
             hostname: supabaseHost,
             pathname: "/storage/v1/object/public/**",
           },
         ]
       : [
           {
-            protocol: "https",
+            protocol: "https" as const,
             hostname: "*.supabase.co",
             pathname: "/storage/v1/object/public/**",
           },
-        ],
+        ]),
+    ],
   },
   async headers() {
     return [

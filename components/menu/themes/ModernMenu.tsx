@@ -1,5 +1,6 @@
 "use client";
 
+import { DemoMenu } from "./DemoMenu";
 import { useMemo, useState } from "react";
 import { useMenu } from "../MenuContext";
 import { MenuImage } from "../MenuMedia";
@@ -8,6 +9,11 @@ import { useT } from "@/components/i18n/I18nProvider";
 import { formatMoney, priceRange } from "@/lib/utils";
 
 export function ModernMenu() {
+  const { data } = useMenu();
+  return data.restaurant.slug === "demo" ? <DemoMenu /> : <StandardModernMenu />;
+}
+
+function StandardModernMenu() {
   const { data, currency, showPrices, openProduct } = useMenu();
   const t = useT();
   const { restaurant, categories: allCategories } = data;

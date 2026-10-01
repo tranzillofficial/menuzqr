@@ -17,6 +17,7 @@ export function MenuImage({
   sizes = "(max-width: 640px) 100vw, 400px",
   priority,
   rounded,
+  fit = "contain",
 }: {
   src: string | null;
   alt: string;
@@ -24,6 +25,7 @@ export function MenuImage({
   sizes?: string;
   priority?: boolean;
   rounded?: string;
+  fit?: "contain" | "cover";
 }) {
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -62,7 +64,8 @@ export function MenuImage({
         onLoad={() => setLoaded(true)}
         onError={() => setFailed(true)}
         className={cn(
-          "object-contain transition-opacity duration-300",
+          "transition-opacity duration-300",
+          fit === "cover" ? "object-cover" : "object-contain",
           loaded ? "opacity-100" : "opacity-0"
         )}
       />
