@@ -331,9 +331,9 @@ export function ProductEditor({
 
         <label className="block space-y-2 text-sm font-medium">{label('تصنيف ضريبة المنتج', 'Product VAT category')}
           <Select name="vat_code" defaultValue={product?.vat_code ?? 'standard'}>
-            {VAT_CODES.filter(code => code !== 'reduced' || restaurant.tax_mode === 'uk').map(code => <option key={code} value={code}>{code === 'exempt' ? label('معفى', 'Exempt') : code} {code !== 'exempt' ? `${vatRate(restaurant.tax_mode, true, code)}%` : ''}</option>)}
+            {VAT_CODES.map(code => <option key={code} value={code}>{code === 'exempt' ? label('معفى', 'Exempt') : code} {code !== 'exempt' ? `${vatRate(restaurant.tax_mode, true, code,restaurant.tax_rates)}%` : ''}</option>)}
           </Select>
-          <span className="block text-xs font-normal text-ink-500">{label('اختار التصنيف حسب طبيعة المنتج وطريقة تقديمه. الأسعار', 'Choose the category for the product and how it is supplied. Prices are')} {restaurant.prices_include_vat ? label('شاملة الضريبة.', 'VAT inclusive.') : label('قبل الضريبة؛ سعر العميل يشمل الضريبة.', 'VAT exclusive; customer prices include VAT.')}</span>
+          <span className="block text-xs font-normal text-ink-500">{label('اختار التصنيف حسب طبيعة المنتج وطريقة تقديمه. الأسعار', 'Choose the category for the product and how it is supplied. Prices are')} {restaurant.prices_include_vat ? label('شاملة الضريبة.', 'VAT inclusive.') : label('قبل الضريبة؛ الضريبة تضاف للإجمالي.', 'VAT exclusive; VAT is added to the total.')}</span>
         </label>
         {/* --- variants --- */}
         <div className="rounded-2xl border border-ink-200 p-4">

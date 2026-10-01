@@ -30,3 +30,11 @@ Records have no scheduled deletion. Retain exports and independent backups for r
 - https://www.tax.gov.ae/en/taxes/Vat/uae.einvoicing.aspx
 - https://zatca.gov.sa/en/E-Invoicing/Pages/default.aspx
 - https://www.zatca.gov.sa/en/HelpCenter/guidelines/Documents/Economic%20Activity.pdf
+
+## Configurable country rates and Egypt
+
+Egypt defaults to 14% standard VAT, EGP and Africa/Cairo. Managers may configure standard and reduced rates independently for UK, UAE, Saudi and Egypt (0–100, two decimal places). Zero and exempt stay 0, and unregistered businesses collect no VAT. Use appropriate rates for the business and supply. Egypt is a sales receipt mode; ETA electronic invoicing/receipt integration is not implemented.
+
+Three pricing choices apply to existing entered product values without rewriting them: inclusive, exclusive with gross menu prices, or exclusive with base menu prices. For 100 and 14%, inclusive yields net 87.72 + VAT 12.28 = total 100; either exclusive choice yields net 100 + VAT 14 = total 114. Base price menus disclose excluded VAT, and cart/POS show the VAT and final total before confirmation. Quantity calculations retain per-line rounding. Changing modes repeatedly never compounds VAT. Existing immutable snapshots, invoices and refunds retain their original rate. Changing country does not convert numeric product values across currencies.
+
+Egypt rate source: https://www.eta.gov.eg/ar/news/twdh-khdw-almtam-walkafyhat-almhddt-bqrarat-wzyr-almalyt-ldrybt-alqymt-almdaft

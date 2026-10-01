@@ -1,13 +1,14 @@
-export const TAX_MODES = ['none', 'uk', 'uae', 'saudi'] as const;
+export const TAX_MODES = ['none', 'uk', 'uae', 'saudi', 'egypt'] as const;
 export type TaxMode = typeof TAX_MODES[number];
 export const VAT_CODES = ['standard', 'reduced', 'zero', 'exempt'] as const;
 export type VatCode = typeof VAT_CODES[number];
-export type TaxSettings = { tax_mode: TaxMode; vat_registered: boolean; vat_number: string | null; prices_include_vat: boolean; legal_name: string | null; tax_address: string | null; business_timezone: string };
-export const MARKET = { none: { currency: '', timezone: 'Africa/Cairo', standard: 0 }, uk: { currency: 'GBP', timezone: 'Europe/London', standard: 20 }, uae: { currency: 'AED', timezone: 'Asia/Dubai', standard: 5 }, saudi: { currency: 'SAR', timezone: 'Asia/Riyadh', standard: 15 } };
-export function vatRate(mode: TaxMode, registered: boolean, code: VatCode) {
+export type MarketRates = Partial<Record<TaxMode, { standard: number; reduced: number }>>;
+export type TaxSettings = { tax_mode: TaxMode; tax_rates?: MarketRates; menu_prices_include_vat?: boolean; vat_registered: boolean; vat_number: string | null; prices_include_vat: boolean; legal_name: string | null; tax_address: string | null; business_timezone: string };
+export const MARKET = { none: { currency: '', timezone: 'Africa/Cairo', standard: 0 }, uk: { currency: 'GBP', timezone: 'Europe/London', standard: 20 }, uae: { currency: 'AED', timezone: 'Asia/Dubai', standard: 5 }, saudi: { currency: 'SAR', timezone: 'Asia/Riyadh', standard: 15 }, egypt: { currency: 'EGP', timezone: 'Africa/Cairo', standard: 14 } };
+export function vatRate(mode: TaxMode, registered: boolean, code: VatCode, rates?: MarketRates) {
   if (!registered || mode === 'none' || code === 'zero' || code === 'exempt') return 0;
-  if (code === 'reduced') return mode === 'uk' ? 5 : 0;
-  return MARKET[mode].standard;
+  if (code === 'reduced') return rates?.[mode]?.reduced ?? (mode === 'uk' ? 5 : 0);
+  return rates?.[mode]?.standard ?? MARKET[mode].standard;
 }
 export function taxAmounts(price: number, quantity: number, rate: number, inclusive: boolean) {
   const amount = Math.round((price * quantity + Number.EPSILON) * 100);
@@ -15,8 +16,9 @@ export function taxAmounts(price: number, quantity: number, rate: number, inclus
   const gross = inclusive ? amount : amount + vat;
   return { net: (gross - vat) / 100, vat: vat / 100, gross: gross / 100 };
 }
-export function displayPrice(price: number, code: VatCode, settings: Pick<TaxSettings, 'tax_mode' | 'vat_registered' | 'prices_include_vat'>) {
-  return taxAmounts(Number(price), 1, vatRate(settings.tax_mode, settings.vat_registered, code), settings.prices_include_vat).gross;
+export function displayPrice(price: number, code: VatCode, settings: Pick<TaxSettings, 'tax_mode' | 'vat_registered' | 'prices_include_vat' | 'tax_rates' | 'menu_prices_include_vat'>) {
+  if (!settings.prices_include_vat && settings.menu_prices_include_vat === false) return Number(price);
+  return taxAmounts(Number(price), 1, vatRate(settings.tax_mode, settings.vat_registered, code, settings.tax_rates), settings.prices_include_vat).gross;
 }
 export type VatBreakdown = { code: string; rate: number; net: number; vat: number; gross: number };
 export type FiscalSnapshot = { invoice_kind: 'receipt' | 'simplified' | 'full'; version: number; mode: TaxMode; registered: boolean; vat_number: string | null; legal_name: string; address: string | null; timezone: string; inclusive: boolean; customer: { name?: string; address?: string; vat_number?: string }; net: number; vat: number; gross: number; breakdown: VatBreakdown[]; };

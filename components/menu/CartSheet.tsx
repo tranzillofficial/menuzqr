@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { cartLineTotal, useMenu } from "./MenuContext";
+import { cartLineDisplay, cartLineVat, useMenu } from "./MenuContext";
 import { placeOrderAction } from "@/lib/actions/orders";
 import { formatMoney } from "@/lib/utils";
 import { useT } from "@/components/i18n/I18nProvider";
@@ -169,7 +169,7 @@ function CartSheet({ slug, tableToken }: { slug: string; tableToken: string }) {
                       </div>
                       <div className="flex flex-col items-end gap-2">
                         <span className="text-sm font-semibold">
-                          {formatMoney(cartLineTotal(item), currency)}
+                          {formatMoney(cartLineDisplay(item), currency)}
                         </span>
                         <div className="flex items-center rounded-lg border border-ink-200">
                           <button
@@ -221,6 +221,7 @@ function CartSheet({ slug, tableToken }: { slug: string; tableToken: string }) {
             )}
 
             <div className="border-t border-ink-100 p-4">
+              {items.some(i => i.tax && i.tax.rate > 0) && <div className="mb-2 space-y-1 text-sm"><p className="flex justify-between"><span>Subtotal / قبل الضريبة</span><span>{formatMoney(total - items.reduce((sum,i) => sum + cartLineVat(i),0),currency)}</span></p><p className="flex justify-between"><span>VAT / الضريبة</span><span>{formatMoney(items.reduce((sum,i) => sum + cartLineVat(i),0),currency)}</span></p></div>}
               <div className="mb-3 flex items-center justify-between text-sm">
                 <span className="text-ink-500">{t("menu.total")}</span>
                 <span className="text-lg font-semibold">{formatMoney(total, currency)}</span>

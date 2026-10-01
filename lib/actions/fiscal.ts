@@ -3,7 +3,7 @@ import { getMembership } from '@/lib/membership';
 import { createAdminSupabase } from '@/lib/supabase/admin';
 import { createServerSupabase } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { TAX_MODES, MARKET, type TaxMode } from '@/lib/tax';
+import { TAX_MODES, MARKET, type TaxMode, type MarketRates } from '@/lib/tax';
 import { getLocale } from '@/lib/i18n/server';
 import { str, bool } from './helpers';
 import type { ActionState } from '@/lib/types';
@@ -17,8 +17,17 @@ export async function saveTaxSettings(_previous: ActionState, form: FormData): P
   if (registered && (mode==='none'||!name||address.length<5||!number)) return {ok:false,message:ar?'كمّل اسم المنشأة القانوني وعنوانها ورقم الضريبة.':'Enter the legal business name, address and VAT number.'};
   if(registered && mode==='uk'&&!/^(GB)?\d{9}(\d{3})?$/.test(number)) return {ok:false,message:'Enter a UK VAT number with 9 or 12 digits, optionally prefixed GB.'};
   if(registered && (mode==='uae'||mode==='saudi')&&!/^\d{15}$/.test(number)) return {ok:false,message:ar?'الرقم الضريبي لازم يكون ١٥ رقم.':'The VAT number must have 15 digits.'};
+  const rates: MarketRates = {};
+  for (const market of TAX_MODES.filter(m => m !== 'none')) {
+    const standard = Number(str(form, `${market}_standard`));
+    const reduced = Number(str(form, `${market}_reduced`));
+    if ([standard,reduced].some(n => !Number.isFinite(n) || n < 0 || n > 100 || Math.abs(n * 100 - Math.round(n * 100)) > 0.000001)) return {ok:false,message:ar?'النسبة لازم تكون من 0 لـ100 وبحد أقصى رقمين عشريين.':'Rates must be 0–100 with at most two decimal places.'};
+    rates[market] = {standard,reduced};
+  }
+  const pricing = str(form,'pricing_mode');
+  if (!['inclusive','exclusive_gross','exclusive_net'].includes(pricing)) return {ok:false,message:'Choose a pricing mode.'};
   const db=await createServerSupabase();
-  const {error}=await db.from('restaurants').update({tax_mode:mode,vat_registered:registered,vat_number:number||null,legal_name:name||null,tax_address:address||null,prices_include_vat:bool(form,'prices_include_vat'),business_timezone:MARKET[mode].timezone,...(mode!=='none'?{currency:MARKET[mode].currency}:{})}).eq('id',member.restaurant.id);
+  const {error}=await db.from('restaurants').update({tax_mode:mode,vat_registered:registered,vat_number:number||null,legal_name:name||null,tax_address:address||null,tax_rates:rates,prices_include_vat:pricing==='inclusive',menu_prices_include_vat:pricing!=='exclusive_net',business_timezone:MARKET[mode].timezone,...(mode!=='none'?{currency:MARKET[mode].currency}:{})}).eq('id',member.restaurant.id);
   if(error) return {ok:false,message:ar?'تعذر حفظ الإعدادات. راجع البيانات وحاول تاني.':error.message};
   revalidatePath('/dashboard','layout'); revalidatePath(`/${member.restaurant.slug}/menu`);
   return {ok:true,message:ar?'إعدادات الضريبة اتحفظت.':'Tax settings saved.'};

@@ -58,7 +58,7 @@ export function PosScreen({ restaurantId, restaurantName, currency, products, ca
     setCart(previous => {
       const existing = previous.find(line => line.variantId === variant.id);
       return existing ? previous.map(line => line.variantId === variant.id ? { ...line, quantity: Math.min(99, line.quantity + 1) } : line)
-        : [...previous, { variantId: variant.id, name: product.name, variant: variant.name, price: grossPrice(Number(variant.price), product), basePrice: Number(variant.price), rate: vatRate(taxSettings.tax_mode,taxSettings.vat_registered,product.vat_code), quantity: 1 }];
+        : [...previous, { variantId: variant.id, name: product.name, variant: variant.name, price: grossPrice(Number(variant.price), product), basePrice: Number(variant.price), rate: vatRate(taxSettings.tax_mode,taxSettings.vat_registered,product.vat_code,taxSettings.tax_rates), quantity: 1 }];
     });
     setAnnouncement(`${label('اتضاف للطلب', 'Added to order')}: ${product.name}`);
   }
@@ -107,13 +107,13 @@ export function PosScreen({ restaurantId, restaurantName, currency, products, ca
       {!cart.length ? <div className="rounded-xl border border-dashed border-ink-200 px-4 py-10 text-center text-sm text-ink-500">{label('اختار المنتجات وهتظهر هنا', 'Added products appear here')}</div> :
         <ul data-testid="cart-lines" className="max-h-[38dvh] space-y-2 overflow-y-auto overscroll-contain">
           {cart.map(line => <li key={line.variantId} className="rounded-xl bg-ink-50 p-3">
-            <div className="flex items-start justify-between gap-2"><div className="min-w-0"><p className="text-sm font-medium">{line.name}</p><p className="text-xs text-ink-500">{line.variant}</p></div><strong className="shrink-0 text-sm">{money(taxAmounts(line.basePrice, line.quantity, line.rate, taxSettings.prices_include_vat).gross)}</strong></div>
+            <div className="flex items-start justify-between gap-2"><div className="min-w-0"><p className="text-sm font-medium">{line.name}</p><p className="text-xs text-ink-500">{line.variant}</p></div><strong className="shrink-0 text-sm">{money(taxSettings.prices_include_vat || taxSettings.menu_prices_include_vat !== false ? taxAmounts(line.basePrice, line.quantity, line.rate, taxSettings.prices_include_vat).gross : line.basePrice * line.quantity)}</strong></div>
             <div className="mt-2 flex items-center gap-2"><button type="button" aria-label={`${label('تقليل كمية', 'Decrease')} ${line.name}`} onClick={() => quantity(line.variantId, -1)} className="size-9 rounded-lg border border-ink-200 bg-white">−</button><span className="min-w-6 text-center text-sm font-semibold">{line.quantity}</span><button type="button" disabled={line.quantity >= 99} aria-label={`${label('زيادة كمية', 'Increase')} ${line.name}`} onClick={() => quantity(line.variantId, 1)} className="size-9 rounded-lg border border-ink-200 bg-white disabled:opacity-40">+</button><button type="button" onClick={() => { changed(); setCart(previous => previous.filter(item => item.variantId !== line.variantId)); }} className="ms-auto px-2 py-2 text-xs text-red-600">{label('حذف', 'Remove')}</button></div>
           </li>)}
         </ul>}
       <input value={note} onChange={event => { setNote(event.target.value); changed(); }} maxLength={400} placeholder={label('ملاحظة للطلب', 'Order note')} aria-label={label('ملاحظة للطلب', 'Order note')} className="h-11 w-full rounded-xl border border-ink-200 px-3 text-sm" />
       <div className="space-y-1 text-sm"><p className="flex justify-between"><span>{label('قبل الضريبة', 'Subtotal')}</span><span>{money(total - vat)}</span></p><p className="flex justify-between"><span>VAT</span><span>{money(vat)}</span></p></div>
-      {taxSettings.vat_registered && taxSettings.tax_mode !== 'saudi' && <div className="space-y-2 text-sm">
+      {taxSettings.vat_registered && ['uk','uae'].includes(taxSettings.tax_mode) && <div className="space-y-2 text-sm">
         <label className="flex gap-2"><input type="checkbox" checked={fullInvoice} onChange={e => { setFullInvoice(e.target.checked); changed(); }} />{label('فاتورة ضريبية كاملة', 'Full VAT invoice')}</label>
         {fullInvoice && <><input aria-label="Customer name" placeholder={label('اسم العميل', 'Customer name')} value={customerName} onChange={e => { setCustomerName(e.target.value); changed(); }} className="h-11 w-full rounded-xl border px-3" /><input aria-label="Customer address" placeholder={label('عنوان العميل', 'Customer address')} value={customerAddress} onChange={e => { setCustomerAddress(e.target.value); changed(); }} className="h-11 w-full rounded-xl border px-3" /><input aria-label="Customer VAT number" placeholder={label('رقم ضريبة العميل إن وجد', 'Customer VAT number, if registered')} value={customerVat} onChange={e => { setCustomerVat(e.target.value); changed(); }} className="h-11 w-full rounded-xl border px-3" /></>}
       </div>}

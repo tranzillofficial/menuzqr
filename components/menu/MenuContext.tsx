@@ -18,13 +18,16 @@ export type CartItem = {
   productName: string;
   variantName: string;
   unitPrice: number;
-  tax?: { basePrice: number; rate: number; inclusive: boolean };
+  tax?: { basePrice: number; rate: number; inclusive: boolean; showGross?: boolean };
   quantity: number;
   note: string;
   imageUrl: string | null;
 };
 
 export function cartLineTotal(item: Pick<CartItem,"unitPrice"|"quantity"|"tax">) { return item.tax ? taxAmounts(item.tax.basePrice,item.quantity,item.tax.rate,item.tax.inclusive).gross : Math.round(item.unitPrice*item.quantity*100)/100; }
+
+export function cartLineDisplay(item: Pick<CartItem,"unitPrice"|"quantity"|"tax">) { return item.tax?.showGross === false && !item.tax.inclusive ? Math.round(item.tax.basePrice*item.quantity*100)/100 : cartLineTotal(item); }
+export function cartLineVat(item: Pick<CartItem,"unitPrice"|"quantity"|"tax">) { return item.tax ? taxAmounts(item.tax.basePrice,item.quantity,item.tax.rate,item.tax.inclusive).vat : 0; }
 
 type MenuContextValue = {
   data: MenuData;
@@ -150,5 +153,5 @@ export function MenuProvider({
     cartOpen,
   ]);
 
-  return <MenuContext.Provider value={value}>{children}</MenuContext.Provider>;
+  return <MenuContext.Provider value={value}>{showPrices && data.restaurant.vat_registered && !data.restaurant.prices_include_vat && data.restaurant.menu_prices_include_vat === false && <p className="bg-amber-50 px-4 py-2 text-center text-xs text-amber-900">الأسعار قبل الضريبة؛ VAT تضاف إلى الإجمالي قبل تأكيد الطلب. · Prices exclude VAT; VAT is added to the total before ordering.</p>}{children}</MenuContext.Provider>;
 }

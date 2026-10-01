@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { cartLineTotal, useMenu } from "./MenuContext";
+import { cartLineDisplay, useMenu } from "./MenuContext";
 import { MenuImage } from "./MenuMedia";
 import { formatMoney, splitIngredients } from "@/lib/utils";
 import { useT } from "@/components/i18n/I18nProvider";
@@ -133,7 +133,7 @@ function ProductSheetContent() {
                         <span className="text-sm font-medium">{v.name}</span>
                         {showPrices && (
                           <span className="text-sm font-semibold">
-                            {formatMoney(Number(v.price), currency)}
+                            {formatMoney(Number(v.price), currency)}{v.tax && !v.tax.inclusive && v.tax.showGross === false && <span className="block text-[10px]">+ VAT {v.tax.rate}%</span>}
                           </span>
                         )}
                       </button>
@@ -208,7 +208,7 @@ function ProductSheetContent() {
             >
               {t("menu.addToOrder")} ·{" "}
               <span className="ltr-nums">
-                {formatMoney(cartLineTotal({unitPrice:Number(variant.price),quantity,tax:variant.tax}), currency)}
+                {formatMoney(cartLineDisplay({unitPrice:Number(variant.price),quantity,tax:variant.tax}), currency)}
               </span>
             </button>
           </div>

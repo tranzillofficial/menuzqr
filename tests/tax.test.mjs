@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {taxAmounts,vatRate,summarizeSales} from '../lib/tax.ts';
+import {taxAmounts,vatRate,displayPrice,summarizeSales} from '../lib/tax.ts';
 import {businessDayRange} from '../lib/business-time.ts';
 test('Inclusive 20%, 5%, UAE and Saudi prices preserve gross and remove the right VAT',()=>{
  assert.deepEqual(taxAmounts(120,1,20,true),{net:100,vat:20,gross:120});
@@ -25,4 +25,16 @@ test('UK daily boundaries honor summer time and both DST transitions',()=>{
  assert.equal(businessDayRange('2026-07-01','Europe/London').start,'2026-06-30T23:00:00.000Z');
  assert.equal(businessDayRange('2026-10-01','Asia/Dubai').start,'2026-09-30T20:00:00.000Z');
  assert.throws(()=>businessDayRange('2026-02-30','Europe/London'));
+});
+
+test('Egypt and configurable per-market rates support all three price choices',()=>{
+ const settings={tax_mode:'egypt',vat_registered:true,prices_include_vat:false};
+ assert.equal(vatRate('egypt',true,'standard'),14);
+ assert.equal(displayPrice(100,'standard',settings),114);
+ assert.equal(displayPrice(100,'standard',{...settings,menu_prices_include_vat:false}),100);
+ assert.equal(displayPrice(100,'standard',{...settings,prices_include_vat:true}),100);
+ assert.deepEqual(taxAmounts(100,1,14,false),{net:100,vat:14,gross:114});
+ assert.deepEqual(taxAmounts(100,1,14,true),{net:87.72,vat:12.28,gross:100});
+ assert.equal(vatRate('uk',true,'standard',{uk:{standard:18,reduced:3}}),18);
+ assert.equal(vatRate('egypt',true,'exempt',{egypt:{standard:14,reduced:5}}),0);
 });

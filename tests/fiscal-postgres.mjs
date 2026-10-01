@@ -20,6 +20,7 @@ create function can_manage_restaurant(r uuid) returns boolean language sql as $$
 create function is_admin() returns boolean language sql as $$select false$$;
 grant usage on schema public,auth to anon,authenticated,service_role;grant all on all tables in schema public to service_role;grant select on restaurant_members to authenticated;`);
 await db.exec(readFileSync(new URL('../supabase/migrations/20261001065430_fiscal_tax_and_journal.sql',import.meta.url),'utf8'));
+await db.exec(readFileSync(new URL('../supabase/migrations/20261001074947_configurable_market_tax.sql',import.meta.url),'utf8'));
 console.log('Migration compiled on PostgreSQL');
 const actor='10000000-0000-4000-8000-000000000001',r='20000000-0000-4000-8000-000000000001',other='20000000-0000-4000-8000-000000000002';
 await db.exec(`insert into profiles values('${actor}','Test cashier','test@example.com');insert into restaurants(id,owner_id,name,slug)values('${r}','${actor}','Test','test'),('${other}','${actor}','Other','other');insert into restaurant_members(restaurant_id,user_id,role)values('${r}','${actor}','owner');update restaurants set tax_mode='uk',vat_registered=true,vat_number='GB123456789',legal_name='Test Ltd',tax_address='1 Test Street',business_timezone='Europe/London' where id='${r}';`);
@@ -64,4 +65,11 @@ await db.exec('set role anon');await assert.rejects(()=>db.query('select create_
 await db.exec(`set role authenticated;select set_config('request.jwt.claim.sub','${actor}',false);`);assert.ok((await db.query('select * from financial_events')).rows.length>0);await assert.rejects(()=>db.exec(`delete from orders`),/permission denied/);await assert.rejects(()=>db.exec(`insert into financial_events(restaurant_id,order_id,kind,currency,gross,net,vat,breakdown)values('${r}','${o.id}','sale','GBP',1,1,0,'[]')`),/permission denied/);await db.exec('reset role');
 await db.exec(`select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000099',false);set role authenticated;`);assert.equal((await db.query('select * from financial_events')).rows.length,0);await db.exec('reset role');
 console.log('PASS: mixed inclusive VAT, zero vs exempt, idempotency, frozen settings, full refunds, immutable Z close, exclusive prices, guest void, cross-tenant checks, RLS and no hard deletes');
+await db.exec(`update restaurants set tax_mode='egypt',currency='EGP',business_timezone='Africa/Cairo',vat_registered=true,vat_number='123456789',prices_include_vat=false,menu_prices_include_vat=false,tax_rates='{"egypt":{"standard":14,"reduced":0},"uk":{"standard":19,"reduced":4}}' where id='${r}';update product_variants set price=100 where id='${vars[2]}';`);
+const egypt=await sale('50000000-0000-4000-8000-000000000021',[{variantId:vars[2],quantity:1}]);assert.equal(egypt.total,114);assert.equal(egypt.fiscal_snapshot.net,100);assert.equal(egypt.fiscal_snapshot.vat,14);
+await db.exec(`update restaurants set tax_rates='{"egypt":{"standard":10,"reduced":0}}',prices_include_vat=true where id='${r}';`);
+const incl=await sale('50000000-0000-4000-8000-000000000022',[{variantId:vars[2],quantity:1}]);assert.equal(incl.total,100);assert.equal(incl.fiscal_snapshot.vat,9.09);
+assert.equal((await db.query('select fiscal_snapshot from orders where id=$1',[egypt.id])).rows[0].fiscal_snapshot.vat,14);
+await assert.rejects(()=>db.exec(`update restaurants set tax_rates='{"egypt":{"standard":-1}}' where id='${r}'`),/Invalid rate/);
+console.log('PASS: Egypt 14%, custom rates, exclusive 100 + 14, inclusive 100, immutable previous sale and invalid rates');
 await db.close();

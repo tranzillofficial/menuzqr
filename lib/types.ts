@@ -61,7 +61,7 @@ export type Category = {
 };
 
 export type ProductVariant = {
-  tax?: { basePrice: number; rate: number; inclusive: boolean };
+  tax?: { basePrice: number; rate: number; inclusive: boolean; showGross?: boolean };
   id: string;
   restaurant_id: string;
   product_id: string;
@@ -284,6 +284,9 @@ export type MenuData = {
     | "menu_theme"
     | "ordering_enabled"
     | "waiter_calls_enabled"
+    | "prices_include_vat"
+    | "menu_prices_include_vat"
+    | "vat_registered"
   >;
   categories: Array<Category & { products: ProductWithVariants[] }>;
 };

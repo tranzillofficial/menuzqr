@@ -112,7 +112,7 @@ export async function saveProductAction(
   }
 
   const vatCode = str(form, "vat_code") || "standard";
-  if (!VAT_CODES.includes(vatCode as VatCode) || (restaurant.tax_mode !== "uk" && vatCode === "reduced")) return fail("Choose a VAT category available in this market.");
+  if (!VAT_CODES.includes(vatCode as VatCode)) return fail("Choose a VAT category available in this market.");
 
   const payload = {
     vat_code: vatCode,
