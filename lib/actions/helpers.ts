@@ -1,6 +1,7 @@
 import "server-only";
 import { staffPermissions, type StaffPermission } from "@/lib/staff-permissions";
 
+import { getMembership } from "@/lib/membership";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import type { ActionState, Restaurant } from "@/lib/types";
@@ -64,6 +65,16 @@ export async function getOwnedRestaurant(): Promise<
   }
 
   return { ok: true, restaurant: data as Restaurant, userId: user.id };
+}
+
+/** Menu reads and mutations use the same selected manager membership. */
+export async function getMenuRestaurant(): Promise<
+  | {ok:true;restaurant:Restaurant;userId:string}
+  | {ok:false;error:ActionState}
+> {
+  const membership = await getMembership();
+  if (!membership?.isManager) return {ok:false,error:fail("Manager access required.")};
+  return {ok:true,restaurant:membership.restaurant,userId:membership.userId};
 }
 
 /**

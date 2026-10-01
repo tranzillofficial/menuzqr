@@ -1,5 +1,6 @@
 "use server";
 
+import { createCategoryQuickAction } from "./categories";
 import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { VAT_CODES, type VatCode } from "@/lib/tax";
@@ -9,7 +10,7 @@ import {
   deleteAssetIfOwned,
   done,
   fail,
-  getOwnedRestaurant,
+  getMenuRestaurant,
   optionalStr,
   sanitiseImageUrl,
   str,
@@ -17,6 +18,8 @@ import {
 
 function revalidate(slug: string) {
   revalidatePath("/dashboard/products");
+  revalidatePath("/dashboard/categories");
+  revalidatePath("/dashboard/pos");
   revalidatePath("/dashboard");
   revalidatePath(`/${slug}/menu`);
 }
@@ -71,7 +74,7 @@ export async function saveProductAction(
   _prev: ActionState,
   form: FormData
 ): Promise<ActionState> {
-  const owned = await getOwnedRestaurant();
+  const owned = await getMenuRestaurant();
   if (!owned.ok) return owned.error;
   const { restaurant } = owned;
 
@@ -90,7 +93,13 @@ export async function saveProductAction(
     });
   }
 
-  const categoryId = optionalStr(form, "category_id");
+  let categoryId = optionalStr(form, "category_id");
+  const suggestedSection = optionalStr(form,"catalog_section_name");
+  if (!categoryId && suggestedSection) {
+    const created = await createCategoryQuickAction(suggestedSection);
+    if (!created.ok || !created.category) return fail(created.message ?? "Could not create the catalog section.");
+    categoryId = created.category.id;
+  }
   const imageUrl = sanitiseImageUrl(optionalStr(form, "image_url"));
   const imageSourceRaw = str(form, "image_source");
   const imageSource = imageUrl
@@ -208,7 +217,7 @@ export async function saveProductAction(
 }
 
 export async function deleteProductAction(id: string): Promise<ActionState> {
-  const owned = await getOwnedRestaurant();
+  const owned = await getMenuRestaurant();
   if (!owned.ok) return owned.error;
 
   const supabase = await createServerSupabase();
@@ -232,7 +241,7 @@ export async function deleteProductAction(id: string): Promise<ActionState> {
 }
 
 export async function toggleProductAction(id: string, isActive: boolean): Promise<ActionState> {
-  const owned = await getOwnedRestaurant();
+  const owned = await getMenuRestaurant();
   if (!owned.ok) return owned.error;
 
   const supabase = await createServerSupabase();
@@ -248,7 +257,7 @@ export async function toggleProductAction(id: string, isActive: boolean): Promis
 }
 
 export async function moveProductAction(id: string, direction: "up" | "down"): Promise<ActionState> {
-  const owned = await getOwnedRestaurant();
+  const owned = await getMenuRestaurant();
   if (!owned.ok) return owned.error;
 
   const supabase = await createServerSupabase();
@@ -284,7 +293,7 @@ export async function moveProductAction(id: string, direction: "up" | "down"): P
 }
 
 export async function moveCategoryAction(id: string, direction: "up" | "down"): Promise<ActionState> {
-  const owned = await getOwnedRestaurant();
+  const owned = await getMenuRestaurant();
   if (!owned.ok) return owned.error;
 
   const supabase = await createServerSupabase();

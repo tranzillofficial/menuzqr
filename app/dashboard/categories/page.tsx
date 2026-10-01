@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { requireRestaurant } from "@/lib/auth";
+import { requireManager } from "@/lib/membership";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/dashboard/Shell";
 import { getT } from "@/lib/i18n/server";
@@ -9,13 +9,14 @@ import type { Category } from "@/lib/types";
 export const metadata: Metadata = { title: "Categories" };
 
 export default async function CategoriesPage() {
-  const [restaurant, supabase, t] = await Promise.all([
-    requireRestaurant(),
+  const [membership, supabase, t] = await Promise.all([
+    requireManager("/dashboard/categories"),
     createServerSupabase(),
     getT(),
   ]);
 
-  const [{ data: categories }, { data: products }] = await Promise.all([
+  const restaurant = membership.restaurant;
+  const [{ data: categories, error: categoryError }, { data: products, error: productError }] = await Promise.all([
     supabase
       .from("categories")
       .select("*")
@@ -24,6 +25,8 @@ export default async function CategoriesPage() {
       .order("created_at", { ascending: true }),
     supabase.from("products").select("category_id").eq("restaurant_id", restaurant.id),
   ]);
+
+  if (categoryError || productError) throw new Error("Could not load menu categories and products.");
 
   const productCounts: Record<string, number> = {};
   for (const product of products ?? []) {

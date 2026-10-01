@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState, useTransition } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { saveProductAction } from "@/lib/actions/products";
 import { createCategoryQuickAction } from "@/lib/actions/categories";
@@ -63,6 +63,8 @@ export function ProductEditor({
   const [name, setName] = useState(product?.name ?? "");
   const [description, setDescription] = useState(product?.description ?? "");
   const [ingredients, setIngredients] = useState(product?.ingredients ?? "");
+  const categoryChoice = useRef(0);
+  const [catalogSectionName,setCatalogSectionName] = useState("");
   const [categoryId, setCategoryId] = useState(product?.category_id ?? "");
   const [imageUrl, setImageUrl] = useState(product?.image_url ?? null);
   const [imageSource, setImageSource] = useState<"uploaded" | "library" | "none">(
@@ -83,11 +85,13 @@ export function ProductEditor({
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [suggestionsHidden, setSuggestionsHidden] = useState(false);
 
-  function addCategory(name: string, thenSelect = true) {
+  function addCategory(name: string, thenSelect = true, sourceId?: string | null) {
     const clean = name.trim();
     if (!clean) return;
+    const choice = ++categoryChoice.current;
     startCategory(async () => {
-      const result = await createCategoryQuickAction(clean);
+      const result = await createCategoryQuickAction(clean,sourceId ?? undefined);
+      if (choice !== categoryChoice.current) return;
       if (!result.ok || !result.category) {
         toast(result.message ?? "Could not add the category.", "error");
         return;
@@ -105,8 +109,9 @@ export function ProductEditor({
     });
   }
 
-  /** Fills the form from a catalog entry. Nothing is saved until the owner submits. */
+  /** Fill the product draft and create/select its catalog section automatically. */
   function applyCatalogItem(item: CatalogItem) {
+    categoryChoice.current += 1;
     setName(item.name);
     if (item.description) setDescription(item.description);
     if (item.ingredients) setIngredients(item.ingredients);
@@ -124,13 +129,19 @@ export function ProductEditor({
         }))
       );
     }
+    setCatalogSectionName(item.category_name ?? "");
     if (item.category_name) {
       const match = categoryList.find(
-        (c) => c.name.toLowerCase() === item.category_name!.toLowerCase()
+        (c) => (item.category_id && c.source_catalog_category_id === item.category_id) || c.name.trim().toLowerCase().replace(/\s+/g,' ') === item.category_name!.trim().toLowerCase().replace(/\s+/g,' ')
       );
-      if (match) setCategoryId(match.id);
-      else setNewCategoryName(item.category_name);
-    }
+      if (match) { setCategoryId(match.id);setAddingCategory(false);setNewCategoryName(""); }
+      else {
+        setCategoryId("");
+        setNewCategoryName(item.category_name);
+        setAddingCategory(true);
+        addCategory(item.category_name,true,item.category_id);
+      }
+    } else { setCategoryId(""); }
     setSuggestionsHidden(true);
     setCatalogOpen(false);
     toast(t("products.filledFromCatalog"), "info");
@@ -173,7 +184,7 @@ export function ProductEditor({
       <form action={formAction} className="space-y-6">
         {product && <input type="hidden" name="id" value={product.id} />}
         <input type="hidden" name="image_url" value={imageUrl ?? ""} />
-        <input type="hidden" name="image_source" value={imageSource} />
+        <input type="hidden" name="catalog_section_name" value={catalogSectionName}/><input type="hidden" name="image_source" value={imageSource} />
         <input type="hidden" name="is_active" value={isActive ? "on" : ""} />
         <input type="hidden" name="variants" value={serialisedVariants} />
         <input type="hidden" name="category_id" value={categoryId} />
@@ -241,7 +252,7 @@ export function ProductEditor({
             <Select
               id="p-category"
               value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
+              onChange={(e) => {categoryChoice.current += 1;setCategoryId(e.target.value);setCatalogSectionName("");}}
             >
               <option value="">{t("products.uncategorised")}</option>
               {categoryList.map((c) => (
@@ -435,7 +446,7 @@ export function ProductEditor({
           <Button type="button" variant="secondary" onClick={onClose}>
             {t("common.cancel")}
           </Button>
-          <SubmitButton>{product ? t("common.saveChanges") : t("products.add")}</SubmitButton>
+          <SubmitButton disabled={savingCategory}>{product ? t("common.saveChanges") : t("products.add")}</SubmitButton>
         </div>
       </form>
 

@@ -8,7 +8,7 @@ import {
   deleteAssetIfOwned,
   done,
   fail,
-  getOwnedRestaurant,
+  getMenuRestaurant,
   optionalStr,
   sanitiseImageUrl,
   str,
@@ -25,7 +25,7 @@ export async function saveCategoryAction(
   _prev: ActionState,
   form: FormData
 ): Promise<ActionState> {
-  const owned = await getOwnedRestaurant();
+  const owned = await getMenuRestaurant();
   if (!owned.ok) return owned.error;
   const { restaurant } = owned;
 
@@ -83,29 +83,45 @@ export async function saveCategoryAction(
  * section inline without the owner losing the form they were filling in.
  */
 export async function createCategoryQuickAction(
-  name: string
-): Promise<{ ok: boolean; message?: string; category?: { id: string; name: string } }> {
-  const owned = await getOwnedRestaurant();
+  name: string, sourceId?: string
+): Promise<{ ok: boolean; message?: string; category?: { id: string; name: string; source_catalog_category_id?: string | null } }> {
+  const owned = await getMenuRestaurant();
   if (!owned.ok) return { ok: false, message: owned.error?.message };
 
-  const clean = name.trim().slice(0, 60);
+  let clean = name.trim().slice(0, 60);
   if (!clean) return { ok: false, message: "Enter a category name." };
 
   const supabase = await createServerSupabase();
 
+  if (sourceId) {
+    const {data:source,error:sourceError} = await supabase.from("catalog_categories").select("id,name").eq("id",sourceId).eq("is_active",true).maybeSingle();
+    if (sourceError || !source) return {ok:false,message:"That catalog section is no longer available."};
+    clean = source.name.trim().slice(0,60);
+    const {data:linked,error:linkedError} = await supabase.from("categories").select("id,name").eq("restaurant_id",owned.restaurant.id).eq("source_catalog_category_id",source.id).maybeSingle();
+    if (linkedError) return {ok:false,message:linkedError.message};
+    if (linked) return {ok:true,category:linked};
+  }
+
   // Escape LIKE metacharacters: "50% off" must not match "50 percent off".
   // .limit(1) because two rows differing only in case would make maybeSingle throw.
   const pattern = clean.replace(/[\\%_]/g, (ch) => `\\${ch}`);
-  const { data: matches } = await supabase
+  const { data: matches, error: readError } = await supabase
     .from("categories")
-    .select("id, name")
+    .select("id, name, source_catalog_category_id")
     .eq("restaurant_id", owned.restaurant.id)
     .ilike("name", pattern)
     .limit(1);
 
+  if (readError) return {ok:false,message:readError.message};
   const existing = matches?.[0];
 
   if (existing) {
+    if (sourceId && !existing.source_catalog_category_id) {
+      const {error} = await supabase.from("categories").update({source_catalog_category_id:sourceId}).eq("id",existing.id).eq("restaurant_id",owned.restaurant.id).is("source_catalog_category_id",null);
+      if (error) return {ok:false,message:error.message};
+      revalidate(owned.restaurant.slug);
+      existing.source_catalog_category_id=sourceId;
+    }
     return { ok: true, message: `"${existing.name}" already exists.`, category: existing };
   }
 
@@ -119,9 +135,10 @@ export async function createCategoryQuickAction(
     .insert({
       restaurant_id: owned.restaurant.id,
       name: clean,
+      ...(sourceId ? {source_catalog_category_id:sourceId} : {}),
       sort_order: (count ?? 0) * 10,
     })
-    .select("id, name")
+    .select("id, name, source_catalog_category_id")
     .single();
 
   if (error || !data) return { ok: false, message: error?.message ?? "Could not add the category." };
@@ -131,7 +148,7 @@ export async function createCategoryQuickAction(
 }
 
 export async function deleteCategoryAction(id: string): Promise<ActionState> {
-  const owned = await getOwnedRestaurant();
+  const owned = await getMenuRestaurant();
   if (!owned.ok) return owned.error;
 
   const supabase = await createServerSupabase();
@@ -155,7 +172,7 @@ export async function deleteCategoryAction(id: string): Promise<ActionState> {
 }
 
 export async function toggleCategoryAction(id: string, isActive: boolean): Promise<ActionState> {
-  const owned = await getOwnedRestaurant();
+  const owned = await getMenuRestaurant();
   if (!owned.ok) return owned.error;
 
   const supabase = await createServerSupabase();
@@ -172,7 +189,7 @@ export async function toggleCategoryAction(id: string, isActive: boolean): Promi
 
 /** Persists a full ordering. `ids` must be the complete list in its new order. */
 export async function reorderCategoriesAction(ids: string[]): Promise<ActionState> {
-  const owned = await getOwnedRestaurant();
+  const owned = await getMenuRestaurant();
   if (!owned.ok) return owned.error;
 
   const supabase = await createServerSupabase();
@@ -194,7 +211,7 @@ export async function reorderCategoriesAction(ids: string[]): Promise<ActionStat
 
 /** Reorder helper kept server-side so the sort_order stays consistent. */
 export async function reorderProductsAction(ids: string[]): Promise<ActionState> {
-  const owned = await getOwnedRestaurant();
+  const owned = await getMenuRestaurant();
   if (!owned.ok) return owned.error;
 
   const supabase = await createServerSupabase();

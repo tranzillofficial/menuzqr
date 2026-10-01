@@ -49,6 +49,7 @@ export type Restaurant = TaxSettings & {
 };
 
 export type Category = {
+  source_catalog_category_id?: string | null;
   id: string;
   restaurant_id: string;
   name: string;

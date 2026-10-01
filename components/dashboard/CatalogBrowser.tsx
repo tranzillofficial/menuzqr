@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icons";
 import { SmartImage } from "@/components/ui/SmartImage";
 import { useToast } from "@/components/ui/Toast";
-import { useT } from "@/components/i18n/I18nProvider";
+import { useI18n, useT } from "@/components/i18n/I18nProvider";
 import { importCatalogItemsAction } from "@/lib/actions/catalog";
 import { cn } from "@/lib/utils";
 import type { CatalogCategory, CatalogItem } from "@/lib/types";
@@ -31,6 +31,7 @@ export function CatalogBrowser({
   currency: string;
 }) {
   const t = useT();
+  const {locale} = useI18n();
   const toast = useToast();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -121,9 +122,10 @@ export function CatalogBrowser({
   }
 
   function copy() {
+    if (pending) return;
     const chosen = [...picked].map((id) => ({
       id,
-      price: Number(prices[id] ?? ""),
+      ...(prices[id]?.trim() ? {price:Number(prices[id])} : {}),
     }));
     startTransition(async () => {
       const result = await importCatalogItemsAction(chosen, publishNow);
@@ -139,7 +141,10 @@ export function CatalogBrowser({
           : (result.message ?? t("catalog.nothingNew")),
         "success"
       );
+      if (result.sections || result.repaired) toast(locale==='ar' ? `اتضاف ${result.sections ?? 0} قسم واتربط ${result.repaired ?? 0} صنف بقسمه.` : `${result.sections ?? 0} sections added; ${result.repaired ?? 0} dishes linked to their sections.`,"success");
+      if (result.hiddenSections) toast(locale==='ar'?'بعض الأقسام الموجودة مخفية في المينيو. تقدر تظهرها من إدارة الأقسام.':'Some existing sections are hidden on the menu. Enable them in Categories.',"info");
       router.push("/dashboard/products");
+      router.refresh();
     });
   }
 
@@ -339,7 +344,7 @@ export function CatalogBrowser({
             >
               {t("common.cancel")}
             </Button>
-            <Button onClick={copy} loading={pending} className="shrink-0">
+            <Button onClick={copy} loading={pending} disabled={pending} className="shrink-0">
               <Icon.plus className="size-4" />
               {t("catalog.copyCta")}
             </Button>

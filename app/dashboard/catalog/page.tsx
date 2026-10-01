@@ -15,7 +15,7 @@ export default async function DashboardCatalogPage() {
     getT(),
   ]);
 
-  const [{ data: categories }, { data: items }] = await Promise.all([
+  const [{ data: categories, error: categoryError }, { data: items, error: itemError }] = await Promise.all([
     supabase
       .from("catalog_categories")
       .select("id, name, description, image_url, sort_order, is_active")
@@ -30,7 +30,10 @@ export default async function DashboardCatalogPage() {
       .order("name", { ascending: true }),
   ]);
 
-  const normalised = ((items ?? []) as CatalogItem[]).map((item) => ({
+  if (categoryError || itemError) throw new Error("Could not load the ready-made menu.");
+  const activeSections = new Set((categories ?? []).map(c => c.id));
+
+  const normalised = ((items ?? []) as CatalogItem[]).filter(item => !item.category_id || activeSections.has(item.category_id)).map((item) => ({
     ...item,
     variants: Array.isArray(item.variants) ? item.variants : [],
     keywords: Array.isArray(item.keywords) ? item.keywords : [],
