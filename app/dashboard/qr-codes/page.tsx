@@ -4,7 +4,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/dashboard/Shell";
 import { getBusinessT as getT } from "@/lib/i18n/server";
 import { QrStudio } from "@/components/qr/QrStudio";
-import { absoluteUrl } from "@/lib/utils";
+import {businessMenuUrl} from "@/lib/tenant-domain";
 import type { QrTemplate, RestaurantTable } from "@/lib/types";
 
 export const metadata: Metadata = { title: "QR Codes" };
@@ -49,7 +49,7 @@ export default async function QrCodesPage() {
         restaurant={restaurant}
         tables={(tables ?? []) as RestaurantTable[]}
         templates={(templates ?? []) as QrTemplate[]}
-        generalUrl={absoluteUrl(`/${restaurant.slug}/menu`)}
+        generalUrl={await businessMenuUrl(restaurant)}
       />
     </div>
   );

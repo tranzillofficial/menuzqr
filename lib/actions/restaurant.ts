@@ -136,7 +136,7 @@ export async function updateRestaurantAction(
 }
 
 export async function updateMenuThemeAction(theme: string): Promise<ActionState> {
-  const owned = await getOwnedRestaurant();
+  const owned = await getOwnedRestaurant("design");
   if (!owned.ok) return owned.error;
   if (!moduleEnabled(owned.restaurant,"design")) return fail("Menu design is disabled for this account.");
   if (!MENU_THEME_IDS.includes(theme as (typeof MENU_THEME_IDS)[number])) {
@@ -160,7 +160,7 @@ export async function updateFeatureSettingsAction(
   _prev: ActionState,
   form: FormData
 ): Promise<ActionState> {
-  const owned = await getOwnedRestaurant();
+  const owned = await getOwnedRestaurant("settings");
   if (!owned.ok) return owned.error;
 
   const wallet = str(form,"cash_wallet").replace(/[\s()-]/g,"");

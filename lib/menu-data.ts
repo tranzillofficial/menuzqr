@@ -1,3 +1,4 @@
+import {getTenantDomain} from "./tenant-domain";
 import { moduleEnabled } from "./business-modules";
 import { visibleCategories } from "./category-tree";
 import { displayPrice, vatRate } from "./tax";
@@ -27,6 +28,8 @@ export const getPublicMenu = cache(async function getPublicMenu(
   slug: string,
   tableToken?: string
 ): Promise<PublicMenuResult> {
+  const domain=await getTenantDomain();
+  if(domain&&domain.restaurants.slug!==slug)return {state:"not_found"} as const;
   const supabase = createAdminSupabase();
 
   const { data: restaurant } = await supabase

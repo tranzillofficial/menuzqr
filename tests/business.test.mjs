@@ -19,3 +19,11 @@ test('category paths and recursive filters respect hidden ancestors',()=>{
  const cycle=[{id:'a',name:'A',parent_id:'b',is_active:true},{id:'b',name:'B',parent_id:'a',is_active:true}];
  assert.equal(visibleCategories(cycle).length,0);assert.equal(categoryDescendants(cycle,'a').size,2);
 });
+
+test('versioned features disable core routes while retaining old custom accounts',()=>{
+ const old={enabled_modules:['pos','orders']};
+ for(const p of ['/dashboard/restaurant','/dashboard/products','/dashboard/categories','/dashboard/qr-codes','/dashboard/settings'])assert.equal(dashboardPathEnabled(old,p),true);
+ const limited={enabled_modules:['features_v2','pos']};
+ assert.equal(dashboardPathEnabled(limited,'/dashboard/pos'),true);
+ for(const p of ['/dashboard/restaurant','/dashboard/products','/dashboard/categories','/dashboard/qr-codes','/dashboard/settings'])assert.equal(dashboardPathEnabled(limited,p),false);
+});

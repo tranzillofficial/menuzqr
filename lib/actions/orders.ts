@@ -3,6 +3,7 @@
 import { moduleEnabled } from "@/lib/business-modules";
 import { getMembership } from "@/lib/membership";
 import { staffPermissions, statusPermission } from "@/lib/staff-permissions";
+import {getTenantDomain} from "@/lib/tenant-domain";
 import { revalidatePath } from "next/cache";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -66,6 +67,7 @@ export async function placeOrderAction(
   orderNote: string,
   sessionId: string
 ): Promise<PlaceOrderResult> {
+  const domain=await getTenantDomain();if(domain&&domain.restaurants.slug!==slug)return {ok:false,message:"This link belongs to a different business."};
   if (!Array.isArray(lines) || lines.length === 0) {
     return { ok: false, message: "Your cart is empty." };
   }
@@ -154,6 +156,7 @@ export async function placeOrderAction(
 }
 
 export async function placeOnlineOrderAction(slug:string, lines:CartLine[], note:string, session:string, request:string, customer:{name:string;phone:string}):Promise<PlaceOrderResult> {
+  const domain=await getTenantDomain();if(domain&&domain.restaurants.slug!==slug)return {ok:false,message:"This link belongs to a different business."};
  if (!Array.isArray(lines)||!lines.length||lines.length>MAX_LINES||!customer||typeof customer.name!=='string'||typeof customer.phone!=='string'||typeof note!=='string'||typeof session!=='string'||session.length<16||session.length>64||typeof request!=='string'||! /^[0-9a-f-]{36}$/i.test(request)) return {ok:false,message:'بيانات الطلب غير مكتملة.'};
  const name=customer.name.trim().slice(0,160),phone=customer.phone.replace(/[\s()-]/g,'');
  if(name.length<2||!/^\+?\d{8,15}$/.test(phone))return {ok:false,message:'اكتب الاسم ورقم الموبايل بشكل صحيح.'};
@@ -171,6 +174,7 @@ export async function callWaiterAction(
   slug: string,
   tableToken: string
 ): Promise<{ ok: boolean; message: string }> {
+  const domain=await getTenantDomain();if(domain&&domain.restaurants.slug!==slug)return {ok:false,message:"This link belongs to a different business."};
   const supabase = createAdminSupabase();
 
   const { data: restaurant } = await supabase

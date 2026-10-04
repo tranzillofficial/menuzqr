@@ -1,6 +1,6 @@
 "use client";
 
-import { dashboardPathEnabled, moduleEnabled, type BusinessConfig } from "@/lib/business-modules";
+import { MODULE_NAVIGATION, dashboardPathEnabled, moduleEnabled, type BusinessConfig } from "@/lib/business-modules";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useState, type ReactNode } from "react";
@@ -13,26 +13,11 @@ import type { TranslationKey } from "@/lib/i18n";
 import { AccountMenu } from "./AccountMenu";
 import { useDrawer } from "@/components/ui/useDrawer";
 
-const NAV: Array<{
-  href: string;
-  label: TranslationKey;
-  icon: (typeof Icon)[keyof typeof Icon];
-  exact?: boolean;
-}> = [
-  { href: "/dashboard/pos", label: "nav.pos", icon: Icon.receipt },
-  { href: "/dashboard/reports", label: "nav.reports", icon: Icon.receipt },
-  { href: "/dashboard", label: "nav.overview", icon: Icon.home, exact: true },
-  { href: "/dashboard/restaurant", label: "nav.restaurant", icon: Icon.store },
-  { href: "/dashboard/categories", label: "nav.categories", icon: Icon.grid },
-  { href: "/dashboard/products", label: "nav.products", icon: Icon.burger },
-  { href: "/dashboard/catalog", label: "nav.catalog", icon: Icon.sparkles },
-  { href: "/dashboard/tables", label: "nav.tables", icon: Icon.table },
-  { href: "/dashboard/qr-codes", label: "nav.qrCodes", icon: Icon.qr },
-  { href: "/dashboard/orders", label: "nav.orders", icon: Icon.receipt },
-  { href: "/dashboard/staff", label: "nav.staff", icon: Icon.users },
-  { href: "/dashboard/billing", label: "nav.billing", icon: Icon.sparkles },
-  { href: "/dashboard/design", label: "nav.design", icon: Icon.palette },
-  { href: "/dashboard/settings", label: "nav.settings", icon: Icon.settings },
+const NAV: Array<{href:string;label:TranslationKey;icon:(typeof Icon)[keyof typeof Icon];exact?:boolean}> = [
+ ...MODULE_NAVIGATION.map(item=>({href:item.href,label:item.label,icon:Icon[item.icon]})),
+ {href:"/dashboard/categories",label:"nav.categories",icon:Icon.grid},
+ {href:"/dashboard",label:"nav.overview",icon:Icon.home,exact:true},
+ {href:"/dashboard/billing",label:"nav.billing",icon:Icon.sparkles},
 ];
 
 export function DashboardShell({

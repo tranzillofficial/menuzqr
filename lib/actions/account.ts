@@ -1,5 +1,6 @@
 "use server";
 
+import {getTenantDomain} from "@/lib/tenant-domain";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -27,7 +28,9 @@ export async function signUpAction(
   _prev: ActionState,
   form: FormData
 ): Promise<ActionState> {
+  const domain=await getTenantDomain();
   const email = str(form, "email").toLowerCase();
+  if(domain)return fail("Create accounts through business management.");
   const password = str(form, "password");
   const fullName = str(form, "full_name");
 
@@ -64,9 +67,11 @@ export async function signInAction(
   if (!email || !password) return fail("Enter your email and password.");
 
   const supabase = await createServerSupabase();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return fail(readableAuthError(error.message));
 
+  const domain=await getTenantDomain();
+  if(domain){const {data:member}=await supabase.from("restaurant_members").select("id").eq("user_id",data.user.id).eq("restaurant_id",domain.restaurant_id).eq("is_active",true).maybeSingle();if(!member){await supabase.auth.signOut();return fail("الحساب ده مش تابع للنشاط. This account does not belong to this business.");}}
   revalidatePath("/", "layout");
   redirect(safeNext(next));
 }
