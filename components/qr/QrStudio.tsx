@@ -1,5 +1,6 @@
 "use client";
 
+import { moduleEnabled } from "@/lib/business-modules";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { QrLabelPreview } from "./QrLabelPreview";
@@ -254,7 +255,7 @@ export function QrStudio({
       </section>
 
       {/* ---- table QR ---- */}
-      <section>
+      {moduleEnabled(restaurant,"tables") && <section>
         <div className="print-hide mb-3 flex flex-wrap items-center gap-2">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-500">
             {t("qr.tableCards")}
@@ -340,7 +341,7 @@ export function QrStudio({
             })}
           </div>
         )}
-      </section>
+      </section>}
     </div>
   );
 }

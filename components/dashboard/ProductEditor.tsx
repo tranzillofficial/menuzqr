@@ -1,5 +1,7 @@
 "use client";
 
+import { moduleEnabled } from "@/lib/business-modules";
+import { categoryPath } from "@/lib/category-tree";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { saveProductAction } from "@/lib/actions/products";
@@ -196,7 +198,7 @@ export function ProductEditor({
               <label htmlFor="p-name" className="text-sm font-medium text-ink-800">
                 {t("products.name")} <span className="text-brand-600">*</span>
               </label>
-              <div className="flex flex-wrap gap-1.5">
+              {moduleEnabled(restaurant,"catalog") && <div className="flex flex-wrap gap-1.5">
                 <button
                   type="button"
                   onClick={() => setCatalogOpen(true)}
@@ -211,7 +213,7 @@ export function ProductEditor({
                   </svg>
                   {t("products.catalogBtn")}
                 </button>
-              </div>
+              </div>}
             </div>
             <Input
               id="p-name"
@@ -225,7 +227,7 @@ export function ProductEditor({
               <p className="text-xs font-medium text-red-600">{state.fieldErrors.name}</p>
             )}
 
-            {!suggestionsHidden && name.trim().length >= 2 && (
+            {moduleEnabled(restaurant,"catalog") && !suggestionsHidden && name.trim().length >= 2 && (
               <CatalogSuggestions
                 query={name}
                 onPick={applyCatalogItem}
@@ -257,7 +259,7 @@ export function ProductEditor({
               <option value="">{t("products.uncategorised")}</option>
               {categoryList.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name}
+                  {categoryPath(categoryList,c.id)}
                 </option>
               ))}
             </Select>
@@ -450,12 +452,12 @@ export function ProductEditor({
         </div>
       </form>
 
-      <CatalogBrowser
+      {moduleEnabled(restaurant,"catalog") && <CatalogBrowser
         open={catalogOpen}
         onClose={() => setCatalogOpen(false)}
         onPick={applyCatalogItem}
         seed={name}
-      />
+      />}
     </Modal>
   );
 }

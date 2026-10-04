@@ -1,4 +1,5 @@
 "use server";
+import { moduleEnabled } from '@/lib/business-modules';
 import { getMembership } from '@/lib/membership';
 import { createAdminSupabase } from '@/lib/supabase/admin';
 import { createServerSupabase } from '@/lib/supabase/server';
@@ -42,7 +43,7 @@ export async function changeFinancialOrder(orderId:string,action:'refund'|'void'
   return {ok:true,message:action==='refund'?'Refund recorded.':action==='void'?'Void recorded.':'Payment recorded.'};
 }
 export async function closeDay() {
-  const member=await getMembership(); if(!member?.isManager)return {ok:false,message:'Manager access required.'};
+  const member=await getMembership(); if(!member?.isManager || !moduleEnabled(member.restaurant,'reports'))return {ok:false,message:'Reports access required.'};
   const {data,error}=await createAdminSupabase().rpc('close_fiscal_day',{p_actor:member.userId,p_restaurant:member.restaurant.id});
   if(error)return {ok:false,message:error.message};
   revalidatePath('/dashboard/reports'); return {ok:true,message:`Z report #${data.report_number} saved.`};

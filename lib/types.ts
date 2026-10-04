@@ -19,6 +19,8 @@ export type Profile = {
 export type Restaurant = TaxSettings & {
   id: string;
   owner_id: string;
+  business_kind?: string | null;
+  enabled_modules?: string[] | null;
   name: string;
   slug: string;
   description: string | null;
@@ -49,6 +51,7 @@ export type Restaurant = TaxSettings & {
 };
 
 export type Category = {
+  parent_id?: string | null;
   source_catalog_category_id?: string | null;
   id: string;
   restaurant_id: string;
@@ -273,6 +276,8 @@ export type MenuData = {
   restaurant: Pick<
     Restaurant,
     | "id"
+    | "enabled_modules"
+    | "business_kind"
     | "name"
     | "slug"
     | "description"

@@ -53,7 +53,8 @@ export default async function AdminRestaurantsPage({
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-xl font-semibold text-ink-900 sm:text-2xl">{t("admin.restaurants")}</h1>
+        <Link href="/admin/accounts/new" className="inline-flex rounded-xl bg-brand-600 px-4 py-2 text-sm text-white">إنشاء حساب مخصص / New business account</Link>
+        <h1 className="mt-3 text-xl font-semibold text-ink-900 sm:text-2xl">{t("admin.restaurants")}</h1>
         <p className="mt-1 text-sm text-ink-500">
           {t("admin.restaurantsSub")}
         </p>

@@ -1,5 +1,6 @@
 "use client";
 
+import { moduleEnabled } from "@/lib/business-modules";
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateFeatureSettingsAction } from "@/lib/actions/restaurant";
@@ -70,7 +71,7 @@ export function SettingsForm({
           description={t("settings.featuresSub")}
         />
         <ul className="divide-y divide-ink-100">
-          {ROWS.map((row) => (
+          {ROWS.filter(row => row.key === "waiter_calls_enabled" ? moduleEnabled(restaurant,"service_calls") : row.key === "ordering_enabled" ? moduleEnabled(restaurant,"orders") : true).map((row) => (
             <li key={row.key} className="flex items-start gap-4 px-5 py-4">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-ink-900">{t(row.title)}</p>

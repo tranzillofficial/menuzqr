@@ -1,3 +1,5 @@
+import { moduleEnabled } from "./business-modules";
+import { visibleCategories } from "./category-tree";
 import { displayPrice, vatRate } from "./tax";
 import { getUser } from "./auth";
 import { cache } from "react";
@@ -30,7 +32,7 @@ export const getPublicMenu = cache(async function getPublicMenu(
   const { data: restaurant } = await supabase
     .from("restaurants")
     .select(
-      "id,name,slug,description,logo_url,cover_url,phone,address,currency,language,menu_theme,ordering_enabled,waiter_calls_enabled,status,owner_id,activation_expires_at,tax_mode,vat_registered,prices_include_vat,tax_rates,menu_prices_include_vat"
+      "id,business_kind,enabled_modules,name,slug,description,logo_url,cover_url,phone,address,currency,language,menu_theme,ordering_enabled,waiter_calls_enabled,status,owner_id,activation_expires_at,tax_mode,vat_registered,prices_include_vat,tax_rates,menu_prices_include_vat"
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -49,6 +51,8 @@ export const getPublicMenu = cache(async function getPublicMenu(
     };
   }
 
+  restaurant.ordering_enabled = restaurant.ordering_enabled && moduleEnabled(restaurant,"orders");
+  restaurant.waiter_calls_enabled = restaurant.waiter_calls_enabled && moduleEnabled(restaurant,"service_calls");
   if (preview) {
     restaurant.ordering_enabled = false;
     restaurant.waiter_calls_enabled = false;
@@ -58,7 +62,6 @@ export const getPublicMenu = cache(async function getPublicMenu(
       .from("categories")
       .select("*")
       .eq("restaurant_id", restaurant.id)
-      .eq("is_active", true)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true }),
     supabase
@@ -71,7 +74,7 @@ export const getPublicMenu = cache(async function getPublicMenu(
   ]);
 
   let table: Pick<RestaurantTable, "id" | "label"> | null = null;
-  if (tableToken && !preview) {
+  if (tableToken && !preview && moduleEnabled(restaurant,"tables")) {
     const { data } = await supabase
       .from("restaurant_tables")
       .select("id,label")
@@ -90,7 +93,8 @@ export const getPublicMenu = cache(async function getPublicMenu(
       .sort((a, b) => a.sort_order - b.sort_order || a.price - b.price),
   }));
 
-  const grouped = (categories ?? []).map((category) => ({
+  const visible = visibleCategories(categories ?? []);
+  const grouped = visible.map((category) => ({
     ...category,
     products: allProducts.filter((p) => p.category_id === category.id),
   }));
@@ -115,8 +119,8 @@ export const getPublicMenu = cache(async function getPublicMenu(
     state: "ok",
     table,
     data: {
-      restaurant: { id: restaurant.id, name: restaurant.name, slug: restaurant.slug, description: restaurant.description, logo_url: restaurant.logo_url, cover_url: restaurant.cover_url, phone: restaurant.phone, address: restaurant.address, currency: restaurant.currency, language: restaurant.language, menu_theme: restaurant.menu_theme, ordering_enabled: restaurant.ordering_enabled, waiter_calls_enabled: restaurant.waiter_calls_enabled, prices_include_vat: restaurant.prices_include_vat, menu_prices_include_vat: restaurant.menu_prices_include_vat, vat_registered: restaurant.vat_registered },
-      categories: grouped.filter((c) => c.products.length > 0),
+      restaurant: { enabled_modules: restaurant.enabled_modules, business_kind: restaurant.business_kind, id: restaurant.id, name: restaurant.name, slug: restaurant.slug, description: restaurant.description, logo_url: restaurant.logo_url, cover_url: restaurant.cover_url, phone: restaurant.phone, address: restaurant.address, currency: restaurant.currency, language: restaurant.language, menu_theme: restaurant.menu_theme, ordering_enabled: restaurant.ordering_enabled, waiter_calls_enabled: restaurant.waiter_calls_enabled, prices_include_vat: restaurant.prices_include_vat, menu_prices_include_vat: restaurant.menu_prices_include_vat, vat_registered: restaurant.vat_registered },
+      categories: moduleEnabled(restaurant,"subcategories") ? grouped : grouped.filter((c) => c.products.length > 0),
     },
   };
 });

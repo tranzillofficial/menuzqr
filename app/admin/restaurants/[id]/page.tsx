@@ -1,3 +1,4 @@
+import { BusinessAccountForm } from "@/components/admin/BusinessAccountForm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -83,6 +84,8 @@ export default async function AdminRestaurantPage({
           </Link>
         </div>
       </div>
+
+      <BusinessAccountForm key={restaurant.updated_at} restaurant={restaurant} />
 
       <Card className="p-5">
         <h2 className="text-sm font-semibold text-ink-900">Activation</h2>

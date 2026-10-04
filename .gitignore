@@ -46,3 +46,6 @@ next-env.d.ts
 .env.*.local
 
 !.env.example
+
+# Supabase CLI cache
+supabase/.temp/
