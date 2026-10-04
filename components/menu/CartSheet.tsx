@@ -22,18 +22,18 @@ function sessionId() {
 
 export function CartBar({ slug, tableToken }: { slug: string; tableToken: string }) {
   const t = useT();
-  const { itemCount, total, currency, orderingEnabled, setCartOpen } = useMenu();
+  const { itemCount, total, currency, orderingEnabled, setCartOpen, data } = useMenu();
 
   if (!orderingEnabled) return null;
 
   return (
     <>
       {itemCount > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-40 p-3 sm:p-4">
+        <div className="fixed inset-x-0 bottom-0 z-40 bg-gradient-to-t from-white/95 to-transparent px-3 pt-4 pb-[max(.75rem,env(safe-area-inset-bottom))] sm:px-4">
           <button
             type="button"
             onClick={() => setCartOpen(true)}
-            className="animate-slide-up mx-auto flex w-full max-w-lg items-center gap-3 rounded-2xl bg-ink-900 px-5 py-4 text-white shadow-2xl transition-colors hover:bg-ink-800"
+            className={`animate-slide-up mx-auto flex w-full max-w-lg items-center gap-3 rounded-2xl px-5 py-4 text-white shadow-2xl transition-colors ${data.restaurant.slug==='alhamd'?'bg-[#704728] hover:bg-[#56351f]':'bg-ink-900 hover:bg-ink-800'}`}
           >
             <span className="grid size-7 place-items-center rounded-full bg-white text-sm font-bold text-ink-900">
               {itemCount}
