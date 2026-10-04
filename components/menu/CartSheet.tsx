@@ -6,6 +6,34 @@ import { placeOrderAction, placeOnlineOrderAction } from "@/lib/actions/orders";
 import { formatMoney } from "@/lib/utils";
 import { useT, useI18n } from "@/components/i18n/I18nProvider";
 
+function TransferDetail({ label, value, ar }: { label: string; value: string; ar: boolean }) {
+  const [status, setStatus] = useState<"idle" | "copied" | "failed">("idle");
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(value);
+      setStatus("copied");
+    } catch {
+      setStatus("failed");
+    }
+  }
+
+  return (
+    <div className="rounded-xl border border-ink-200 bg-white p-3 text-start">
+      <p className="mb-1 text-xs text-ink-600">{label}</p>
+      <div className="flex items-center gap-3">
+        <span dir="ltr" className="min-w-0 flex-1 select-all break-all text-lg font-bold leading-relaxed">{value}</span>
+        <button type="button" onClick={copy} aria-label={ar ? `نسخ ${label}` : `Copy ${label}`} className="min-h-11 shrink-0 rounded-lg border border-ink-200 px-3 text-sm font-semibold hover:bg-ink-50">
+          {status === "copied" ? (ar ? "تم النسخ ✓" : "Copied ✓") : (ar ? "نسخ" : "Copy")}
+        </button>
+      </div>
+      <p role="status" className="text-xs text-ink-600">
+        {status === "copied" ? (ar ? "تم نسخ بيانات التحويل." : "Transfer details copied.") : status === "failed" ? (ar ? "تعذر النسخ. اضغط مطولًا على البيانات لنسخها." : "Copy unavailable. Press and hold the details to copy them.") : ""}
+      </p>
+    </div>
+  );
+}
+
 function sessionId() {
   if (typeof window === "undefined") return "";
   try {
@@ -104,7 +132,7 @@ function CartSheet({ slug, tableToken }: { slug: string; tableToken: string }) {
         className="animate-slide-up relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white text-ink-900 shadow-2xl sm:rounded-3xl"
       >
         {placed ? (
-          <div className="p-8 text-center">
+          <div className="overflow-y-auto p-6 text-center sm:p-8">
             <div className="mx-auto grid size-16 place-items-center rounded-full bg-emerald-100 text-3xl">
               ✓
             </div>
@@ -112,7 +140,7 @@ function CartSheet({ slug, tableToken }: { slug: string; tableToken: string }) {
             <p className="mt-1.5 text-sm text-ink-600">
               {table ? t("menu.orderSentBody", { number: placed.number, table: table.label }) : (ar ? `طلبك رقم ${placed.number} وصل للمكان. الدفع في انتظار التأكيد اليدوي.` : `Order #${placed.number} was received. Payment awaits manual confirmation.`)}
             </p>
-            {!table && data.payments && <div className="mt-4 space-y-3 rounded-xl bg-ink-50 p-4 text-sm"><p>{ar?'حوّل باستخدام البيانات التالية، ثم أرسل صورة الإثبات على واتساب لصاحب المكان.':'Transfer using the details below, then send proof to the business on WhatsApp.'}</p>{data.payments.cash_wallet&&<p>Cash: <span dir="ltr">{data.payments.cash_wallet}</span></p>}{data.payments.instapay_address&&<p>InstaPay: <span dir="ltr">{data.payments.instapay_address}</span></p>}<a target="_blank" rel="noreferrer" className="block rounded-xl bg-emerald-600 p-3 text-white" href={`https://wa.me/${data.payments.payment_whatsapp}?text=${encodeURIComponent(ar?`طلب رقم ${placed.number} — ${name}. سأرفق صورة التحويل.`:`Order #${placed.number} — ${name}. I will attach transfer proof.`)}`}>{ar?'التواصل وإرسال صورة التحويل':'Contact and send transfer proof'}</a></div>}
+            {!table && data.payments && <div className="mt-4 space-y-3 rounded-xl bg-ink-50 p-4 text-sm"><p>{ar?'حوّل باستخدام البيانات التالية، ثم أرسل صورة الإثبات على واتساب لصاحب المكان.':'Transfer using the details below, then send proof to the business on WhatsApp.'}</p>{data.payments.cash_wallet&&<TransferDetail label={ar?"رقم المحفظة / كاش":"Cash wallet"} value={data.payments.cash_wallet} ar={ar}/>}{data.payments.instapay_address&&<TransferDetail label="InstaPay" value={data.payments.instapay_address} ar={ar}/>}<a target="_blank" rel="noreferrer" className="block rounded-xl bg-emerald-600 p-3 text-white" href={`https://wa.me/${data.payments.payment_whatsapp}?text=${encodeURIComponent(ar?`طلب رقم ${placed.number} — ${name}. سأرفق صورة التحويل.`:`Order #${placed.number} — ${name}. I will attach transfer proof.`)}`}>{ar?'التواصل وإرسال صورة التحويل':'Contact and send transfer proof'}</a></div>}
             <button
               type="button"
               onClick={() => {
