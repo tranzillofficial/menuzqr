@@ -1,3 +1,5 @@
+import { ThermalPrinter } from "@/components/dashboard/ThermalPrinter";
+import { InvoiceExport } from "@/components/dashboard/InvoiceExport";
 import { TaxSettingsForm } from "@/components/dashboard/TaxSettingsForm";
 import type { Metadata } from "next";
 import { requireRestaurant } from "@/lib/auth";
@@ -9,8 +11,7 @@ import { AlertsCard } from "@/components/pwa/AlertsCard";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icons";
 import { getPlatformSettings } from "@/lib/platform";
-import { localizedPricing } from "@/lib/pricing";
-import { getT, getLocale } from "@/lib/i18n/server";
+import { getT } from "@/lib/i18n/server";
 import { formatDate } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -25,11 +26,10 @@ export default async function SettingsPage() {
 
   const { data: settings } = await supabase
     .from("restaurant_settings")
-    .select("sound_enabled, show_prices, show_ingredients")
+    .select("sound_enabled, show_prices, show_ingredients,remote_ordering_enabled,cash_wallet,instapay_address,payment_whatsapp")
     .eq("restaurant_id", restaurant.id)
     .maybeSingle();
 
-  const pricing = localizedPricing(platform, await getLocale());
   const rows: Array<[string, string, boolean?]> = [
     [
       t("settings.planName"),
@@ -55,6 +55,7 @@ export default async function SettingsPage() {
       <SettingsForm
         restaurant={restaurant}
         settings={{
+          remote_ordering_enabled:settings?.remote_ordering_enabled??false, cash_wallet:settings?.cash_wallet??"",instapay_address:settings?.instapay_address??"",payment_whatsapp:settings?.payment_whatsapp??"",
           sound_enabled: settings?.sound_enabled ?? true,
           show_prices: settings?.show_prices ?? true,
           show_ingredients: settings?.show_ingredients ?? true,
@@ -62,6 +63,8 @@ export default async function SettingsPage() {
       />
 
       <TaxSettingsForm restaurant={restaurant} />
+      <ThermalPrinter restaurantId={restaurant.id} restaurantName={restaurant.name} currency={restaurant.currency} receipt={null}/>
+      <InvoiceExport />
       <AlertsCard />
 
       <Card>

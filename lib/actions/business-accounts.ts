@@ -26,7 +26,7 @@ export async function createBusinessAccount(_previous:ActionState,form:FormData)
  if(lookupError||existing)return fail('الرابط مستخدم أو تعذر التحقق منه.');
  const {data:user,error:authError}=await db.auth.admin.createUser({email,password,email_confirm:true,user_metadata:{full_name:name}});
  if(authError||!user.user)return fail(authError?.message??'Could not create account.');
- const {data:business,error}=await db.from('restaurants').insert({owner_id:user.user.id,name,slug,currency:'EGP',language:'ar',business_kind:str(form,'business_kind').slice(0,80)||'retail',enabled_modules:modules(form),waiter_calls_enabled:false,ordering_enabled:false}).select('id').single();
+ const {data:business,error}=await db.from('restaurants').insert({owner_id:user.user.id,name,slug,currency:'EGP',tax_mode:'egypt',business_timezone:'Africa/Cairo',language:'ar',business_kind:str(form,'business_kind').slice(0,80)||'retail',enabled_modules:modules(form),waiter_calls_enabled:false,ordering_enabled:false}).select('id').single();
  if(error||!business){await db.auth.admin.deleteUser(user.user.id);return fail('تعذر إنشاء النشاط. '+(error?.message??''));}
  await db.from('admin_actions').insert({restaurant_id:business.id,admin_id:admin.userId,action:'business:created'});
  revalidatePath('/admin');return done(`الحساب جاهز: ${email}. رابط المنتجات: /${slug}/menu. التفعيل والاشتراك من صفحة الحساب.`);

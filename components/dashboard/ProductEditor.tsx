@@ -1,7 +1,7 @@
 "use client";
 
 import { moduleEnabled } from "@/lib/business-modules";
-import { categoryPath } from "@/lib/category-tree";
+import { CategoryPicker } from "./CategoryPicker";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { saveProductAction } from "@/lib/actions/products";
@@ -251,18 +251,7 @@ export function ProductEditor({
               </button>
             </div>
 
-            <Select
-              id="p-category"
-              value={categoryId}
-              onChange={(e) => {categoryChoice.current += 1;setCategoryId(e.target.value);setCatalogSectionName("");}}
-            >
-              <option value="">{t("products.uncategorised")}</option>
-              {categoryList.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {categoryPath(categoryList,c.id)}
-                </option>
-              ))}
-            </Select>
+            <CategoryPicker id="p-category" categories={categoryList} value={categoryId} emptyLabel={t("products.uncategorised")} onChange={id=>{categoryChoice.current+=1;setCategoryId(id);setCatalogSectionName("");}} />
 
             {addingCategory && (
               <div className="flex gap-2 rounded-xl border border-brand-200 bg-brand-50/60 p-2">
@@ -344,8 +333,9 @@ export function ProductEditor({
 
         <label className="block space-y-2 text-sm font-medium">{label('تصنيف ضريبة المنتج', 'Product VAT category')}
           <Select name="vat_code" defaultValue={product?.vat_code ?? 'standard'}>
-            {VAT_CODES.map(code => <option key={code} value={code}>{code === 'exempt' ? label('معفى', 'Exempt') : code} {code !== 'exempt' ? `${vatRate(restaurant.tax_mode, true, code,restaurant.tax_rates)}%` : ''}</option>)}
+            {VAT_CODES.map(code => <option key={code} value={code}>{code === 'exempt' ? label('معفى', 'Exempt') : code === 'zero' ? label('بدون ضريبة', 'Zero rated') : code === 'standard' ? label('الضريبة الأساسية', 'Standard VAT') : label('ضريبة مخفضة', 'Reduced VAT')} {code !== 'exempt' ? `${vatRate(restaurant.tax_mode === "none" && restaurant.currency === "EGP" ? "egypt" : restaurant.tax_mode, true, code,restaurant.tax_rates)}%` : ''}</option>)}
           </Select>
+              <p className="mt-2 text-xs text-ink-500">{label("النسب حسب بلد النشاط وإعداداته. الضريبة لا تُحصّل إلا بعد اختيار البلد وتفعيل التسجيل الضريبي.","Rates follow the business country and settings. VAT is only charged when registration is enabled.")} {(!restaurant.vat_registered || restaurant.tax_mode==="none") && <strong>{label(" التحصيل الحالي: بدون ضريبة. "," Currently no VAT is charged. ")}</strong>} <a href="/dashboard/settings" className="text-brand-700 underline">{label("إعدادات الضريبة", "Tax settings")}</a></p>
           <span className="block text-xs font-normal text-ink-500">{label('اختار التصنيف حسب طبيعة المنتج وطريقة تقديمه. الأسعار', 'Choose the category for the product and how it is supplied. Prices are')} {restaurant.prices_include_vat ? label('شاملة الضريبة.', 'VAT inclusive.') : label('قبل الضريبة؛ الضريبة تضاف للإجمالي.', 'VAT exclusive; VAT is added to the total.')}</span>
         </label>
         {/* --- variants --- */}

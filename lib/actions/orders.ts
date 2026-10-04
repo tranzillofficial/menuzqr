@@ -140,6 +140,7 @@ export async function placeOrderAction(
     currency: restaurant.currency,
   });
 
+  revalidatePath("/dashboard/pos");
   revalidatePath("/dashboard/orders");
   revalidatePath("/station");
 
@@ -150,6 +151,20 @@ export async function placeOrderAction(
     total,
     currency: restaurant.currency,
   };
+}
+
+export async function placeOnlineOrderAction(slug:string, lines:CartLine[], note:string, session:string, request:string, customer:{name:string;phone:string}):Promise<PlaceOrderResult> {
+ if (!Array.isArray(lines)||!lines.length||lines.length>MAX_LINES||!customer||typeof customer.name!=='string'||typeof customer.phone!=='string'||typeof note!=='string'||typeof session!=='string'||session.length<16||session.length>64||typeof request!=='string'||! /^[0-9a-f-]{36}$/i.test(request)) return {ok:false,message:'بيانات الطلب غير مكتملة.'};
+ const name=customer.name.trim().slice(0,160),phone=customer.phone.replace(/[\s()-]/g,'');
+ if(name.length<2||!/^\+?\d{8,15}$/.test(phone))return {ok:false,message:'اكتب الاسم ورقم الموبايل بشكل صحيح.'};
+ const db=createAdminSupabase();
+ const {data:r}=await db.from('restaurants').select('id,currency,enabled_modules').eq('slug',slug).maybeSingle();
+ if(!r||!moduleEnabled(r,'orders')) return {ok:false,message:'استقبال الطلبات غير متاح.'};
+ const {data:o,error}=await db.rpc('create_fiscal_order',{p_actor:null,p_restaurant:r.id,p_request:request,p_lines:lines,p_table:null,p_note:note.trim().slice(0,400),p_payment:null,p_received:null,p_customer:{name,phone},p_guest:true,p_session:session});
+ if(error||!o)return {ok:false,message:'تعذر إرسال الطلب. راجع البيانات أو تواصل مع المكان.'};
+ await publishEvent({id:`order.new:${o.id}`,kind:'order.new',restaurantId:r.id,orderId:o.id,orderNumber:o.order_number,tableLabel:null,total:Number(o.total),currency:o.currency});
+ revalidatePath('/dashboard/orders');revalidatePath('/dashboard/pos');revalidatePath('/station');
+ return {ok:true,orderNumber:o.order_number,publicToken:o.public_token,total:Number(o.total),currency:o.currency};
 }
 
 export async function callWaiterAction(
@@ -220,6 +235,7 @@ export async function callWaiterAction(
     tableLabel: table.label,
   });
 
+  revalidatePath("/dashboard/pos");
   revalidatePath("/dashboard/orders");
   revalidatePath("/station");
   return { ok: true, message: `A waiter has been called to ${table.label}.` };
@@ -257,7 +273,7 @@ export async function updateOrderStatusAction(
   if (error) return fail(error.message);
   if (!updated) return fail("That order is not on your board any more.");
 
-  if (status === "ready") {
+  if (status === "ready" && updated.table_id && moduleEnabled(membership.restaurant,"service_calls")) {
     await raisePickup(context.restaurantId, updated.id, updated.order_number, updated.table_id, context.userId);
   } else {
     await publishEvent({
@@ -269,6 +285,7 @@ export async function updateOrderStatusAction(
     });
   }
 
+  revalidatePath("/dashboard/pos");
   revalidatePath("/dashboard/orders");
   revalidatePath("/dashboard");
   revalidatePath("/station");
@@ -305,6 +322,7 @@ export async function callWaiterForOrderAction(
     note
   );
 
+  revalidatePath("/dashboard/pos");
   revalidatePath("/dashboard/orders");
   revalidatePath("/station");
   return raised ? done("A waiter has been called.") : done("A waiter is already on the way.");
@@ -388,6 +406,7 @@ export async function resolveWaiterRequestAction(requestId: string): Promise<Act
 
   if (error) return fail(error.message);
 
+  revalidatePath("/dashboard/pos");
   revalidatePath("/dashboard/orders");
   revalidatePath("/station");
   return done("Marked as handled.");

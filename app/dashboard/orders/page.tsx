@@ -1,3 +1,5 @@
+import { activeOrders } from "@/lib/order-data";
+import { InvoiceExport } from "@/components/dashboard/InvoiceExport";
 import type { Metadata } from "next";
 import { requireRestaurant } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -15,11 +17,13 @@ export default async function OrdersPage() {
     getT(),
   ]);
 
-  const [{ data: orders }, { data: waiters }] = await Promise.all([
+  const [active, { data: orders,error:orderError }, { data: waiters,error:waiterError }] = await Promise.all([
+    activeOrders(restaurant.id),
     supabase
       .from("orders")
       .select("*, order_items(*), restaurant_tables(id, label)")
       .eq("restaurant_id", restaurant.id)
+      .in("status", ["completed","cancelled"])
       .order("created_at", { ascending: false })
       .limit(120),
     supabase
@@ -30,14 +34,16 @@ export default async function OrdersPage() {
       .order("created_at", { ascending: true }),
   ]);
 
+  if(orderError||waiterError)throw new Error("Could not load orders");
   return (
     <div className="mx-auto max-w-5xl">
       <PageHeader
         title={t("orders.title")}
         description={t("orders.sub")}
       />
+      <InvoiceExport />
       <OrdersBoard
-        orders={(orders ?? []) as OrderWithDetails[]}
+        orders={[...active,...(orders??[]) as OrderWithDetails[]]}
         waiterRequests={(waiters ?? []) as WaiterRequest[]}
         currency={restaurant.currency}
       />

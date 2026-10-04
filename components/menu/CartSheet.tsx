@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { cartLineDisplay, cartLineVat, useMenu } from "./MenuContext";
-import { placeOrderAction } from "@/lib/actions/orders";
+import { placeOrderAction, placeOnlineOrderAction } from "@/lib/actions/orders";
 import { formatMoney } from "@/lib/utils";
-import { useT } from "@/components/i18n/I18nProvider";
+import { useT, useI18n } from "@/components/i18n/I18nProvider";
 
 function sessionId() {
   if (typeof window === "undefined") return "";
@@ -61,8 +61,12 @@ function CartSheet({ slug, tableToken }: { slug: string; tableToken: string }) {
     removeItem,
     clearCart,
     table,
+    data,
   } = useMenu();
 
+  const {locale}=useI18n();const ar=locale==='ar';
+  const [name,setName]=useState(''),[phone,setPhone]=useState('');
+  const request=useRef<string|null>(null);
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,22 +77,14 @@ function CartSheet({ slug, tableToken }: { slug: string; tableToken: string }) {
   async function submit() {
     setSubmitting(true);
     setError(null);
-    const result = await placeOrderAction(
-      slug,
-      tableToken,
-      items.map((i) => ({ variantId: i.variantId, quantity: i.quantity, note: i.note })),
-      note,
-      sessionId()
-    );
-    setSubmitting(false);
-
-    if (!result.ok) {
-      setError(result.message);
-      return;
-    }
-    clearCart();
-    setNote("");
-    setPlaced({ number: result.orderNumber });
+    if(!request.current)request.current=crypto.randomUUID();
+    try {
+      const lines=items.map(i=>({variantId:i.variantId,quantity:i.quantity,note:i.note}));
+      const result=table ? await placeOrderAction(slug,tableToken,lines,note,sessionId()) : await placeOnlineOrderAction(slug,lines,note,sessionId(),request.current,{name,phone});
+      if(!result.ok){setError(result.message);return;}
+      clearCart();setNote('');setPlaced({number:result.orderNumber});request.current=null;
+    } catch {setError(ar?'تعذر الاتصال. حاول تاني.':'Connection interrupted. Try again.');}
+    finally {setSubmitting(false);}
   }
 
   return (
@@ -114,8 +110,9 @@ function CartSheet({ slug, tableToken }: { slug: string; tableToken: string }) {
             </div>
             <h2 className="mt-4 text-xl font-semibold">{t("menu.orderSent")}</h2>
             <p className="mt-1.5 text-sm text-ink-600">
-              {t("menu.orderSentBody", { number: placed.number, table: table?.label ?? "" })}
+              {table ? t("menu.orderSentBody", { number: placed.number, table: table.label }) : (ar ? `طلبك رقم ${placed.number} وصل للمكان. الدفع في انتظار التأكيد اليدوي.` : `Order #${placed.number} was received. Payment awaits manual confirmation.`)}
             </p>
+            {!table && data.payments && <div className="mt-4 space-y-3 rounded-xl bg-ink-50 p-4 text-sm"><p>{ar?'حوّل باستخدام البيانات التالية، ثم أرسل صورة الإثبات على واتساب لصاحب المكان.':'Transfer using the details below, then send proof to the business on WhatsApp.'}</p>{data.payments.cash_wallet&&<p>Cash: <span dir="ltr">{data.payments.cash_wallet}</span></p>}{data.payments.instapay_address&&<p>InstaPay: <span dir="ltr">{data.payments.instapay_address}</span></p>}<a target="_blank" rel="noreferrer" className="block rounded-xl bg-emerald-600 p-3 text-white" href={`https://wa.me/${data.payments.payment_whatsapp}?text=${encodeURIComponent(ar?`طلب رقم ${placed.number} — ${name}. سأرفق صورة التحويل.`:`Order #${placed.number} — ${name}. I will attach transfer proof.`)}`}>{ar?'التواصل وإرسال صورة التحويل':'Contact and send transfer proof'}</a></div>}
             <button
               type="button"
               onClick={() => {
@@ -196,10 +193,11 @@ function CartSheet({ slug, tableToken }: { slug: string; tableToken: string }) {
                 </ul>
               )}
 
+              {!table && items.length>0 && <div className="mt-4 space-y-3"><label className="block text-sm">{ar?'الاسم':'Name'}<input value={name} onChange={e=>setName(e.target.value)} maxLength={160} autoComplete="name" className="mt-1 w-full rounded-xl border p-3"/></label><label className="block text-sm">{ar?'رقم الموبايل':'Phone'}<input value={phone} onChange={e=>setPhone(e.target.value)} maxLength={20} type="tel" autoComplete="tel" dir="ltr" className="mt-1 w-full rounded-xl border p-3"/></label><p className="text-xs text-ink-500">{ar?'الطلب للاستلام من الفرع. أي توصيل أو إثبات تحويل يتم بالتنسيق مع المكان على واتساب.':'Pickup from the branch. Arrange delivery or transfer proof with the business on WhatsApp.'}</p></div>}
               {items.length > 0 && (
                 <div className="mt-4">
                   <label htmlFor="order-note" className="text-xs font-semibold uppercase tracking-wide text-ink-400">
-                    {t("menu.noteForKitchen")}
+                    {table?t("menu.noteForKitchen"):(ar?"ملاحظات الطلب":"Order notes")}
                   </label>
                   <textarea
                     id="order-note"
@@ -228,7 +226,7 @@ function CartSheet({ slug, tableToken }: { slug: string; tableToken: string }) {
               </div>
               <button
                 type="button"
-                disabled={items.length === 0 || submitting}
+                disabled={items.length === 0 || submitting || (!table && (name.trim().length<2 || !/^\+?\d{8,15}$/.test(phone.replace(/[\s()-]/g,""))))}
                 onClick={submit}
                 className="w-full rounded-xl bg-ink-900 px-4 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-ink-800 disabled:bg-ink-300"
               >

@@ -73,9 +73,9 @@ export function MenuExperience({
 
       <ProductSheet />
 
+      <CartBar slug={data.restaurant.slug} tableToken={tableToken} />
       {table && (
         <>
-          <CartBar slug={data.restaurant.slug} tableToken={tableToken} />
           <WaiterButton
             slug={data.restaurant.slug}
             tableToken={tableToken}

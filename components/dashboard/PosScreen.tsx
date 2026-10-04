@@ -1,6 +1,6 @@
 "use client";
 
-import { categoryPath, categoryDescendants } from "@/lib/category-tree";
+import { categoryDescendants } from "@/lib/category-tree";
 import { useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useI18n } from '@/components/i18n/I18nProvider';
@@ -8,6 +8,7 @@ import { SmartImage } from '@/components/ui/SmartImage';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { checkoutPos, getPosTables } from '@/lib/actions/pos';
+import { CategoryPicker } from "./CategoryPicker";
 import { ThermalPrinter, type ReceiptPrinterHandle } from '@/components/dashboard/ThermalPrinter';
 import type { PosReceipt } from '@/lib/thermal-print';
 import { displayPrice, taxAmounts, vatRate, type TaxSettings } from '@/lib/tax';
@@ -132,11 +133,11 @@ export function PosScreen({ restaurantId, restaurantName, currency, products, ca
   return <div className="space-y-4 pb-24 lg:pb-0">
     <header className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-xl font-semibold">{label('الكاشير', 'Point of sale')}</h1><p className="text-xs text-ink-500">{restaurantName}</p></div><Link href="/dashboard/orders" className="rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm">{label('متابعة الطلبات', 'View orders')}</Link><Link href="/dashboard/reports" className="rounded-xl border px-3 py-2 text-sm">{label('التقارير وإغلاق اليوم', 'Reports and end of day')}</Link></header>
     <p role="status" aria-live="polite" className="sr-only">{announcement}</p>
-    <ThermalPrinter printRef={printer} restaurantId={restaurantId} restaurantName={restaurantName} currency={currency} receipt={receipt} />
+    <ThermalPrinter compact printRef={printer} restaurantId={restaurantId} restaurantName={restaurantName} currency={currency} receipt={receipt} />
     <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_310px]">
       <section className="min-w-0" aria-label={label('المنتجات', 'Products')}>
         <input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder={label('ابحث عن منتج', 'Search products')} aria-label={label('ابحث عن منتج', 'Search products')} className="h-11 w-full rounded-xl border border-ink-200 bg-white px-4 text-sm" />
-        <div className="my-3 flex gap-2 overflow-x-auto pb-2">{[{ id: 'all', name: label('الكل', 'All') }, ...categories].map(item => <button key={item.id} type="button" aria-pressed={category === item.id} onClick={() => setCategory(item.id)} className={cn('min-h-10 shrink-0 rounded-xl px-3 text-xs font-medium', category === item.id ? 'bg-ink-900 text-white' : 'border border-ink-200 bg-white text-ink-600')}>{item.id === "all" ? item.name : categoryPath(categories,item.id)}</button>)}</div>
+        <div className="my-3"><CategoryPicker categories={categories} value={category==='all'?'':category} onChange={id=>setCategory(id||'all')} emptyLabel={label('كل الأقسام','All categories')} /></div>
         {shown.length === 0 && <div className="rounded-2xl border border-dashed border-ink-300 p-8 text-center text-sm"><p>{label('مفيش منتجات مطابقة', 'No matching products')}</p>{products.length ? <button type="button" onClick={() => { setQuery(''); setCategory('all'); }} className="mt-3 text-brand-700">{label('عرض كل المنتجات', 'Show all products')}</button> : <Link href="/dashboard/products" className="mt-3 inline-block text-brand-700">{label('ضيف منتجاتك', 'Add your products')}</Link>}</div>}
         <div data-testid="product-grid" className="grid grid-cols-2 gap-2 min-[380px]:grid-cols-3 sm:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">
           {shown.map(product => {

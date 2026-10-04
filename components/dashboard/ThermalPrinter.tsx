@@ -1,6 +1,7 @@
 "use client";
 
 import { useImperativeHandle, type Ref, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { Icon } from "@/components/ui/Icons";
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { useI18n } from '@/components/i18n/I18nProvider';
@@ -16,7 +17,8 @@ function subscribeSettings(callback: () => void) {
 
 export type ReceiptPrinterHandle = { printReceipt: (receipt: PosReceipt) => Promise<void> };
 
-export function ThermalPrinter({ restaurantId, restaurantName, currency, receipt, printRef }: {
+export function ThermalPrinter({ restaurantId, restaurantName, currency, receipt, printRef, compact = false }: {
+  compact?: boolean;
   printRef?: Ref<ReceiptPrinterHandle>;
   restaurantId: string; restaurantName: string; currency: string; receipt: PosReceipt | null;
 }) {
@@ -108,12 +110,12 @@ export function ThermalPrinter({ restaurantId, restaurantName, currency, receipt
     } finally { lock.current = false; setBusy(false); }
   }
 
-  return <div className="space-y-2 rounded-xl border border-ink-200 bg-white p-3">
-    <div className="flex flex-wrap items-center gap-2"><Button type="button" variant="secondary" onClick={() => setOpen(true)}>{label('إعداد الطابعة الحرارية', 'Thermal printer setup')}</Button>
+  return <div className={compact ? "space-y-2" : "space-y-2 rounded-xl border border-ink-200 bg-white p-3"}>
+    <div className="flex flex-wrap items-center gap-2"><Button type="button" variant="secondary" aria-label={label('إعدادات الطابعة', 'Printer settings')} onClick={() => setOpen(true)}><Icon.settings className="size-4" />{!compact && label('إعداد الطابعة الحرارية', 'Thermal printer setup')}</Button>
       {receipt && <Button type="button" loading={busy} disabled={busy} onClick={() => print()}>{label('طباعة الإيصال', 'Print receipt')} #{receipt.number}</Button>}
       {receipt && settings.mode !== 'browser' && settings.token && settings.printer && <Button type="button" variant="secondary" disabled={busy} onClick={() => print(false, undefined, true)}>{label('الطباعة عن طريق تعريف الجهاز', 'Print using system driver')}</Button>}</div>
     {message && <p role="status" aria-live="polite" className="rounded-lg bg-ink-50 p-3 text-sm">{message}</p>}
-    <p className="text-xs text-ink-500">{label('الطباعة تبدأ بعد حفظ الطلب. بدون برنامج الربط هتفتح نافذة المتصفح؛ اختار الطابعة ومقاس 58 أو 80 مم وألغِ رؤوس وتذييلات الصفحات. لو الإرسال الحراري فشل راجع الطابعة قبل إعادة الطباعة لتجنب نسخة مكررة.', 'Printing starts after checkout. Without the bridge, select your printer and 58 or 80 mm paper in the browser dialog and disable headers/footers. If thermal sending fails, check the printer before retrying to avoid duplicates.')}</p>
+    {!compact && <p className="text-xs text-ink-500">{label('الطباعة تبدأ بعد حفظ الطلب. بدون برنامج الربط هتفتح نافذة المتصفح؛ اختار الطابعة ومقاس 58 أو 80 مم وألغِ رؤوس وتذييلات الصفحات. لو الإرسال الحراري فشل راجع الطابعة قبل إعادة الطباعة لتجنب نسخة مكررة.', 'Printing starts after checkout. Without the bridge, select your printer and 58 or 80 mm paper in the browser dialog and disable headers/footers. If thermal sending fails, check the printer before retrying to avoid duplicates.')}</p>}
     {settings.printer && <p className="text-xs text-ink-500">{settings.printer} · {settings.width} mm</p>}
     <Modal open={open} onClose={() => { if (!busy) setOpen(false); }} title={label('الطابعة الحرارية', 'Thermal printer')} size="sm">
       <div className="space-y-4 text-sm">

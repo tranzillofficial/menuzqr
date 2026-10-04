@@ -57,7 +57,7 @@ export const getPublicMenu = cache(async function getPublicMenu(
     restaurant.ordering_enabled = false;
     restaurant.waiter_calls_enabled = false;
   }
-  const [{ data: categories }, { data: products }] = await Promise.all([
+  const [{ data: categories }, { data: products }, {data: payments}] = await Promise.all([
     supabase
       .from("categories")
       .select("*")
@@ -71,6 +71,7 @@ export const getPublicMenu = cache(async function getPublicMenu(
       .eq("is_active", true)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true }),
+    supabase.from("restaurant_settings").select("remote_ordering_enabled,cash_wallet,instapay_address,payment_whatsapp").eq("restaurant_id",restaurant.id).maybeSingle(),
   ]);
 
   let table: Pick<RestaurantTable, "id" | "label"> | null = null;
@@ -119,6 +120,7 @@ export const getPublicMenu = cache(async function getPublicMenu(
     state: "ok",
     table,
     data: {
+      payments: payments ?? undefined,
       restaurant: { enabled_modules: restaurant.enabled_modules, business_kind: restaurant.business_kind, id: restaurant.id, name: restaurant.name, slug: restaurant.slug, description: restaurant.description, logo_url: restaurant.logo_url, cover_url: restaurant.cover_url, phone: restaurant.phone, address: restaurant.address, currency: restaurant.currency, language: restaurant.language, menu_theme: restaurant.menu_theme, ordering_enabled: restaurant.ordering_enabled, waiter_calls_enabled: restaurant.waiter_calls_enabled, prices_include_vat: restaurant.prices_include_vat, menu_prices_include_vat: restaurant.menu_prices_include_vat, vat_registered: restaurant.vat_registered },
       categories: moduleEnabled(restaurant,"subcategories") ? grouped : grouped.filter((c) => c.products.length > 0),
     },

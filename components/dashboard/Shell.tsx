@@ -1,13 +1,13 @@
 "use client";
 
-import { dashboardPathEnabled, type BusinessConfig } from "@/lib/business-modules";
+import { dashboardPathEnabled, moduleEnabled, type BusinessConfig } from "@/lib/business-modules";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useState, type ReactNode } from "react";
 import { Icon } from "@/components/ui/Icons";
 import { cn } from "@/lib/utils";
 import { NotificationCenter } from "./NotificationCenter";
-import { useT } from "@/components/i18n/I18nProvider";
+import { useT, useI18n } from "@/components/i18n/I18nProvider";
 import { LocaleSwitch } from "@/components/i18n/LocaleSwitch";
 import type { TranslationKey } from "@/lib/i18n";
 import { AccountMenu } from "./AccountMenu";
@@ -52,6 +52,7 @@ export function DashboardShell({
 }) {
   const pathname = usePathname();
   const t = useT();
+  const {locale} = useI18n();
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
   useDrawer(open, close, pathname);
@@ -77,7 +78,7 @@ export function DashboardShell({
             )}
           >
             <item.icon className="size-4.5 shrink-0" />
-            {t(item.label)}
+            {item.label === "nav.restaurant" && businessConfig.enabled_modules != null && !moduleEnabled(businessConfig,"tables") ? (locale === "ar" ? "الفرع" : "Branch") : t(item.label)}
           </Link>
         );
       })}

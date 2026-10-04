@@ -1,5 +1,6 @@
 "use client";
 
+import { moduleEnabled } from "@/lib/business-modules";
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createRestaurantAction, updateRestaurantAction } from "@/lib/actions/restaurant";
@@ -19,6 +20,7 @@ export function RestaurantForm({ restaurant }: { restaurant: Restaurant | null }
   const toast = useToast();
   const t = useT();
   const { locale } = useI18n();
+  const retail = restaurant?.enabled_modules != null && !moduleEnabled(restaurant,"tables");
   const isEdit = Boolean(restaurant);
 
   const [state, formAction] = useActionState(
@@ -45,11 +47,11 @@ export function RestaurantForm({ restaurant }: { restaurant: Restaurant | null }
     <form action={formAction} className="space-y-5">
       <Card>
         <CardHeader
-          title={t("restaurant.details")}
-          description={t("restaurant.detailsSub")}
+          title={retail ? (locale==="ar"?"بيانات الفرع":"Branch details") : t("restaurant.details")}
+          description={retail ? undefined : t("restaurant.detailsSub")}
         />
         <div className="grid gap-5 p-5 sm:grid-cols-2">
-          <Field label={t("restaurant.name")} htmlFor="name" required error={state?.fieldErrors?.name}>
+          <Field label={retail ? (locale==="ar"?"اسم الفرع":"Branch name") : t("restaurant.name")} htmlFor="name" required error={state?.fieldErrors?.name}>
             <Input
               id="name"
               name="name"

@@ -1,0 +1,15 @@
+"use client";
+import { useState } from "react";
+import { categoryPath } from "@/lib/category-tree";
+import { useI18n } from "@/components/i18n/I18nProvider";
+import type { Category } from "@/lib/types";
+export function CategoryPicker({categories,value,onChange,emptyLabel,id}: {categories:Category[];value:string;onChange:(id:string)=>void;emptyLabel?:string;id?:string}) {
+ const {locale}=useI18n();const ar=locale==='ar';
+ const [parent,setParent]=useState<string|null>(()=>categories.find(c=>c.id===value)?.parent_id??null);
+ const [search,setSearch]=useState('');
+ const [open,setOpen]=useState(false);
+ const node=categories.find(c=>c.id===parent);
+ const shown=categories.filter(c=>search.trim()?categoryPath(categories,c.id).toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()):(c.parent_id??null)===parent);
+ function select(id:string){onChange(id);setOpen(false);setSearch('');}
+ return <div className="space-y-2"><button id={id} type="button" aria-expanded={open} onClick={()=>setOpen(!open)} className="flex min-h-11 w-full items-center justify-between rounded-xl border border-ink-200 bg-white px-3 text-start text-sm"><span>{value?categoryPath(categories,value):emptyLabel??(ar?'بدون قسم':'No category')}</span><span>⌄</span></button>{open&&<div className="rounded-xl border border-ink-200 bg-white p-3 shadow-sm"><input aria-label={ar?'بحث عن قسم':'Search categories'} placeholder={ar?'ابحث عن قسم…':'Search categories…'} value={search} onChange={e=>setSearch(e.target.value)} className="mb-2 w-full rounded-lg border p-2 text-sm"/>{!search&&<div className="mb-2 flex flex-wrap gap-2 text-xs"><button type="button" className="rounded-lg bg-ink-100 p-2" onClick={()=>setParent(null)}>{ar?'الأقسام الرئيسية':'Root categories'}</button>{node&&<><button type="button" className="rounded-lg bg-ink-100 p-2" onClick={()=>setParent(node.parent_id??null)}>{ar?'رجوع':'Back'}</button><span className="p-2">{categoryPath(categories,node.id)}</span></>}</div>}<div className="max-h-60 overflow-y-auto"><button type="button" onClick={()=>select('')} className="w-full rounded-lg p-2 text-start text-sm hover:bg-ink-50">{emptyLabel??(ar?'بدون قسم':'No category')}</button>{node&&!search&&<button type="button" onClick={()=>select(node.id)} className="w-full rounded-lg bg-brand-50 p-2 text-start text-sm font-semibold">{ar?'اختيار هذا القسم':'Select this category'}: {node.name}</button>}{shown.map(c=><div key={c.id} className="flex border-t border-ink-100"><button type="button" aria-pressed={value===c.id} onClick={()=>select(c.id)} className="min-h-11 flex-1 rounded-lg p-2 text-start text-sm hover:bg-brand-50">{search?categoryPath(categories,c.id):c.name}</button>{categories.some(child=>child.parent_id===c.id)&&<button type="button" aria-label={`${ar?'فتح أقسام':'Open subcategories of'} ${c.name}`} onClick={()=>{setParent(c.id);setSearch('');}} className="min-h-11 rounded-lg border-s px-3 text-brand-700">{ar?'الأقسام الفرعية ←':'Subcategories →'}</button>}</div>)}{shown.length===0&&<p className="p-2 text-sm text-ink-500">{ar?'لا توجد أقسام':'No categories'}</p>}</div></div>}</div>;
+}
