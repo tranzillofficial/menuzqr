@@ -1,3 +1,4 @@
+import { moduleEnabled } from '@/lib/business-modules';
 import Link from 'next/link';
 import { requireManager } from '@/lib/membership';
 import { getPlatformSettings } from '@/lib/platform';
@@ -14,5 +15,5 @@ export default async function PosPage(){
  const db=await createServerSupabase();
  const [products,categories,tables]=await Promise.all([db.from('products').select('*,product_variants(*)').eq('restaurant_id',member.restaurant.id).eq('is_active',true).order('sort_order'),db.from('categories').select('*').eq('restaurant_id',member.restaurant.id).eq('is_active',true).order('sort_order'),db.from('restaurant_tables').select('*').eq('restaurant_id',member.restaurant.id).eq('is_active',true).order('sort_order')]);
  if(products.error||categories.error||tables.error) throw new Error('Could not load POS');
- return <PosScreen restaurantId={member.restaurant.id} restaurantName={member.restaurant.name} currency={member.restaurant.currency} products={(products.data??[]) as ProductWithVariants[]} categories={(categories.data??[]) as Category[]} tables={(tables.data??[]) as RestaurantTable[]} taxSettings={member.restaurant} />;
+ return <PosScreen tablesEnabled={moduleEnabled(member.restaurant,"tables")} restaurantId={member.restaurant.id} restaurantName={member.restaurant.name} currency={member.restaurant.currency} products={(products.data??[]) as ProductWithVariants[]} categories={(categories.data??[]) as Category[]} tables={(tables.data??[]) as RestaurantTable[]} taxSettings={member.restaurant} />;
 }

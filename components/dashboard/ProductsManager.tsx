@@ -1,5 +1,7 @@
 "use client";
 
+import { moduleEnabled } from "@/lib/business-modules";
+import { categoryPath, categoryDescendants } from "@/lib/category-tree";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -43,7 +45,7 @@ export function ProductsManager({
 
   const visible = products.filter((product) => {
     if (filter === "uncategorised" && product.category_id) return false;
-    if (filter !== "all" && filter !== "uncategorised" && product.category_id !== filter)
+    if (filter !== "all" && filter !== "uncategorised" && !categoryDescendants(categories,filter).has(product.category_id ?? ""))
       return false;
     if (query.trim()) {
       const q = query.trim().toLowerCase();
@@ -64,7 +66,7 @@ export function ProductsManager({
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-2">
-        <LinkButton href="/dashboard/catalog" variant="secondary">{t("nav.catalog")}</LinkButton>
+        {moduleEnabled(restaurant,"catalog") && <LinkButton href="/dashboard/catalog" variant="secondary">{t("nav.catalog")}</LinkButton>}
         <Button onClick={() => setEditing("new")}>
           <Icon.plus className="size-4" />
           {t("products.add")}
@@ -90,7 +92,7 @@ export function ProductsManager({
           <option value="all">{t("products.allCategories")}</option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>
-              {c.name}
+              {categoryPath(categories,c.id)}
             </option>
           ))}
           <option value="uncategorised">{t("products.uncategorised")}</option>

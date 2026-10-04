@@ -54,6 +54,7 @@ export default async function DashboardLayout({
       restaurantName={restaurant?.name ?? null}
       restaurantId={restaurant?.id ?? null}
       isAdmin={Boolean(profile?.is_admin)}
+      businessConfig={restaurant ?? {}}
       userEmail={user.email ?? ""}
     >
       {children}

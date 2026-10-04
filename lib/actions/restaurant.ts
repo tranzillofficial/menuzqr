@@ -1,5 +1,6 @@
 "use server";
 
+import { moduleEnabled } from "@/lib/business-modules";
 import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { createAdminSupabase } from "@/lib/supabase/admin";
@@ -137,6 +138,7 @@ export async function updateRestaurantAction(
 export async function updateMenuThemeAction(theme: string): Promise<ActionState> {
   const owned = await getOwnedRestaurant();
   if (!owned.ok) return owned.error;
+  if (!moduleEnabled(owned.restaurant,"design")) return fail("Menu design is disabled for this account.");
   if (!MENU_THEME_IDS.includes(theme as (typeof MENU_THEME_IDS)[number])) {
     return fail("Unknown menu design.");
   }
@@ -165,8 +167,8 @@ export async function updateFeatureSettingsAction(
   const { error } = await supabase
     .from("restaurants")
     .update({
-      ordering_enabled: bool(form, "ordering_enabled"),
-      waiter_calls_enabled: bool(form, "waiter_calls_enabled"),
+      ordering_enabled: moduleEnabled(owned.restaurant,"orders") && bool(form, "ordering_enabled"),
+      waiter_calls_enabled: moduleEnabled(owned.restaurant,"service_calls") && bool(form, "waiter_calls_enabled"),
     })
     .eq("id", owned.restaurant.id);
 

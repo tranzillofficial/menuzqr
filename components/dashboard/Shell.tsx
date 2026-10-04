@@ -1,5 +1,6 @@
 "use client";
 
+import { dashboardPathEnabled, type BusinessConfig } from "@/lib/business-modules";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useState, type ReactNode } from "react";
@@ -40,12 +41,14 @@ export function DashboardShell({
   restaurantId,
   isAdmin,
   userEmail,
+  businessConfig = {},
 }: {
   children: ReactNode;
   restaurantName: string | null;
   restaurantId: string | null;
   isAdmin: boolean;
   userEmail: string;
+  businessConfig?: BusinessConfig;
 }) {
   const pathname = usePathname();
   const t = useT();
@@ -58,7 +61,7 @@ export function DashboardShell({
 
   const nav = (
     <nav className="flex flex-col gap-0.5">
-      {NAV.map((item) => {
+      {NAV.filter(item => dashboardPathEnabled(businessConfig,item.href)).map((item) => {
         const active = isActive(item.href, item.exact);
         return (
           <Link

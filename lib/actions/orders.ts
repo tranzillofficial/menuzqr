@@ -1,5 +1,7 @@
 "use server";
 
+import { moduleEnabled } from "@/lib/business-modules";
+import { getMembership } from "@/lib/membership";
 import { staffPermissions, statusPermission } from "@/lib/staff-permissions";
 import { revalidatePath } from "next/cache";
 import { createAdminSupabase } from "@/lib/supabase/admin";
@@ -75,7 +77,7 @@ export async function placeOrderAction(
 
   const { data: restaurant } = await supabase
     .from("restaurants")
-    .select("id, status, ordering_enabled, currency, slug")
+    .select("id, status, enabled_modules, ordering_enabled, currency, slug")
     .eq("slug", slug)
     .maybeSingle();
 
@@ -88,6 +90,7 @@ export async function placeOrderAction(
   // restaurant's own staff: a waiter scans the table and takes the order.
   const staffId = await memberOf(restaurant.id);
 
+  if (!moduleEnabled(restaurant,"orders") || !moduleEnabled(restaurant,"tables")) return {ok:false,message:"Table ordering is unavailable."};
   if (!restaurant.ordering_enabled && !staffId) {
     return { ok: false, message: "Table ordering is turned off for this restaurant." };
   }
@@ -157,7 +160,7 @@ export async function callWaiterAction(
 
   const { data: restaurant } = await supabase
     .from("restaurants")
-    .select("id, status, waiter_calls_enabled")
+    .select("id, status, enabled_modules, waiter_calls_enabled")
     .eq("slug", slug)
     .maybeSingle();
 
@@ -169,6 +172,7 @@ export async function callWaiterAction(
   // code when the owner has switched guest calls off.
   const staffId = await memberOf(restaurant.id);
 
+  if (!moduleEnabled(restaurant,"service_calls") || !moduleEnabled(restaurant,"tables")) return {ok:false,message:"Service calls are unavailable."};
   if (!restaurant.waiter_calls_enabled && !staffId) {
     return { ok: false, message: "Waiter calls are turned off for this restaurant." };
   }
@@ -235,6 +239,8 @@ export async function updateOrderStatusAction(
   status: string,
   reason = ""
 ): Promise<ActionState> {
+  const membership = await getMembership();
+  if (!membership || !moduleEnabled(membership.restaurant,"orders")) return fail("Orders are disabled for this account.");
   const context = await getMemberContext();
   if (!context.ok) return context.error;
 
@@ -274,6 +280,8 @@ export async function callWaiterForOrderAction(
   orderId: string,
   note?: string
 ): Promise<ActionState> {
+  const membership = await getMembership();
+  if (!membership || (!moduleEnabled(membership.restaurant,"orders") || !moduleEnabled(membership.restaurant,"service_calls"))) return fail("Service calls are disabled for this account.");
   const context = await getMemberContext();
   if (!context.ok) return context.error;
 
@@ -361,6 +369,8 @@ async function raisePickup(
 }
 
 export async function resolveWaiterRequestAction(requestId: string): Promise<ActionState> {
+  const membership = await getMembership();
+  if (!membership || !moduleEnabled(membership.restaurant,"service_calls")) return fail("Service calls are disabled for this account.");
   const context = await getMemberContext();
   if (!context.ok) return context.error;
 

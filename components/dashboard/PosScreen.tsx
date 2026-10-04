@@ -1,5 +1,6 @@
 "use client";
 
+import { categoryPath, categoryDescendants } from "@/lib/category-tree";
 import { useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useI18n } from '@/components/i18n/I18nProvider';
@@ -15,9 +16,9 @@ import type { ProductWithVariants, Category, RestaurantTable } from '@/lib/types
 
 type Line = { variantId: string; name: string; variant: string; price: number; quantity: number; basePrice: number; rate: number };
 
-export function PosScreen({ restaurantId, restaurantName, currency, products, categories, tables, taxSettings }: {
+export function PosScreen({ restaurantId, restaurantName, currency, products, categories, tables, taxSettings, tablesEnabled = true }: {
   restaurantId: string; restaurantName: string; currency: string; products: ProductWithVariants[];
-  categories: Category[]; tables: RestaurantTable[]; taxSettings: TaxSettings;
+  tablesEnabled?: boolean; categories: Category[]; tables: RestaurantTable[]; taxSettings: TaxSettings;
 }) {
   const { locale } = useI18n();
   const label = (ar: string, en: string) => locale === 'ar' ? ar : en;
@@ -49,7 +50,7 @@ export function PosScreen({ restaurantId, restaurantName, currency, products, ca
   const grossPrice = (price: number, product: ProductWithVariants) => displayPrice(Number(price), product.vat_code, taxSettings);
   const count = cart.reduce((sum, line) => sum + line.quantity, 0);
   const shown = products.filter(product =>
-    (category === 'all' || product.category_id === category) &&
+    (category === 'all' || categoryDescendants(categories,category).has(product.category_id ?? "")) &&
     `${product.name} ${product.description ?? ''}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())
   );
   function changed() { request.current = null; setError(''); }
@@ -100,7 +101,7 @@ export function PosScreen({ restaurantId, restaurantName, currency, products, ca
 
   const order = <div className="space-y-4">
     <fieldset disabled={pending} className="space-y-4">
-      <div className="grid grid-cols-2 gap-2" aria-label={label('نوع الطلب', 'Order type')}>{(['takeaway','dinein'] as const).map(type => <button key={type} type="button" aria-pressed={orderType === type} onClick={() => { setOrderType(type); setTable(''); changed(); if (type === 'dinein') void refreshTables(); }} className={cn('rounded-xl border py-2.5 text-sm', orderType === type ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-ink-200')}>{type === 'takeaway' ? label('تيك أواي', 'Takeaway') : label('داخل المطعم', 'Dine in')}</button>)}</div>
+      {tablesEnabled && <div className="grid grid-cols-2 gap-2" aria-label={label('نوع الطلب', 'Order type')}>{(['takeaway','dinein'] as const).map(type => <button key={type} type="button" aria-pressed={orderType === type} onClick={() => { setOrderType(type); setTable(''); changed(); if (type === 'dinein') void refreshTables(); }} className={cn('rounded-xl border py-2.5 text-sm', orderType === type ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-ink-200')}>{type === 'takeaway' ? label('تيك أواي', 'Takeaway') : label('داخل المطعم', 'Dine in')}</button>)}</div>}
       {orderType === 'dinein' && <div className="space-y-2">
         <div className="flex items-center justify-between text-sm"><span>{label('الطاولة', 'Table')} ({availableTables.length})</span><button type="button" disabled={refreshingTables} onClick={refreshTables} className="text-brand-700">{refreshingTables ? label('جاري التحديث', 'Refreshing') : label('تحديث', 'Refresh')}</button></div>
         <select aria-label={label('اختار طاولة', 'Select a table')} value={table} onChange={event => { setTable(event.target.value); changed(); }} className="h-11 w-full rounded-xl border border-ink-200 bg-white px-3 text-sm"><option value="">{label('اختار طاولة', 'Select a table')}</option>{availableTables.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</select>
@@ -135,8 +136,8 @@ export function PosScreen({ restaurantId, restaurantName, currency, products, ca
     <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_310px]">
       <section className="min-w-0" aria-label={label('المنتجات', 'Products')}>
         <input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder={label('ابحث عن منتج', 'Search products')} aria-label={label('ابحث عن منتج', 'Search products')} className="h-11 w-full rounded-xl border border-ink-200 bg-white px-4 text-sm" />
-        <div className="my-3 flex gap-2 overflow-x-auto pb-2">{[{ id: 'all', name: label('الكل', 'All') }, ...categories].map(item => <button key={item.id} type="button" aria-pressed={category === item.id} onClick={() => setCategory(item.id)} className={cn('min-h-10 shrink-0 rounded-xl px-3 text-xs font-medium', category === item.id ? 'bg-ink-900 text-white' : 'border border-ink-200 bg-white text-ink-600')}>{item.name}</button>)}</div>
-        {shown.length === 0 && <div className="rounded-2xl border border-dashed border-ink-300 p-8 text-center text-sm"><p>{label('مفيش منتجات مطابقة', 'No matching products')}</p>{products.length ? <button type="button" onClick={() => { setQuery(''); setCategory('all'); }} className="mt-3 text-brand-700">{label('عرض كل المنتجات', 'Show all products')}</button> : <Link href="/dashboard/catalog" className="mt-3 inline-block text-brand-700">{label('ضيف من المنيو العام', 'Add from catalog')}</Link>}</div>}
+        <div className="my-3 flex gap-2 overflow-x-auto pb-2">{[{ id: 'all', name: label('الكل', 'All') }, ...categories].map(item => <button key={item.id} type="button" aria-pressed={category === item.id} onClick={() => setCategory(item.id)} className={cn('min-h-10 shrink-0 rounded-xl px-3 text-xs font-medium', category === item.id ? 'bg-ink-900 text-white' : 'border border-ink-200 bg-white text-ink-600')}>{item.id === "all" ? item.name : categoryPath(categories,item.id)}</button>)}</div>
+        {shown.length === 0 && <div className="rounded-2xl border border-dashed border-ink-300 p-8 text-center text-sm"><p>{label('مفيش منتجات مطابقة', 'No matching products')}</p>{products.length ? <button type="button" onClick={() => { setQuery(''); setCategory('all'); }} className="mt-3 text-brand-700">{label('عرض كل المنتجات', 'Show all products')}</button> : <Link href="/dashboard/products" className="mt-3 inline-block text-brand-700">{label('ضيف منتجاتك', 'Add your products')}</Link>}</div>}
         <div data-testid="product-grid" className="grid grid-cols-2 gap-2 min-[380px]:grid-cols-3 sm:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">
           {shown.map(product => {
             const variants = product.product_variants.filter(variant => variant.is_active && Number.isFinite(Number(variant.price)));

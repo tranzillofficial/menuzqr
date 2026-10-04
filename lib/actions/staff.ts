@@ -1,4 +1,5 @@
 "use server";
+import { requireBusinessModule } from "@/lib/business-access";
 
 import { STAFF_PERMISSIONS } from "@/lib/staff-permissions";
 import { revalidatePath } from "next/cache";
@@ -22,6 +23,7 @@ import { bool, done, fail, str } from "./helpers";
 async function requireManagerContext(): Promise<
   { ok: true; restaurantId: string; userId: string } | { ok: false; error: ActionState }
 > {
+  await requireBusinessModule("staff");
   const supabase = await createServerSupabase();
   const {
     data: { user },

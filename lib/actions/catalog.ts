@@ -1,4 +1,5 @@
 "use server";
+import { requireBusinessModule } from "@/lib/business-access";
 
 import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -11,6 +12,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Atomic copy. Source ids retain the section link when the owner renames it. */
 export async function importCatalogItemsAction(picks: ImportPick[], publishNow = false): Promise<ImportResult> {
+  await requireBusinessModule("catalog");
   const owned = await getMenuRestaurant();
   if (!owned.ok) return {ok:false,message:owned.error?.message};
   if (!Array.isArray(picks) || picks.length > 150) return {ok:false,message:"Pick up to 150 dishes."};

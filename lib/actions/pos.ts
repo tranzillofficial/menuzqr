@@ -1,4 +1,5 @@
 "use server";
+import { moduleEnabled } from "@/lib/business-modules";
 import { getMembership } from '@/lib/membership';
 import { createAdminSupabase } from '@/lib/supabase/admin';
 import { getPlatformSettings } from '@/lib/platform';
@@ -12,6 +13,7 @@ export async function getPosTables() {
   const [member, platform, locale] = await Promise.all([getMembership(), getPlatformSettings(), getLocale()]);
   const ar = locale === 'ar';
   if (!member?.isManager || !hasPosAccess(member.restaurant, platform.posEnabled)) return { ok: false as const, message: ar ? 'اشتراك الكاشير مش مفعّل.' : 'POS access is not active.' };
+  if (!moduleEnabled(member.restaurant,"tables")) return {ok:true as const,tables:[]};
   const db = await createServerSupabase();
   const { data, error } = await db.from('restaurant_tables').select('id,label')
     .eq('restaurant_id', member.restaurant.id).eq('is_active', true).order('sort_order');
@@ -22,6 +24,7 @@ export async function checkoutPos(input:{requestId:string;lines:{variantId:strin
   const [member,platform,locale] = await Promise.all([getMembership(),getPlatformSettings(),getLocale()]);
   const ar=locale==='ar';
   if (!member?.isManager || !hasPosAccess(member.restaurant,platform.posEnabled)) return {ok:false as const,message:ar?'اشتراك الكاشير مش مفعّل.':'POS access is not active.'};
+  if (input.tableId && !moduleEnabled(member.restaurant,"tables")) return {ok:false as const,message:"Tables are disabled for this account."};
   if (!Array.isArray(input.lines) || input.lines.length>100 || (input.received!==null && (!Number.isFinite(input.received) || input.received<0))) return {ok:false as const,message:ar?'راجع بيانات الطلب.':'Check your order.'};
   const db = createAdminSupabase();
   const {data,error}=await db.rpc('create_fiscal_order',{p_actor:member.userId,p_restaurant:member.restaurant.id,p_request:input.requestId,p_lines:input.lines,p_table:input.tableId,p_note:input.note,p_payment:input.payment,p_received:input.received,p_customer:input.customer??{}});

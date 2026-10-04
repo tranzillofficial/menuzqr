@@ -1,3 +1,4 @@
+import { dashboardPathEnabled, moduleEnabled } from "@/lib/business-modules";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -99,7 +100,7 @@ export default async function DashboardPage() {
 
       <ActivationPanel restaurant={restaurant} />
 
-      {counts.waiters > 0 && (
+      {moduleEnabled(restaurant,"service_calls") && counts.waiters > 0 && (
         <Link
           href="/dashboard/orders"
           className="flex items-center gap-3 rounded-2xl border border-brand-300 bg-brand-50 px-5 py-4 transition-colors hover:bg-brand-100"
@@ -113,7 +114,7 @@ export default async function DashboardPage() {
       )}
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        {stats.map((stat) => (
+        {stats.filter(item => dashboardPathEnabled(restaurant,item.href)).map((stat) => (
           <Link
             key={stat.label}
             href={stat.href}
@@ -129,7 +130,7 @@ export default async function DashboardPage() {
         <Card className="p-5">
           <h2 className="text-base font-semibold text-ink-900">{t("dash.yourSetup")}</h2>
           <ul className="mt-4 space-y-2.5">
-            {checklist.map((item) => (
+            {checklist.filter(item => dashboardPathEnabled(restaurant,item.href)).map((item) => (
               <li key={item.label}>
                 <Link
                   href={item.href}
@@ -156,7 +157,7 @@ export default async function DashboardPage() {
           </ul>
         </Card>
 
-        <Card className="p-5">
+        {moduleEnabled(restaurant,"orders") && <Card className="p-5">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold text-ink-900">{t("dash.recentOrders")}</h2>
             <Link href="/dashboard/orders" className="text-sm text-brand-700 hover:underline">
@@ -186,7 +187,7 @@ export default async function DashboardPage() {
               })}
             </ul>
           )}
-        </Card>
+        </Card>}
       </div>
     </div>
   );

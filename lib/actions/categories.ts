@@ -1,5 +1,6 @@
 "use server";
 
+import { moduleEnabled } from "@/lib/business-modules";
 import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/supabase/server";
 import type { ActionState } from "@/lib/types";
@@ -39,6 +40,7 @@ export async function saveCategoryAction(
   const payload = {
     restaurant_id: restaurant.id,
     name,
+    ...(moduleEnabled(restaurant,"subcategories") ? {parent_id: optionalStr(form,"parent_id")} : {}),
     description: optionalStr(form, "description"),
     image_url: imageUrl,
     is_active: bool(form, "is_active"),
@@ -93,6 +95,7 @@ export async function createCategoryQuickAction(
 
   const supabase = await createServerSupabase();
 
+  if (sourceId && !moduleEnabled(owned.restaurant,"catalog")) return {ok:false,message:"Catalog is disabled for this account."};
   if (sourceId) {
     const {data:source,error:sourceError} = await supabase.from("catalog_categories").select("id,name").eq("id",sourceId).eq("is_active",true).maybeSingle();
     if (sourceError || !source) return {ok:false,message:"That catalog section is no longer available."};

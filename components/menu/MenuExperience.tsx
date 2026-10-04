@@ -1,5 +1,7 @@
 "use client";
 
+import { RetailMenu } from "./themes/RetailMenu";
+import { moduleEnabled } from "@/lib/business-modules";
 import { MenuProvider } from "./MenuContext";
 import { ProductSheet } from "./ProductSheet";
 import { CartBar } from "./CartSheet";
@@ -36,7 +38,7 @@ export function MenuExperience({
   showIngredients: boolean;
   staffMode?: boolean;
 }) {
-  const Theme = THEMES[data.restaurant.menu_theme] ?? ElegantMenu;
+  const Theme = moduleEnabled(data.restaurant,"subcategories") ? RetailMenu : THEMES[data.restaurant.menu_theme] ?? ElegantMenu;
   const lightFab = data.restaurant.menu_theme === "elegant" || data.restaurant.menu_theme === "market";
 
   // The menu's own chrome. "Add to order", "Call waiter". follows the

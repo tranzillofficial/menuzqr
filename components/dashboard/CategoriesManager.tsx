@@ -1,5 +1,7 @@
 "use client";
 
+import { moduleEnabled } from "@/lib/business-modules";
+import { categoryPath, categoryDescendants } from "@/lib/category-tree";
 import { useActionState, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -11,14 +13,14 @@ import { moveCategoryAction } from "@/lib/actions/products";
 import { Button, LinkButton } from "@/components/ui/Button";
 import { ConfirmButton } from "@/components/ui/ConfirmDialog";
 import { EmptyState } from "@/components/ui/Card";
-import { Field, Input, Switch, Textarea } from "@/components/ui/Field";
+import { Field, Input, Select, Switch, Textarea } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icons";
 import { ImagePicker } from "@/components/ui/ImagePicker";
 import { SmartImage } from "@/components/ui/SmartImage";
 import { Modal } from "@/components/ui/Modal";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { useToast } from "@/components/ui/Toast";
-import { useT } from "@/components/i18n/I18nProvider";
+import { useI18n, useT } from "@/components/i18n/I18nProvider";
 import type { Category, Restaurant } from "@/lib/types";
 
 export function CategoriesManager({
@@ -47,7 +49,7 @@ export function CategoriesManager({
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-2">
-        <LinkButton href="/dashboard/catalog" variant="secondary">{t("nav.catalog")}</LinkButton>
+        {moduleEnabled(restaurant,"catalog") && <LinkButton href="/dashboard/catalog" variant="secondary">{t("nav.catalog")}</LinkButton>}
         <Button onClick={() => setEditing("new")}>
           <Icon.plus className="size-4" />
           {t("categories.add")}
@@ -100,7 +102,7 @@ export function CategoriesManager({
               </div>
 
               <div className="min-w-0 flex-1">
-                <p className="truncate font-medium text-ink-900">{category.name}</p>
+                <p className="truncate font-medium text-ink-900">{categoryPath(categories,category.id)}</p>
                 <p className="truncate text-xs text-ink-500">
                   {productCounts[category.id] ?? 0} {t("common.products")}
                   {category.description ? ` · ${category.description}` : ""}
@@ -140,6 +142,7 @@ export function CategoriesManager({
       {editing !== null && (
         <CategoryModal
           restaurant={restaurant}
+          categories={categories}
           category={editing === "new" ? null : editing}
           onClose={() => setEditing(null)}
         />
@@ -150,16 +153,20 @@ export function CategoriesManager({
 
 function CategoryModal({
   restaurant,
+  categories,
   category,
   onClose,
 }: {
   restaurant: Restaurant;
+  categories: Category[];
   category: Category | null;
   onClose: () => void;
 }) {
   const router = useRouter();
   const toast = useToast();
   const t = useT();
+  const { locale } = useI18n();
+  const excluded = category ? categoryDescendants(categories,category.id) : new Set<string>();
   const [state, formAction] = useActionState(saveCategoryAction, null);
   const [imageUrl, setImageUrl] = useState(category?.image_url ?? null);
   const [isActive, setIsActive] = useState(category?.is_active ?? true);
@@ -195,6 +202,12 @@ function CategoryModal({
           />
         </Field>
 
+        {moduleEnabled(restaurant,"subcategories") && <Field label={locale === 'ar' ? 'القسم الرئيسي' : 'Parent category'} htmlFor="cat-parent">
+          <Select id="cat-parent" name="parent_id" defaultValue={category?.parent_id ?? ''}>
+            <option value="">{locale === 'ar' ? 'قسم رئيسي مستقل' : 'Top level category'}</option>
+            {categories.filter(c => !excluded.has(c.id)).map(c => <option key={c.id} value={c.id}>{categoryPath(categories,c.id)}</option>)}
+          </Select>
+        </Field>}
         <Field label={t("products.description")} htmlFor="cat-description" hint={t("categories.descriptionHint")}>
           <Textarea
             id="cat-description"
