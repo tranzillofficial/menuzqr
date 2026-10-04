@@ -8,11 +8,11 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { Switch } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { useToast } from "@/components/ui/Toast";
-import { useT } from "@/components/i18n/I18nProvider";
+import { useT, useI18n } from "@/components/i18n/I18nProvider";
 import type { TranslationKey } from "@/lib/i18n";
-import type { Restaurant } from "@/lib/types";
+import type { PaymentInstructions, Restaurant } from "@/lib/types";
 
-type Settings = {
+type Settings = Partial<PaymentInstructions> & {
   sound_enabled: boolean;
   show_prices: boolean;
   show_ingredients: boolean;
@@ -47,6 +47,8 @@ export function SettingsForm({
   const router = useRouter();
   const toast = useToast();
   const t = useT();
+  const {locale}=useI18n();const ar=locale==="ar";
+  const [remote,setRemote]=useState(settings.remote_ordering_enabled??false);
   const [state, formAction] = useActionState(updateFeatureSettingsAction, null);
 
   const [values, setValues] = useState<Record<FeatureKey, boolean>>({
@@ -86,6 +88,7 @@ export function SettingsForm({
             </li>
           ))}
         </ul>
+        {moduleEnabled(restaurant,"orders") && <section className="space-y-3 border-t border-ink-100 px-5 py-4"><h3 className="font-semibold">{ar?'طلبات رابط المنتجات والتحويل الخارجي':'Online orders and external transfers'}</h3><label className="flex items-center justify-between gap-4 text-sm">{ar?'السماح بطلبات من الرابط العام بدون طاولة':'Allow orders from the public link without a table'}<Switch checked={remote} label={ar?'طلبات الرابط':'Online orders'} onChange={setRemote}/></label><input type="hidden" name="remote_ordering_enabled" value={remote?'on':''}/><p className="text-xs text-ink-500">{ar?'فعّل استقبال الطلبات أعلاه ثم أضف محفظة كاش أو InstaPay ورقم واتساب. التحويل وإرسال صورة الإثبات بينك وبين العميل؛ الدفع لا يتأكد تلقائيًا.':'Enable ordering above and add a cash wallet or InstaPay and WhatsApp. Transfers and proof are handled privately; payment is never verified automatically.'}</p><label className="block text-sm">{ar?'رقم محفظة كاش':'Cash wallet number'}<input name="cash_wallet" dir="ltr" maxLength={30} defaultValue={settings.cash_wallet??''} className="mt-1 w-full rounded-xl border p-3"/></label><label className="block text-sm">{ar?'عنوان أو رقم InstaPay':'InstaPay address or number'}<input name="instapay_address" dir="ltr" maxLength={120} defaultValue={settings.instapay_address??''} className="mt-1 w-full rounded-xl border p-3"/></label><label className="block text-sm">{ar?'رقم واتساب لاستقبال إثبات التحويل (بكود الدولة، مثل 201…)':'WhatsApp for transfer proof (country code, e.g. 201…)'}<input name="payment_whatsapp" dir="ltr" maxLength={20} defaultValue={settings.payment_whatsapp??''} className="mt-1 w-full rounded-xl border p-3"/></label></section>}
         <div className="flex justify-end border-t border-ink-100 px-5 py-4">
           <SubmitButton>{t("settings.saveSettings")}</SubmitButton>
         </div>

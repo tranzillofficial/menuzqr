@@ -163,30 +163,15 @@ export async function updateFeatureSettingsAction(
   const owned = await getOwnedRestaurant();
   if (!owned.ok) return owned.error;
 
+  const wallet = str(form,"cash_wallet").replace(/[\s()-]/g,"");
+  const instapay = str(form,"instapay_address");
+  const whatsapp = str(form,"payment_whatsapp").replace(/[\s()+-]/g,"");
+  const remote = moduleEnabled(owned.restaurant,"orders") && bool(form,"remote_ordering_enabled");
+  if(wallet && !/^\+?\d{8,15}$/.test(wallet) || whatsapp && !/^\d{8,15}$/.test(whatsapp) || wallet.length>30 || instapay.length>120) return fail("راجع أرقام التحويل والواتساب، واكتب كود الدولة لرقم الواتساب.");
+  if(remote && (!(wallet||instapay)||!whatsapp)) return fail("أضف رقم محفظة كاش أو بيانات InstaPay ورقم واتساب قبل تفعيل طلبات الرابط.");
   const supabase = await createServerSupabase();
-  const { error } = await supabase
-    .from("restaurants")
-    .update({
-      ordering_enabled: moduleEnabled(owned.restaurant,"orders") && bool(form, "ordering_enabled"),
-      waiter_calls_enabled: moduleEnabled(owned.restaurant,"service_calls") && bool(form, "waiter_calls_enabled"),
-    })
-    .eq("id", owned.restaurant.id);
-
-  if (error) return fail(error.message);
-
-  const { error: settingsError } = await supabase
-    .from("restaurant_settings")
-    .upsert(
-      {
-        restaurant_id: owned.restaurant.id,
-        sound_enabled: bool(form, "sound_enabled"),
-        show_prices: bool(form, "show_prices"),
-        show_ingredients: bool(form, "show_ingredients"),
-      },
-      { onConflict: "restaurant_id" }
-    );
-
-  if (settingsError) return fail(settingsError.message);
+  const {error}=await supabase.rpc("save_storefront_settings",{p_restaurant:owned.restaurant.id,p_ordering:moduleEnabled(owned.restaurant,"orders")&&bool(form,"ordering_enabled"),p_waiter:moduleEnabled(owned.restaurant,"service_calls")&&bool(form,"waiter_calls_enabled"),p_sound:bool(form,"sound_enabled"),p_prices:bool(form,"show_prices"),p_ingredients:bool(form,"show_ingredients"),p_remote:remote,p_wallet:wallet,p_instapay:instapay,p_whatsapp:whatsapp});
+  if(error)return fail(error.message);
 
   revalidatePath("/dashboard/settings");
   revalidatePath(`/${owned.restaurant.slug}/menu`);

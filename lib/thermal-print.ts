@@ -2,7 +2,7 @@ import type { FiscalSnapshot } from "./tax";
 export type PosReceipt = {
   orderId?: string; documentNumber?: string; originalDocumentNumber?: string; currency?: string; fiscal?: FiscalSnapshot | null; paidAt?: string | null; creditNote?: boolean; creditDate?: string;
   number: number; total: number; received: number; tableLabel: string | null;
-  payment: 'cash' | 'card'; createdAt: string; note: string;
+  payment: 'cash' | 'card' | 'transfer'; fiscalState?: string; createdAt: string; note: string;
   lines: { variantId: string; name: string; variant: string; price: number; quantity: number; gross?: number; net?: number; vat?: number; rate?: number; code?: string }[];
 };
 export type PrinterSettings = { token: string; printer: string; width: 58 | 80; cut: boolean; mode?: 'browser' | 'bridge' };
@@ -80,8 +80,8 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
   for(const b of fiscal?.breakdown ?? []) wrap(`${b.code} ${b.rate}% | Net ${money(sign*b.net)} | VAT ${money(sign*b.vat)} | Gross ${money(sign*b.gross)}`);
   if(fiscal?.mode === 'saudi') wrap(label('إيصال بيع. الربط بالفوترة الإلكترونية غير مفعّل.', 'Sales receipt. Electronic invoicing is not connected.'));
   else if(fiscal?.registered && fiscal.invoice_kind === 'receipt') wrap(label('ليس فاتورة ضريبية كاملة.', 'Not a full VAT invoice.'));
-  wrap(`${label('الدفع', 'Payment')}: ${receipt.payment === 'cash' ? label('كاش', 'Cash') : label('بطاقة', 'Card')}`);
-  if (receipt.payment === 'cash' && !receipt.creditNote) {
+  wrap(`${label('الدفع', 'Payment')}: ${receipt.fiscalState==='unpaid'?label('غير مدفوع','Unpaid'):receipt.payment === 'cash' ? label('كاش', 'Cash') : receipt.payment === 'transfer' ? label('تحويل خارجي — تأكيد يدوي','External transfer — manually confirmed') : label('بطاقة', 'Card')}`);
+  if (receipt.fiscalState!=='unpaid' && receipt.payment === 'cash' && !receipt.creditNote) {
     wrap(`${label('المستلم', 'Received')}: ${money(receipt.received)}`);
     wrap(`${label('الباقي', 'Change')}: ${money(receipt.received - receipt.total)}`);
   }

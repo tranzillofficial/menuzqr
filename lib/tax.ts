@@ -23,7 +23,7 @@ export function displayPrice(price: number, code: VatCode, settings: Pick<TaxSet
 export type VatBreakdown = { code: string; rate: number; net: number; vat: number; gross: number };
 export type FiscalSnapshot = { invoice_kind: 'receipt' | 'simplified' | 'full'; version: number; mode: TaxMode; registered: boolean; vat_number: string | null; legal_name: string; address: string | null; timezone: string; inclusive: boolean; customer: { name?: string; address?: string; vat_number?: string }; net: number; vat: number; gross: number; breakdown: VatBreakdown[]; };
 export type FinancialEvent = { id: number; order_id: string; kind: 'sale' | 'refund' | 'void'; currency: string; gross: number; net: number; vat: number; payment_method: string | null; reason: string | null; actor_id: string | null; actor_name: string | null; created_at: string; breakdown: VatBreakdown[]; document_number: string | null };
-export type SalesSummary = { currencies: { currency: string; sales: number; cash: number; card: number; refunds: number; voids: number; netSales: number; vat: number; breakdown: VatBreakdown[] }[]; saleCount: number; refundCount: number; voidCount: number; };
+export type SalesSummary = { currencies: { currency: string; sales: number; cash: number; card: number; transfer?:number; refunds: number; voids: number; netSales: number; vat: number; breakdown: VatBreakdown[] }[]; saleCount: number; refundCount: number; voidCount: number; };
 export function summarizeSales(events: FinancialEvent[]): SalesSummary {
   const currencies = new Map<string, SalesSummary['currencies'][number]>();
   for (const event of events) {
@@ -35,6 +35,7 @@ export function summarizeSales(events: FinancialEvent[]): SalesSummary {
     if (event.kind === 'void') row.voids += Number(event.gross);
     if (event.payment_method === 'cash') row.cash += sign * Number(event.gross);
     if (event.payment_method === 'card') row.card += sign * Number(event.gross);
+    if (event.payment_method === 'transfer') row.transfer=(row.transfer??0)+sign*Number(event.gross);
     row.netSales += sign * Number(event.gross); row.vat += sign * Number(event.vat);
     if (sign) for (const b of event.breakdown) {
       let existing = row.breakdown.find(x => x.code === b.code && Number(x.rate) === Number(b.rate));
@@ -45,6 +46,7 @@ export function summarizeSales(events: FinancialEvent[]): SalesSummary {
   const round = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
   for (const r of currencies.values()) {
     for (const key of ['sales','cash','card','refunds','voids','netSales','vat'] as const) r[key] = round(r[key]);
+    if(r.transfer!==undefined)r.transfer=round(r.transfer);
     for (const b of r.breakdown) { b.net = round(b.net); b.vat = round(b.vat); b.gross = round(b.gross); }
   }
   return { currencies: [...currencies.values()], saleCount: events.filter(e => e.kind === 'sale').length, refundCount: events.filter(e => e.kind === 'refund').length, voidCount: events.filter(e => e.kind === 'void').length };

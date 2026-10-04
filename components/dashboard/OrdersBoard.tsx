@@ -13,7 +13,7 @@ import { Badge, EmptyState } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icons";
 import { useToast } from "@/components/ui/Toast";
 import { type OrderStatus } from "@/lib/constants";
-import { useT } from "@/components/i18n/I18nProvider";
+import { useT, useI18n } from "@/components/i18n/I18nProvider";
 import type { TranslationKey } from "@/lib/i18n";
 import { formatMoney, formatTime, relativeTime } from "@/lib/utils";
 import type { OrderWithDetails, WaiterRequest } from "@/lib/types";
@@ -46,6 +46,7 @@ export function OrdersBoard({
   const router = useRouter();
   const toast = useToast();
   const t = useT();
+  const {locale}=useI18n();const ar=locale==="ar";
   const [tab, setTab] = useState<"open" | "done">("open");
   const [pending, startTransition] = useTransition();
 
@@ -139,7 +140,7 @@ export function OrdersBoard({
                     #{order.order_number}
                   </span>
                   <span className="rounded-lg bg-ink-100 px-2 py-0.5 text-xs font-medium text-ink-700">
-                    {order.restaurant_tables?.label ?? t("orders.noTable")}
+                    {order.order_source==="online"?(ar?"طلب من الرابط":"Online order"):order.restaurant_tables?.label ?? t("orders.noTable")}
                   </span>
                   <Badge tone={TONE[order.status as OrderStatus]}>
                     {t(`status.${order.status}` as TranslationKey)}
@@ -149,6 +150,8 @@ export function OrdersBoard({
                   </span>
                 </div>
 
+                {order.customer_details?.name&&<p className="mt-2 text-sm">{order.customer_details.name} · <span dir="ltr">{order.customer_details.phone}</span></p>}
+                {order.fiscal_state==="unpaid"&&<p className="mt-2 text-xs text-amber-800">{ar?"غير مدفوع — تأكيد الدفع يدويًا بعد المراجعة":"Unpaid — confirm payment manually after checking"}</p>}
                 <ul className="mt-3 space-y-1.5">
                   {order.order_items.map((item) => (
                     <li key={item.id} className="flex gap-2 text-sm">

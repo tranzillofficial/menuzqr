@@ -120,10 +120,12 @@ export type OrderItem = {
 };
 
 export type Order = {
+  order_source?: "online" | "table" | "pos" | null;
+  customer_details?: {name?:string;phone?:string};
   fiscal_snapshot: FiscalSnapshot | null;
   fiscal_state: "unpaid" | "paid" | "refunded" | "void" | "legacy";
   paid_at: string | null;
-  payment_method: "cash" | "card" | null;
+  payment_method: "cash" | "card" | "transfer" | null;
   id: string;
   restaurant_id: string;
   table_id: string | null;
@@ -272,7 +274,10 @@ export type AdminAction = {
 };
 
 /** Everything a public menu theme needs to render. */
+export type PaymentInstructions = { remote_ordering_enabled: boolean; cash_wallet: string; instapay_address: string; payment_whatsapp: string };
+
 export type MenuData = {
+  payments?: PaymentInstructions;
   restaurant: Pick<
     Restaurant,
     | "id"
