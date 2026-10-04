@@ -38,10 +38,12 @@ export function OrdersBoard({
   orders,
   waiterRequests,
   currency,
+  retail = false,
 }: {
   orders: OrderWithDetails[];
   waiterRequests: WaiterRequest[];
   currency: string;
+  retail?: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -132,7 +134,7 @@ export function OrdersBoard({
       ) : (
         <ul className="grid gap-3 lg:grid-cols-2">
           {shown.map((order) => {
-            const next = NEXT_STATUS[order.status as OrderStatus];
+            const next = retail && !["completed", "cancelled"].includes(order.status) ? { label: "orders.complete" as const, value: "completed" as const } : retail ? undefined : NEXT_STATUS[order.status as OrderStatus];
             return (
               <li key={order.id} className="rounded-2xl border border-ink-200 bg-white p-4">
                 <div className="flex flex-wrap items-center gap-2">

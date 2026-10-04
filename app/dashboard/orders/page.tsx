@@ -1,3 +1,4 @@
+import { moduleEnabled } from "@/lib/business-modules";
 import { activeOrders } from "@/lib/order-data";
 import { InvoiceExport } from "@/components/dashboard/InvoiceExport";
 import type { Metadata } from "next";
@@ -46,6 +47,7 @@ export default async function OrdersPage() {
         orders={[...active,...(orders??[]) as OrderWithDetails[]]}
         waiterRequests={(waiters ?? []) as WaiterRequest[]}
         currency={restaurant.currency}
+        retail={restaurant.enabled_modules != null && !moduleEnabled(restaurant,"tables")}
       />
     </div>
   );

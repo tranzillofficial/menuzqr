@@ -2,6 +2,7 @@ import type { TranslationKey } from './en';
 
 export const retailTranslations: Record<'ar'|'en', Partial<Record<TranslationKey,string>>> = {
   ar: {
+    "status.accepted":"مفتوح", "status.preparing":"مفتوح", "status.ready":"مفتوح", "orders.complete":"إنهاء الطلب",
     'dash.checkRestaurant':'تم إنشاء بيانات الفرع', 'dash.noActivity':'الطلبات الجديدة بتظهر هنا فورًا.', 'dash.newOrderBody':'عميل بعت طلب جديد.', 'orders.noActiveBody':'لما عميل يبعت طلب من رابط الأصناف، هيظهر هنا فورًا.', 'orders.noTable':'طلب مباشر', 'station.kitchen':'تجهيز الطلبات', 'station.fromKitchen':'فريق التجهيز', 'station.waitingPickup':'جاهز للاستلام', 'disabled.body':'إدارة النشاط أوقفت الحساب ده. تواصل معاهم لإعادة تفعيله.',
 
     'nav.restaurant':'الفرع', 'restaurant.title':'الفرع', 'restaurant.details':'بيانات الفرع', 'restaurant.name':'اسم الفرع', 'restaurant.createTitle':'اعمل بيانات نشاطك', 'restaurant.create':'إنشاء الفرع', 'restaurant.saveFirst':'احفظ بيانات الفرع الأول، وبعدها ارفع اللوجو وصورة الغلاف.',
@@ -13,6 +14,7 @@ export const retailTranslations: Record<'ar'|'en', Partial<Record<TranslationKey
     'plans.menuP3':'استقبال طلبات العملاء ومتابعتها', 'dash.setupTitle':'جهّز بيانات نشاطك', 'dash.setupCta':'إنشاء بيانات الفرع',
   },
   en: {
+    "status.accepted":"Open", "status.preparing":"Open", "status.ready":"Open", "orders.complete":"Complete order",
     'dash.checkRestaurant':'Branch profile created', 'dash.noActivity':'New orders appear here instantly.', 'dash.newOrderBody':'A customer sent a new order.', 'orders.noActiveBody':'Customer orders from the product link appear here instantly.', 'orders.noTable':'Direct order', 'station.kitchen':'Order preparation', 'station.fromKitchen':'Preparation team', 'station.waitingPickup':'Ready for pickup', 'disabled.body':'The business disabled this account. Contact management to restore it.',
 
     'nav.restaurant':'Branch', 'restaurant.title':'Branch', 'restaurant.details':'Branch details', 'restaurant.name':'Branch name', 'restaurant.createTitle':'Set up your business', 'restaurant.create':'Create branch', 'restaurant.saveFirst':'Save your branch first, then upload its logo and cover photo.',

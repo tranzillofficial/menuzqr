@@ -261,6 +261,9 @@ export async function updateOrderStatusAction(
   if (!context.ok) return context.error;
 
   if (!ORDER_STATUSES.includes(status as OrderStatus)) return fail("Unknown status.");
+  if (membership.restaurant.enabled_modules != null && !moduleEnabled(membership.restaurant,"tables") && ["accepted", "preparing", "ready"].includes(status)) {
+    return fail("This business completes orders directly without preparation stages.");
+  }
 
   const permission = statusPermission(status);
   if ((!permission || !context.permissions.includes(permission)) && !["owner", "manager"].includes(context.role)) return fail("You do not have permission for this action.");
