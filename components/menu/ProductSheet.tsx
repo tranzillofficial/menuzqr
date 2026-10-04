@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { cartLineDisplay, useMenu } from "./MenuContext";
+import { DemoProductArt } from "./DemoProductArt";
 import { MenuImage } from "./MenuMedia";
 import { formatMoney, splitIngredients } from "@/lib/utils";
 import { useT } from "@/components/i18n/I18nProvider";
@@ -81,6 +82,8 @@ function ProductSheetContent() {
               priority
             />
           )}
+
+          {!activeProduct.image_url && activeProduct.name.includes("(تجريبي)") && <DemoProductArt name={activeProduct.name} className="aspect-[6/5] w-full"/>}
 
           <div className="space-y-5 p-5">
             <div>
