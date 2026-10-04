@@ -12,7 +12,7 @@ import { AlertsCard } from "@/components/pwa/AlertsCard";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icons";
 import { getPlatformSettings } from "@/lib/platform";
-import { getT } from "@/lib/i18n/server";
+import { getBusinessT as getT } from "@/lib/i18n/server";
 import { formatDate } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Settings" };

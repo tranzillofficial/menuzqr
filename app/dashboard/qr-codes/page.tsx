@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { requireRestaurant } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/dashboard/Shell";
-import { getT } from "@/lib/i18n/server";
+import { getBusinessT as getT } from "@/lib/i18n/server";
 import { QrStudio } from "@/components/qr/QrStudio";
 import { absoluteUrl } from "@/lib/utils";
 import type { QrTemplate, RestaurantTable } from "@/lib/types";

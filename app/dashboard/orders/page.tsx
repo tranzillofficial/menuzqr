@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { requireRestaurant } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/dashboard/Shell";
-import { getT } from "@/lib/i18n/server";
+import { getBusinessT as getT } from "@/lib/i18n/server";
 import { OrdersBoard } from "@/components/dashboard/OrdersBoard";
 import type { OrderWithDetails, WaiterRequest } from "@/lib/types";
 

@@ -1,3 +1,4 @@
+import { retailTranslations } from "./retail";
 import { ar } from "./ar";
 import { en, type TranslationKey } from "./en";
 
@@ -37,9 +38,9 @@ export function interpolate(template: string, vars?: Vars) {
 
 export type Translator = (key: TranslationKey, vars?: Vars) => string;
 
-export function createTranslator(locale: Locale): Translator {
+export function createTranslator(locale: Locale, retail = false): Translator {
   const dict = DICTIONARIES[locale] ?? DICTIONARIES[DEFAULT_LOCALE];
-  return (key, vars) => interpolate(dict[key] ?? en[key] ?? key, vars);
+  return (key, vars) => interpolate((retail ? retailTranslations[locale][key] : undefined) ?? dict[key] ?? en[key] ?? key, vars);
 }
 
 export type { TranslationKey };

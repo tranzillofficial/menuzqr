@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/dashboard/Shell";
 import { StaffManager } from "@/components/dashboard/StaffManager";
 import { listStaffAction } from "@/lib/actions/staff";
 import { requireManager } from "@/lib/membership";
-import { getT } from "@/lib/i18n/server";
+import { getBusinessT as getT } from "@/lib/i18n/server";
 
 export const metadata: Metadata = { title: "Team" };
 

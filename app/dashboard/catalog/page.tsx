@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/dashboard/Shell";
 import { CatalogBrowser } from "@/components/dashboard/CatalogBrowser";
 import { requireManager } from "@/lib/membership";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { getT } from "@/lib/i18n/server";
+import { getBusinessT as getT } from "@/lib/i18n/server";
 import type { CatalogCategory, CatalogItem } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Ready-made menu" };

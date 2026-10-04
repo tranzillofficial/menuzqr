@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/dashboard/Shell";
 import { PlansPanel } from "@/components/dashboard/PlansPanel";
 import { requireManager } from "@/lib/membership";
 import { getPlatformSettings } from "@/lib/platform";
-import { getT, getLocale } from "@/lib/i18n/server";
+import { getBusinessT as getT, getLocale } from "@/lib/i18n/server";
 
 export const metadata: Metadata = { title: "Plans" };
 
