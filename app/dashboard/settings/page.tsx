@@ -1,3 +1,4 @@
+import { moduleEnabled } from "@/lib/business-modules";
 import { ThermalPrinter } from "@/components/dashboard/ThermalPrinter";
 import { InvoiceExport } from "@/components/dashboard/InvoiceExport";
 import { TaxSettingsForm } from "@/components/dashboard/TaxSettingsForm";
@@ -23,6 +24,10 @@ export default async function SettingsPage() {
     getPlatformSettings(),
     getT(),
   ]);
+
+  const {count: tableCount,error:tableError}=moduleEnabled(restaurant,"tables") ? await supabase.from("restaurant_tables").select("id",{count:"exact",head:true}).eq("restaurant_id",restaurant.id).eq("is_active",true) : {count:0,error:null};
+  if(tableError)throw new Error("Could not load table settings");
+  const hasTables=(tableCount??0)>0;
 
   const { data: settings } = await supabase
     .from("restaurant_settings")
@@ -53,6 +58,7 @@ export default async function SettingsPage() {
       <ActivationPanel restaurant={restaurant} />
 
       <SettingsForm
+        hasTables={hasTables}
         restaurant={restaurant}
         settings={{
           remote_ordering_enabled:settings?.remote_ordering_enabled??false, cash_wallet:settings?.cash_wallet??"",instapay_address:settings?.instapay_address??"",payment_whatsapp:settings?.payment_whatsapp??"",

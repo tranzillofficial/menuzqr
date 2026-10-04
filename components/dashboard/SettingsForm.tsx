@@ -40,14 +40,17 @@ const ROWS: Array<{ key: FeatureKey; title: TranslationKey; description: Transla
 export function SettingsForm({
   restaurant,
   settings,
+  hasTables,
 }: {
   restaurant: Restaurant;
   settings: Settings;
+  hasTables: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
   const t = useT();
   const {locale}=useI18n();const ar=locale==="ar";
+  const tableOrdering=hasTables && moduleEnabled(restaurant,"tables");
   const [remote,setRemote]=useState(settings.remote_ordering_enabled??false);
   const [state, formAction] = useActionState(updateFeatureSettingsAction, null);
 
@@ -73,7 +76,7 @@ export function SettingsForm({
           description={t("settings.featuresSub")}
         />
         <ul className="divide-y divide-ink-100">
-          {ROWS.filter(row => row.key === "waiter_calls_enabled" ? moduleEnabled(restaurant,"service_calls") : row.key === "ordering_enabled" ? moduleEnabled(restaurant,"orders") : true).map((row) => (
+          {ROWS.filter(row => row.key === "waiter_calls_enabled" ? moduleEnabled(restaurant,"service_calls") : row.key === "ordering_enabled" ? moduleEnabled(restaurant,"orders") && tableOrdering : true).map((row) => (
             <li key={row.key} className="flex items-start gap-4 px-5 py-4">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-ink-900">{t(row.title)}</p>
@@ -88,7 +91,8 @@ export function SettingsForm({
             </li>
           ))}
         </ul>
-        {moduleEnabled(restaurant,"orders") && <section className="space-y-3 border-t border-ink-100 px-5 py-4"><h3 className="font-semibold">{ar?'طلبات رابط المنتجات والتحويل الخارجي':'Online orders and external transfers'}</h3><label className="flex items-center justify-between gap-4 text-sm">{ar?'السماح بطلبات من الرابط العام بدون طاولة':'Allow orders from the public link without a table'}<Switch checked={remote} label={ar?'طلبات الرابط':'Online orders'} onChange={setRemote}/></label><input type="hidden" name="remote_ordering_enabled" value={remote?'on':''}/><p className="text-xs text-ink-500">{ar?'فعّل استقبال الطلبات أعلاه ثم أضف محفظة كاش أو InstaPay ورقم واتساب. التحويل وإرسال صورة الإثبات بينك وبين العميل؛ الدفع لا يتأكد تلقائيًا.':'Enable ordering above and add a cash wallet or InstaPay and WhatsApp. Transfers and proof are handled privately; payment is never verified automatically.'}</p><label className="block text-sm">{ar?'رقم محفظة كاش':'Cash wallet number'}<input name="cash_wallet" dir="ltr" maxLength={30} defaultValue={settings.cash_wallet??''} className="mt-1 w-full rounded-xl border p-3"/></label><label className="block text-sm">{ar?'عنوان أو رقم InstaPay':'InstaPay address or number'}<input name="instapay_address" dir="ltr" maxLength={120} defaultValue={settings.instapay_address??''} className="mt-1 w-full rounded-xl border p-3"/></label><label className="block text-sm">{ar?'رقم واتساب لاستقبال إثبات التحويل (بكود الدولة، مثل 201…)':'WhatsApp for transfer proof (country code, e.g. 201…)'}<input name="payment_whatsapp" dir="ltr" maxLength={20} defaultValue={settings.payment_whatsapp??''} className="mt-1 w-full rounded-xl border p-3"/></label></section>}
+        {!tableOrdering && <input type="hidden" name="ordering_enabled" value={remote?"on":""}/>}
+        {moduleEnabled(restaurant,"orders") && <section className="space-y-3 border-t border-ink-100 px-5 py-4"><h3 className="font-semibold">{ar?'طلبات رابط المنتجات والتحويل الخارجي':'Online orders and external transfers'}</h3><label className="flex items-center justify-between gap-4 text-sm">{ar?'السماح بطلبات من الرابط العام بدون طاولة':'Allow orders from the public link without a table'}<Switch checked={remote} label={ar?'طلبات الرابط':'Online orders'} onChange={setRemote}/></label><input type="hidden" name="remote_ordering_enabled" value={remote?'on':''}/><p className="text-xs text-ink-500">{tableOrdering ? (ar?'فعّل استقبال الطلبات أعلاه ثم أضف محفظة كاش أو InstaPay ورقم واتساب. التحويل وإرسال صورة الإثبات بينك وبين العميل؛ الدفع لا يتأكد تلقائيًا.':'Enable ordering above and add a cash wallet or InstaPay and WhatsApp. Transfers and proof are handled privately; payment is never verified automatically.') : (ar?'أضف محفظة كاش أو InstaPay ورقم واتساب ثم فعّل استقبال الطلبات من الرابط. التحويل وإرسال صورة الإثبات بينك وبين العميل؛ الدفع لا يتأكد تلقائيًا.':'Add a cash wallet or InstaPay and WhatsApp, then enable online orders. Transfers and proof are handled privately; payment is never verified automatically.')}</p><label className="block text-sm">{ar?'رقم محفظة كاش':'Cash wallet number'}<input name="cash_wallet" dir="ltr" maxLength={30} defaultValue={settings.cash_wallet??''} className="mt-1 w-full rounded-xl border p-3"/></label><label className="block text-sm">{ar?'عنوان أو رقم InstaPay':'InstaPay address or number'}<input name="instapay_address" dir="ltr" maxLength={120} defaultValue={settings.instapay_address??''} className="mt-1 w-full rounded-xl border p-3"/></label><label className="block text-sm">{ar?'رقم واتساب لاستقبال إثبات التحويل (بكود الدولة، مثل 201…)':'WhatsApp for transfer proof (country code, e.g. 201…)'}<input name="payment_whatsapp" dir="ltr" maxLength={20} defaultValue={settings.payment_whatsapp??''} className="mt-1 w-full rounded-xl border p-3"/></label></section>}
         <div className="flex justify-end border-t border-ink-100 px-5 py-4">
           <SubmitButton>{t("settings.saveSettings")}</SubmitButton>
         </div>
