@@ -21,6 +21,7 @@ export function RetailMenu() {
   const search = useSearchParams();
   const [query, setQuery] = useState('');
   const [filtersOpen,setFiltersOpen]=useState(false);
+  const [priceLimit, setPriceLimit] = useState<number | null>(null);
   const { restaurant, categories } = data;
   const alhamd=restaurant.slug==='alhamd';
   const roots=categories.filter(c=>!c.parent_id);
@@ -29,12 +30,14 @@ export function RetailMenu() {
   const trail = selected ? categoryAncestors(categories, selected) : [];
   const descendants = selected ? categoryDescendants(categories, selected) : null;
   const needle = query.trim().toLocaleLowerCase();
+  const priceCeiling = Math.max(100, ...categories.flatMap(c => c.products.flatMap(p => p.product_variants.map(v => Math.ceil(Number(v.price))))).filter(Number.isFinite));
   const groups = categories
     .filter(c => !descendants || descendants.has(c.id))
     .map(c => {
       const path = categoryPath(categories, c.id);
       return { category: c, path, products: c.products.filter(p =>
-        !needle || `${p.name} ${p.description ?? ''} ${path}`.toLocaleLowerCase().includes(needle)
+        (!needle || `${p.name} ${p.description ?? ''} ${path}`.toLocaleLowerCase().includes(needle)) &&
+        (priceLimit === null || p.product_variants.some(v => Number(v.price) >= 1 && Number(v.price) <= priceLimit))
       ) };
     }).filter(g => g.products.length > 0);
   const products = groups.flatMap(g => g.products.map(product => ({ product, path: g.path })));
@@ -70,6 +73,14 @@ export function RetailMenu() {
     <main className="mx-auto max-w-5xl space-y-4 px-3 py-4 sm:p-6">
       <section aria-label={ar ? 'البحث وتصفية الأصناف' : 'Search and filter products'} className="space-y-3 rounded-2xl border border-ink-200/60 bg-white p-3 sm:p-4">
         <div className="flex gap-2"><label className="relative min-w-0 flex-1"><span className="sr-only">{ar?'ابحث عن صنف أو شركة':'Search products or companies'}</span><Icon.search className="pointer-events-none absolute start-3 top-3.5 size-5 text-ink-400"/><input type="search" placeholder={ar?'بتدور على إيه؟ صنف أو شركة…':'Search products or companies…'} className="h-12 w-full rounded-xl border border-ink-200 bg-ink-50/70 ps-10 pe-3 text-sm outline-none focus:border-[#bc9567]" value={query} onChange={e=>setQuery(e.target.value)}/></label><button type="button" aria-expanded={filtersOpen} aria-controls="retail-filters" onClick={()=>setFiltersOpen(!filtersOpen)} className="flex h-12 items-center gap-2 rounded-xl bg-[#704728] px-3 text-xs font-semibold text-white"><Icon.settings className="size-4"/>{ar?'فلترة':'Filters'}</button></div>
+        {showPrices && <div className="rounded-xl bg-[#faf7f2] px-3 py-3">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <label htmlFor="retail-price-limit" className="font-semibold text-[#704728]">{ar ? 'السعر حتى' : 'Price up to'} · {priceLimit === null ? (ar ? 'كل الأسعار' : 'All prices') : `${priceLimit} ${currency}`}</label>
+            <label className="flex items-center gap-2 text-ink-600"><input type="checkbox" checked={priceLimit === null} onChange={e => setPriceLimit(e.target.checked ? null : priceCeiling)} className="accent-[#704728]"/>{ar ? 'كل الأسعار' : 'All prices'}</label>
+          </div>
+          <input id="retail-price-limit" type="range" min={1} max={priceCeiling} step={1} value={priceLimit ?? priceCeiling} onChange={e => setPriceLimit(Number(e.target.value))} aria-valuetext={priceLimit === null ? (ar ? 'كل الأسعار' : 'All prices') : `${priceLimit} ${currency}`} className="block h-7 w-full cursor-pointer accent-[#704728]"/>
+          <div className="mt-1 flex justify-between text-[11px] text-ink-500"><span>1 {currency}</span><span>{priceCeiling} {currency}</span></div>
+        </div>}
         <div className="flex gap-2 overflow-x-auto pb-1"><Link href={href(null)} scroll={false} prefetch={false} className={`flex min-h-10 shrink-0 items-center rounded-full px-4 text-xs font-semibold ${!selected?'bg-[#704728] text-white':'bg-[#f7f2eb] text-[#704728]'}`}>{ar?'كل الأصناف':'All products'}</Link>{roots.map(c=><Link key={c.id} href={href(c.id)} scroll={false} prefetch={false} className={`flex min-h-10 shrink-0 items-center rounded-full px-4 text-xs font-semibold ${trail[0]?.id===c.id?'bg-[#704728] text-white':'bg-[#f7f2eb] text-[#704728]'}`}>{c.name}</Link>)}</div>
         <div id="retail-filters" className={`${filtersOpen?"grid":"hidden"} gap-3 sm:grid-cols-2 lg:grid-cols-3`}>
           <label className="block text-sm font-medium">{ar ? 'طريقة العرض' : 'Display by'}
@@ -93,16 +104,22 @@ export function RetailMenu() {
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
           <p className="text-ink-500">{products.length} {ar ? 'صنف' : 'products'}</p>
-          {(selected || query || grouped) && <button type="button" className="text-brand-700 underline" onClick={() => { setQuery(''); go(null, false); }}>{ar ? 'مسح الفلاتر' : 'Clear filters'}</button>}
+          {(selected || query || grouped || priceLimit !== null) && <button type="button" className="text-brand-700 underline" onClick={() => { setQuery(''); setPriceLimit(null); go(null, false); }}>{ar ? 'مسح الفلاتر' : 'Clear filters'}</button>}
         </div>
       </section>
       <nav aria-label={ar ? 'مسار الأقسام' : 'Category path'} className="flex flex-wrap items-center gap-1 text-xs">
         <Link href={href(null)} scroll={false} prefetch={false} className="rounded-lg px-2 py-1 text-brand-700 hover:bg-brand-50">{ar ? 'كل الأصناف' : 'All products'}</Link>
         {trail.map((c, index) => <span key={c.id} className="flex items-center gap-2"><span aria-hidden="true">/</span><Link href={href(c.id)} scroll={false} prefetch={false} aria-current={index === trail.length - 1 ? 'page' : undefined} className="rounded-lg px-2 py-1 text-brand-700 hover:bg-brand-50">{c.name}</Link></span>)}
       </nav>
-      <div className="flex items-center justify-between"><h2 className="text-lg font-bold">{selected?trail.at(-1)?.name:(ar?"اكتشف الأصناف":"Discover products")}</h2><span className="text-xs text-ink-500">{orderingEnabled?(ar?"اضغط على الصنف للطلب":"Tap a product to order"):(ar?"اضغط لمعرفة التفاصيل":"Tap for details")}</span></div>
+      <div className="flex items-center justify-between"><h2 className="text-lg font-bold">{selected?trail.at(-1)?.name:(ar?"اكتشف الأصناف":"Discover products")}</h2>{products.length > 0 && <span className="text-xs text-ink-500">{orderingEnabled?(ar?"اضغط على الصنف للطلب":"Tap a product to order"):(ar?"اضغط لمعرفة التفاصيل":"Tap for details")}</span>}</div>
       {grouped ? groups.map(g => <section key={g.category.id} className="space-y-3"><h2 className="text-lg font-semibold"><Link href={href(g.category.id)} scroll={false} prefetch={false} className="text-brand-700">{g.path}</Link></h2><div className={grid}>{g.products.map(p => productCard(p, g.path))}</div></section>) : <div className={grid}>{products.map(({ product, path }) => productCard(product, path))}</div>}
-      {!products.length && <p className="py-12 text-center text-ink-500">{ar ? 'مفيش أصناف مطابقة للبحث والفلاتر.' : 'No products match your search and filters.'}</p>}
+      {!products.length && <section className="rounded-3xl border border-[#ecdfd2] bg-white px-6 py-12 text-center shadow-sm" aria-live="polite">
+        <div className="mx-auto mb-4 grid size-16 place-items-center rounded-2xl bg-[#f7f2eb] text-[#9a7757]">
+          {needle || priceLimit !== null ? <Icon.search aria-hidden="true" className="size-7"/> : <Icon.store aria-hidden="true" className="size-7"/>}
+        </div>
+        <h3 className="text-lg font-semibold">{needle || priceLimit !== null ? (ar ? 'لا توجد نتائج مطابقة' : 'No matching products') : (ar ? 'لا توجد منتجات حاليًا' : 'No products available yet')}</h3>
+        <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-ink-500">{needle || priceLimit !== null ? (ar ? 'جرّب اسمًا آخر أو غيّر الفلاتر.' : 'Try another name or change the filters.') : (ar ? 'سيتم عرض المنتجات هنا بمجرد إضافتها. يمكنك تصفّح الشركات والأقسام المتاحة.' : 'Products will appear here once added. You can browse the available companies and categories.')}</p>
+      </section>}
     </main>
   </div>;
 }
