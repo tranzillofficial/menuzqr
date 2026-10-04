@@ -6,7 +6,7 @@ import { BUSINESS_MODULES } from '@/lib/business-modules';
 import { validateSlug } from '@/lib/slug';
 import { assertAdmin, done, fail, str } from './helpers';
 import type { ActionState } from '@/lib/types';
-function modules(form:FormData){const values=form.getAll('modules');return BUSINESS_MODULES.filter(m=>values.includes(m));}
+function modules(form:FormData){const values=form.getAll('modules');return [...BUSINESS_MODULES.filter(m=>values.includes(m)),"features_v2"];}
 export async function saveBusinessAccount(_previous:ActionState,form:FormData):Promise<ActionState>{
  const admin=await assertAdmin();if(!admin.ok)return admin.error;
  const id=str(form,'restaurant_id');const enabled=modules(form);const db=await createServerSupabase();

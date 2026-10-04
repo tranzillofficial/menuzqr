@@ -1,3 +1,4 @@
+import {SettingsSections} from "@/components/dashboard/SettingsSections";
 import { moduleEnabled } from "@/lib/business-modules";
 import { ThermalPrinter } from "@/components/dashboard/ThermalPrinter";
 import { InvoiceExport } from "@/components/dashboard/InvoiceExport";
@@ -55,9 +56,8 @@ export default async function SettingsPage() {
     <div className="mx-auto max-w-3xl space-y-6">
       <PageHeader title={t("settings.title")} description={t("settings.sub")} />
 
-      <ActivationPanel restaurant={restaurant} />
-
-      <SettingsForm
+      <SettingsSections sections={[
+        {id:"features",ar:"العرض والطلبات",en:"Display and orders",content:(<>      <SettingsForm
         hasTables={hasTables}
         restaurant={restaurant}
         settings={{
@@ -68,11 +68,12 @@ export default async function SettingsPage() {
         }}
       />
 
-      <TaxSettingsForm restaurant={restaurant} />
-      <ThermalPrinter restaurantId={restaurant.id} restaurantName={restaurant.name} currency={restaurant.currency} receipt={null}/>
-      <InvoiceExport />
-      <AlertsCard />
-
+</>)},
+        {id:"tax",ar:"الضرائب",en:"Taxes",content:<TaxSettingsForm restaurant={restaurant}/>},
+        ...(moduleEnabled(restaurant,"pos")?[{id:"print",ar:"الطباعة",en:"Printing",content:<ThermalPrinter restaurantId={restaurant.id} restaurantName={restaurant.name} currency={restaurant.currency} receipt={null}/>}]:[]),
+        ...(moduleEnabled(restaurant,"reports")?[{id:"invoices",ar:"الفواتير والتصدير",en:"Invoices and export",content:<InvoiceExport/>}]:[]),
+        {id:"alerts",ar:"التنبيهات",en:"Notifications",content:<AlertsCard/>},
+        {id:"account",ar:"الحساب والاشتراك",en:"Account and subscription",content:(<><ActivationPanel restaurant={restaurant}/>
       <Card>
         <CardHeader title={t("settings.plan")} />
         <dl className="divide-y divide-ink-100 text-sm">
@@ -97,7 +98,8 @@ export default async function SettingsPage() {
             <span className="ltr-nums">{platform.supportWhatsappDisplay}</span>
           </a>
         </div>
-      </Card>
+      </Card></>)},
+      ]}/>
     </div>
   );
 }

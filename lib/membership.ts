@@ -1,3 +1,4 @@
+import {getTenantDomain} from "./tenant-domain";
 import "server-only";
 import { staffPermissions, type StaffPermission } from "./staff-permissions";
 import { cache } from "react";
@@ -60,7 +61,8 @@ export const getMembership = cache(async function getMembership(): Promise<Membe
     )
     .sort((a, b) => (ROLE_RANK[a.row.role] ?? 9) - (ROLE_RANK[b.row.role] ?? 9));
 
-  const best = members[0];
+  const domain=await getTenantDomain();
+  const best = domain?members.find(m=>m.restaurant.id===domain.restaurant_id):members[0];
   if (!best) return null;
 
   const role = best.row.role as MemberRole;

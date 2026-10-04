@@ -1,3 +1,5 @@
+import {BusinessDomainForm} from "@/components/admin/BusinessDomainForm";
+import type {TenantDomain} from "@/lib/tenant-domain";
 import { BusinessAccountForm } from "@/components/admin/BusinessAccountForm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -59,6 +61,7 @@ export default async function AdminRestaurantPage({
     : { data: [] as Array<{ id: string; email: string | null }> };
   const teamEmail = new Map((teamProfiles ?? []).map((p) => [p.id, p.email]));
 
+  const {data:domains}=await supabase.from("business_domains").select("*").eq("restaurant_id",id).order("created_at");
   return (
     <div className="space-y-5">
       <Link href="/admin" className="inline-flex items-center gap-1 text-sm text-ink-500 hover:text-ink-800">
@@ -86,6 +89,7 @@ export default async function AdminRestaurantPage({
       </div>
 
       <BusinessAccountForm key={restaurant.updated_at} restaurant={restaurant} />
+      <BusinessDomainForm restaurantId={id} domains={(domains??[]) as TenantDomain[]}/>
 
       <Card className="p-5">
         <h2 className="text-sm font-semibold text-ink-900">Activation</h2>

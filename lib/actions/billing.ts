@@ -47,7 +47,7 @@ export async function previewCouponAction(
  * only a note of what they asked for until an admin activates it.
  */
 export async function requestPosAction(plan: string, code: string): Promise<ActionState> {
-  const owned = await getOwnedRestaurant();
+  const owned = await getOwnedRestaurant(null);
   if (!owned.ok) return owned.error;
 
   if (!POS_PLANS.includes(plan as PosPlan)) return fail("Pick a plan.");
@@ -79,7 +79,7 @@ export async function requestPosAction(plan: string, code: string): Promise<Acti
 }
 
 export async function cancelPosRequestAction(): Promise<ActionState> {
-  const owned = await getOwnedRestaurant();
+  const owned = await getOwnedRestaurant(null);
   if (!owned.ok) return owned.error;
   if (owned.restaurant.pos_status !== "requested") return done();
 
@@ -97,7 +97,7 @@ export async function cancelPosRequestAction(): Promise<ActionState> {
 
 /** Records the code an owner intends to use on the one-time menu fee. */
 export async function saveMenuCouponAction(code: string): Promise<ActionState> {
-  const owned = await getOwnedRestaurant();
+  const owned = await getOwnedRestaurant(null);
   if (!owned.ok) return owned.error;
 
   const supabase = await createServerSupabase();

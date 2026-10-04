@@ -1,5 +1,7 @@
+import {moduleEnabled,type BusinessModule} from "@/lib/business-modules";
+import {getTenantDomain} from "@/lib/tenant-domain";
 import "server-only";
-import { staffPermissions, type StaffPermission } from "@/lib/staff-permissions";
+import { type StaffPermission } from "@/lib/staff-permissions";
 
 import { getMembership } from "@/lib/membership";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -41,7 +43,7 @@ export function num(form: FormData, key: string, fallback = 0): number {
  * Resolves the signed-in user's restaurant and asserts they may manage it.
  * Throws for callers that should never reach the action without a restaurant.
  */
-export async function getOwnedRestaurant(): Promise<
+export async function getOwnedRestaurant(feature:BusinessModule|null="branch"): Promise<
   | { ok: true; restaurant: Restaurant; userId: string }
   | { ok: false; error: ActionState }
 > {
@@ -52,10 +54,10 @@ export async function getOwnedRestaurant(): Promise<
 
   if (!user) return { ok: false, error: fail("You need to sign in first.") };
 
-  const { data } = await supabase
-    .from("restaurants")
-    .select("*")
-    .eq("owner_id", user.id)
+  const domain=await getTenantDomain();
+  let query=supabase.from("restaurants").select("*").eq("owner_id",user.id);
+  if(domain)query=query.eq("id",domain.restaurant_id);
+  const { data } = await query
     .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
@@ -64,16 +66,18 @@ export async function getOwnedRestaurant(): Promise<
     return { ok: false, error: fail("Create your restaurant profile first.") };
   }
 
+  if(feature&&!moduleEnabled(data as Restaurant,feature))return {ok:false,error:fail("This module is disabled for your account.")};
   return { ok: true, restaurant: data as Restaurant, userId: user.id };
 }
 
 /** Menu reads and mutations use the same selected manager membership. */
-export async function getMenuRestaurant(): Promise<
+export async function getMenuRestaurant(feature:BusinessModule="products"): Promise<
   | {ok:true;restaurant:Restaurant;userId:string}
   | {ok:false;error:ActionState}
 > {
   const membership = await getMembership();
   if (!membership?.isManager) return {ok:false,error:fail("Manager access required.")};
+  if(!moduleEnabled(membership.restaurant,feature))return {ok:false,error:fail("This module is disabled for your account.")};
   return {ok:true,restaurant:membership.restaurant,userId:membership.userId};
 }
 
@@ -92,23 +96,15 @@ export async function getMemberContext(): Promise<
 
   if (!user) return { ok: false, error: fail("You need to sign in first.") };
 
-  const { data } = await supabase
-    .from("restaurant_members")
-    .select("restaurant_id, role, service_permissions")
-    .eq("user_id", user.id)
-    .eq("is_active", true)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  if (!data) return { ok: false, error: fail("Create your restaurant profile first.") };
-
-  return { ok: true, restaurantId: data.restaurant_id, role: data.role, userId: user.id, permissions: staffPermissions(data.role, data.service_permissions) };
+  const membership=await getMembership();
+  if(!membership)return {ok:false,error:fail("No active business membership.")};
+  return {ok:true,restaurantId:membership.restaurant.id,role:membership.role,userId:user.id,permissions:membership.permissions};
 }
 
 export async function assertAdmin(): Promise<
   { ok: true; userId: string } | { ok: false; error: ActionState }
 > {
+  if(await getTenantDomain())return {ok:false,error:fail("Administration is available on the platform domain only.")};
   const supabase = await createServerSupabase();
   const {
     data: { user },

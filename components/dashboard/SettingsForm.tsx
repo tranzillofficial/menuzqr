@@ -76,7 +76,7 @@ export function SettingsForm({
           description={t("settings.featuresSub")}
         />
         <ul className="divide-y divide-ink-100">
-          {ROWS.filter(row => row.key === "waiter_calls_enabled" ? moduleEnabled(restaurant,"service_calls") : row.key === "ordering_enabled" ? moduleEnabled(restaurant,"orders") && tableOrdering : true).map((row) => (
+          {ROWS.filter(row => row.key === "waiter_calls_enabled" ? tableOrdering && moduleEnabled(restaurant,"service_calls") : row.key === "ordering_enabled" ? moduleEnabled(restaurant,"orders") && tableOrdering : true).map((row) => (
             <li key={row.key} className="flex items-start gap-4 px-5 py-4">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-ink-900">{t(row.title)}</p>

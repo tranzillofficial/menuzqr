@@ -8,7 +8,7 @@ import { SubmitButton } from "@/components/ui/SubmitButton";
 import { Icon } from "@/components/ui/Icons";
 import { useT } from "@/components/i18n/I18nProvider";
 
-export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: string }) {
+export function AuthForm({ mode, next, businessName }: { mode: "login" | "signup"; next?: string; businessName?:string }) {
   const t = useT();
   const [email, setEmail] = useState("");
   const action = mode === "login" ? signInAction : signUpAction;
@@ -20,7 +20,7 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
         <span className="grid size-8 place-items-center rounded-lg bg-brand-600 text-white">
           <Icon.qr className="size-4.5" />
         </span>
-        MenuzQR
+        {businessName??"MenuzQR"}
       </Link>
 
       <h1 className="font-serif text-3xl text-ink-900">
@@ -50,7 +50,7 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
             onChange={(event) => setEmail(event.target.value)}
             required
             autoComplete="email"
-            placeholder="you@restaurant.com"
+            placeholder="you@example.com"
           />
         </Field>
 
@@ -90,7 +90,7 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
         </SubmitButton>
       </form>
 
-      <p className="mt-6 text-center text-sm text-ink-500">
+      {!businessName&&<p className="mt-6 text-center text-sm text-ink-500">
         {mode === "login" ? (
           <>
             {t("auth.newHere")}{" "}
@@ -106,7 +106,7 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
             </Link>
           </>
         )}
-      </p>
+      </p>}
     </div>
   );
 }

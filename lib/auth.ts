@@ -1,3 +1,4 @@
+import {getTenantDomain} from "./tenant-domain";
 import "server-only";
 import { cache } from "react";
 
@@ -50,10 +51,10 @@ export const getMyRestaurant = cache(async function getMyRestaurant(): Promise<R
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data } = await supabase
-    .from("restaurants")
-    .select("*")
-    .eq("owner_id", user.id)
+  const domain=await getTenantDomain();
+  let query=supabase.from("restaurants").select("*").eq("owner_id",user.id);
+  if(domain)query=query.eq("id",domain.restaurant_id);
+  const { data } = await query
     .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();

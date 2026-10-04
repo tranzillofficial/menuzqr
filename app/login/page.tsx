@@ -1,3 +1,6 @@
+import {getLocale} from "@/lib/i18n/server";
+import {getTenantDomain} from "@/lib/tenant-domain";
+import {I18nProvider} from "@/components/i18n/I18nProvider";
 import type { Metadata } from "next";
 import { AuthForm } from "@/components/AuthForm";
 
@@ -13,10 +16,11 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ next?: string }>;
 }) {
+  const domain=await getTenantDomain();
   const { next } = await searchParams;
   return (
     <main className="flex min-h-screen items-center bg-ink-50 px-4 py-12">
-      <AuthForm mode="login" next={isSafeNext(next) ? next : undefined} />
+      <I18nProvider locale={domain?(domain.restaurants.language==="ar"?"ar":"en"):await getLocale()}><AuthForm mode="login" businessName={domain?.restaurants.name} next={isSafeNext(next) ? next : undefined} /></I18nProvider>
     </main>
   );
 }

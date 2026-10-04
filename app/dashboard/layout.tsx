@@ -1,3 +1,4 @@
+import {getTenantDomain} from "@/lib/tenant-domain";
 import { I18nProvider } from "@/components/i18n/I18nProvider";
 import { getLocale } from "@/lib/i18n/server";
 import { moduleEnabled } from "@/lib/business-modules";
@@ -56,7 +57,7 @@ export default async function DashboardLayout({
     <DashboardShell
       restaurantName={restaurant?.name ?? null}
       restaurantId={restaurant?.id ?? null}
-      isAdmin={Boolean(profile?.is_admin)}
+      isAdmin={Boolean(profile?.is_admin)&&!await getTenantDomain()}
       businessConfig={restaurant ?? {}}
       userEmail={user.email ?? ""}
     >

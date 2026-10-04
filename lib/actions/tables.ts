@@ -17,7 +17,7 @@ export async function saveTableAction(
   form: FormData
 ): Promise<ActionState> {
   await requireBusinessModule("tables");
-  const owned = await getOwnedRestaurant();
+  const owned = await getOwnedRestaurant("tables");
   if (!owned.ok) return owned.error;
 
   const id = str(form, "id");
@@ -57,7 +57,7 @@ export async function createTablesBulkAction(
   prefix = "Table"
 ): Promise<ActionState> {
   await requireBusinessModule("tables");
-  const owned = await getOwnedRestaurant();
+  const owned = await getOwnedRestaurant("tables");
   if (!owned.ok) return owned.error;
 
   const total = Math.min(Math.max(Math.floor(count), 1), 60);
@@ -97,7 +97,7 @@ export async function createTablesBulkAction(
 
 export async function deleteTableAction(id: string): Promise<ActionState> {
   await requireBusinessModule("tables");
-  const owned = await getOwnedRestaurant();
+  const owned = await getOwnedRestaurant("tables");
   if (!owned.ok) return owned.error;
 
   const supabase = await createServerSupabase();
@@ -114,7 +114,7 @@ export async function deleteTableAction(id: string): Promise<ActionState> {
 
 export async function toggleTableAction(id: string, isActive: boolean): Promise<ActionState> {
   await requireBusinessModule("tables");
-  const owned = await getOwnedRestaurant();
+  const owned = await getOwnedRestaurant("tables");
   if (!owned.ok) return owned.error;
 
   const supabase = await createServerSupabase();
@@ -132,7 +132,7 @@ export async function toggleTableAction(id: string, isActive: boolean): Promise<
 /** Invalidates a printed QR (e.g. if a code leaked) by issuing a new token. */
 export async function regenerateTableTokenAction(id: string): Promise<ActionState> {
   await requireBusinessModule("tables");
-  const owned = await getOwnedRestaurant();
+  const owned = await getOwnedRestaurant("tables");
   if (!owned.ok) return owned.error;
 
   // Same shape as the database trigger: 8 characters, no look-alike glyphs.
