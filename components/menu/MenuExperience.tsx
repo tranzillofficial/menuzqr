@@ -47,7 +47,7 @@ export function MenuExperience({
   const t = createTranslator(locale);
 
   return (
-    <I18nProvider locale={locale}>
+    <I18nProvider locale={locale} retail={data.restaurant.enabled_modules != null && !moduleEnabled(data.restaurant,"tables")}>
       {/* The menu reads in the restaurant's language regardless of the
           dashboard language the visitor may have chosen. */}
       <div dir={dirOf(locale)} lang={locale}>

@@ -2,7 +2,7 @@ import { moduleEnabled } from "@/lib/business-modules";
 import type { Metadata } from "next";
 import { getMyRestaurant, requireUser } from "@/lib/auth";
 import { PageHeader } from "@/components/dashboard/Shell";
-import { getT, getLocale } from "@/lib/i18n/server";
+import { getBusinessT as getT, getLocale } from "@/lib/i18n/server";
 import { RestaurantForm } from "@/components/dashboard/RestaurantForm";
 
 export const metadata: Metadata = { title: "Restaurant" };

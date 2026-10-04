@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/Card";
 import { LinkButton } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icons";
 import { absoluteUrl, formatMoney } from "@/lib/utils";
-import { getT } from "@/lib/i18n/server";
+import { getBusinessT as getT } from "@/lib/i18n/server";
 import type { TranslationKey } from "@/lib/i18n";
 
 export const metadata: Metadata = { title: "Overview" };

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { requireRestaurant } from "@/lib/auth";
 import { PageHeader } from "@/components/dashboard/Shell";
-import { getT } from "@/lib/i18n/server";
+import { getBusinessT as getT } from "@/lib/i18n/server";
 import { ThemePicker } from "@/components/dashboard/ThemePicker";
 
 export const metadata: Metadata = { title: "Menu Design" };

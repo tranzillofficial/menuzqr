@@ -20,3 +20,11 @@ export async function getLocale(): Promise<Locale> {
 export async function getT(): Promise<Translator> {
   return createTranslator(await getLocale());
 }
+
+export async function getBusinessT(): Promise<Translator> {
+  const { getMembership } = await import("@/lib/membership");
+  const { moduleEnabled } = await import("@/lib/business-modules");
+  const membership = await getMembership();
+  const r = membership?.restaurant;
+  return createTranslator(await getLocale(), r?.enabled_modules != null && !moduleEnabled(r,"tables"));
+}

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { requireManager } from "@/lib/membership";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/dashboard/Shell";
-import { getT } from "@/lib/i18n/server";
+import { getBusinessT as getT } from "@/lib/i18n/server";
 import { ProductsManager } from "@/components/dashboard/ProductsManager";
 import type { Category, ProductWithVariants } from "@/lib/types";
 
