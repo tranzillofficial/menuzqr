@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Icon } from '@/components/ui/Icons';
 import { DemoProductArt } from '../DemoProductArt';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { useMenu } from '../MenuContext';
 import { MenuImage } from '../MenuMedia';
@@ -17,7 +17,7 @@ export function RetailMenu() {
   const { locale } = useI18n();
   const ar = locale === 'ar';
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = data.menu_path ?? `/${data.restaurant.slug}/menu`;
   const search = useSearchParams();
   const [query, setQuery] = useState('');
   const [filtersOpen,setFiltersOpen]=useState(false);

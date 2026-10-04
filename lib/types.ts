@@ -277,6 +277,7 @@ export type AdminAction = {
 export type PaymentInstructions = { remote_ordering_enabled: boolean; cash_wallet: string; instapay_address: string; payment_whatsapp: string };
 
 export type MenuData = {
+  menu_path?: string;
   payments?: PaymentInstructions;
   restaurant: Pick<
     Restaurant,
