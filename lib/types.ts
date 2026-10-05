@@ -207,7 +207,7 @@ export type LibraryImage = {
 export type QrTemplate = {
   id: string;
   name: string;
-  layout: "counter" | "square" | "tent";
+  layout: "counter" | "square" | "tent" | "cafe";
   scope: "general" | "table" | "both";
   bg_color: string;
   panel_color: string;
