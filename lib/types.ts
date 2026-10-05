@@ -32,6 +32,7 @@ export type Restaurant = TaxSettings & {
   language: string;
   restaurant_type: string | null;
   menu_theme: MenuThemeId;
+  qr_template_id?: string | null;
   ordering_enabled: boolean;
   waiter_calls_enabled: boolean;
   status: RestaurantStatus;
@@ -207,7 +208,7 @@ export type LibraryImage = {
 export type QrTemplate = {
   id: string;
   name: string;
-  layout: "counter" | "square" | "tent";
+  layout: "counter" | "square" | "tent" | "cafe";
   scope: "general" | "table" | "both";
   bg_color: string;
   panel_color: string;
