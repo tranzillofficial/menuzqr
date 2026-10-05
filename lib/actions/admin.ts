@@ -265,6 +265,7 @@ export async function saveCatalogCategoryAction(
 
   const payload = {
     name,
+    name_en: String(form.get("name_en") ?? "").trim().slice(0,60) || null,
     description: String(form.get("description") ?? "").trim().slice(0, 200) || null,
     image_url: sanitiseImageUrl(String(form.get("image_url") ?? "").trim() || null),
     is_active: form.get("is_active") !== "off",
@@ -376,6 +377,7 @@ export async function saveCatalogItemAction(
     // deliberately absent here. sending it would let a stale form value
     // overwrite the real label.
     category_id: categoryId || null,
+    name_en: String(form.get("name_en") ?? "").trim().slice(0,90) || null,
     suggested_price: optionalMoney(form, "suggested_price"),
     price_min: optionalMoney(form, "price_min"),
     price_max: optionalMoney(form, "price_max"),
@@ -383,7 +385,7 @@ export async function saveCatalogItemAction(
       String(form.get("suggested_currency") ?? "").trim().toUpperCase().slice(0, 8) || "EGP",
     cuisine: String(form.get("cuisine") ?? "").trim().slice(0, 60) || null,
     image_url: sanitiseImageUrl(String(form.get("image_url") ?? "").trim() || null),
-    variants: parseCatalogVariants(String(form.get("variants") ?? "")),
+    variants: parseCatalogVariants(String(form.get("variants") ?? "")).map((variant, index) => ({...variant, name_en: String(form.get('variants_en') ?? '').split(',')[index]?.trim().slice(0,40) || null})),
     keywords: String(form.get("keywords") ?? "")
       .split(",")
       .map((k) => k.trim().toLowerCase())

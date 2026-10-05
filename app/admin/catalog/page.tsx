@@ -12,12 +12,14 @@ export default async function AdminCatalogPage() {
   const [{ data: categories }, { data: items }] = await Promise.all([
     supabase
       .from("catalog_categories")
-      .select("id, name, description, image_url, sort_order, is_active")
+      .select("id, name, name_en, description, image_url, sort_order, is_active")
+      .is("merged_into_id", null)
       .order("sort_order", { ascending: true })
       .order("name", { ascending: true }),
     supabase
       .from("catalog_items")
       .select("*")
+      .is("merged_into_id", null)
       .order("sort_order", { ascending: true })
       .order("name", { ascending: true }),
   ]);

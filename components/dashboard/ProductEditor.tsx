@@ -23,6 +23,7 @@ type VariantDraft = {
   key: string;
   id?: string;
   name: string;
+  name_en?: string;
   price: string;
   is_active: boolean;
 };
@@ -39,6 +40,7 @@ function toDrafts(product: ProductWithVariants | null): VariantDraft[] {
       key: newKey(),
       id: v.id,
       name: v.name,
+      name_en: v.name_en ?? '',
       price: String(v.price),
       is_active: v.is_active,
     }));
@@ -63,6 +65,7 @@ export function ProductEditor({
   const [state, formAction] = useActionState(saveProductAction, null);
 
   const [name, setName] = useState(product?.name ?? "");
+  const [nameEn, setNameEn] = useState(product?.name_en ?? '');
   const [description, setDescription] = useState(product?.description ?? "");
   const [ingredients, setIngredients] = useState(product?.ingredients ?? "");
   const categoryChoice = useRef(0);
@@ -115,6 +118,7 @@ export function ProductEditor({
   function applyCatalogItem(item: CatalogItem) {
     categoryChoice.current += 1;
     setName(item.name);
+    setNameEn(item.name_en ?? '');
     if (item.description) setDescription(item.description);
     if (item.ingredients) setIngredients(item.ingredients);
     if (item.image_url) {
@@ -126,6 +130,7 @@ export function ProductEditor({
         item.variants.map((v) => ({
           key: newKey(),
           name: v.name,
+          name_en: v.name_en ?? '',
           price: v.price != null ? String(v.price) : "",
           is_active: true,
         }))
@@ -166,6 +171,7 @@ export function ProductEditor({
       .map((v) => ({
         id: v.id,
         name: v.name.trim(),
+        name_en: v.name_en?.trim() ?? '',
         price: v.price.trim(),
         is_active: v.is_active,
       }))
@@ -236,6 +242,12 @@ export function ProductEditor({
             )}
           </div>
 
+          <div className="space-y-1.5 sm:col-span-2">
+            <div className="flex items-center justify-between gap-2">
+              <label htmlFor="p-name-en" className="text-sm font-medium text-ink-800">{label('الاسم بالإنجليزية (اختياري)', 'English name (optional)')}</label>
+            </div>
+            <Input id="p-name-en" name="name_en" dir="ltr" maxLength={90} value={nameEn} onChange={e => setNameEn(e.target.value)}/>
+          </div>
           <div className="space-y-1.5 sm:col-span-2">
             <div className="flex items-center justify-between gap-2">
               <label htmlFor="p-category" className="text-sm font-medium text-ink-800">
@@ -373,6 +385,7 @@ export function ProductEditor({
                   placeholder="Medium"
                   className="min-w-0 flex-1 rounded-xl border border-ink-200 px-3 py-2 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
                 />
+                <input aria-label={label(`اسم الحجم ${index + 1} بالإنجليزية`, `Size ${index + 1} English name`)} dir="ltr" maxLength={40} value={variant.name_en ?? ''} onChange={e => updateVariant(variant.key, {name_en:e.target.value})} placeholder={label('الاسم بالإنجليزية', 'English name')} className="min-w-0 flex-1 rounded-xl border border-ink-200 px-3 py-2 text-sm"/>
                 <div className="flex items-center rounded-xl border border-ink-200 focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-100">
                   <span className="ps-3 text-sm text-ink-500">{symbol}</span>
                   <input

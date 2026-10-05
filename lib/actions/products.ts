@@ -24,7 +24,7 @@ function revalidate(slug: string) {
   revalidatePath(`/${slug}/menu`);
 }
 
-type VariantInput = { id?: string; name: string; price: number; is_active: boolean };
+type VariantInput = { id?: string; name: string; name_en: string | null; price: number; is_active: boolean };
 
 type VariantParse =
   | { ok: true; variants: VariantInput[] }
@@ -62,6 +62,7 @@ function parseVariants(raw: string): VariantParse {
     variants.push({
       id: typeof o.id === "string" && o.id ? o.id : undefined,
       name,
+      name_en: typeof o.name_en === 'string' ? o.name_en.trim().slice(0,40) || null : null,
       price: Math.round(price * 100) / 100,
       is_active: o.is_active !== false,
     });
@@ -128,6 +129,7 @@ export async function saveProductAction(
     restaurant_id: restaurant.id,
     category_id: categoryId,
     name,
+    name_en: optionalStr(form, "name_en")?.slice(0,90) || null,
     description: optionalStr(form, "description"),
     ingredients: optionalStr(form, "ingredients"),
     image_url: imageUrl,
@@ -194,6 +196,7 @@ export async function saveProductAction(
       restaurant_id: restaurant.id,
       product_id: productId,
       name: variant.name,
+      name_en: variant.name_en,
       price: variant.price,
       is_active: variant.is_active,
       sort_order: index * 10,

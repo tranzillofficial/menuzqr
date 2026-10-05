@@ -1,4 +1,5 @@
 import {getTenantDomain} from "./tenant-domain";
+import { withCatalogName } from './menu-localization';
 import { moduleEnabled } from "./business-modules";
 import { visibleCategories } from "./category-tree";
 import { displayPrice, vatRate } from "./tax";
@@ -89,17 +90,29 @@ export const getPublicMenu = cache(async function getPublicMenu(
     table = data ?? null;
   }
 
+  const itemIds = [...new Set((products ?? []).map(p => p.source_catalog_item_id).filter(Boolean))];
+  const categoryIds = [...new Set((categories ?? []).map(c => c.source_catalog_category_id).filter(Boolean))];
+  const [catalogItems, catalogCategories] = await Promise.all([
+    itemIds.length ? supabase.from('catalog_items').select('id,name,name_en,legacy_name,variants').in('id', itemIds) : Promise.resolve({data: []}),
+    categoryIds.length ? supabase.from('catalog_categories').select('id,name,name_en').in('id', categoryIds) : Promise.resolve({data: []}),
+  ]);
   const allProducts = ((products ?? []) as ProductWithVariants[]).map((p) => ({
-    ...p,
+    ...withCatalogName(p, catalogItems.data?.find(item => item.id === p.source_catalog_item_id)),
     product_variants: (p.product_variants ?? [])
       .filter((v) => v.is_active)
-      .map(v => ({ ...v, price: displayPrice(Number(v.price), p.vat_code, restaurant), tax: { basePrice: Number(v.price), rate: vatRate(restaurant.tax_mode,restaurant.vat_registered,p.vat_code,restaurant.tax_rates), inclusive: restaurant.prices_include_vat, showGross: restaurant.menu_prices_include_vat !== false } }))
+      .map(v => {
+        const source = catalogItems.data?.find(item => item.id === p.source_catalog_item_id);
+        const variants = Array.isArray(source?.variants) ? source.variants as {name:string;name_en?:string}[] : [];
+        const matched = variants.find(variant => variant.name === v.name || variant.name_en === v.name);
+        const regular = ['Regular','عادي'].includes(v.name) ? {name:'عادي',name_en:'Regular'} : null;
+        return { ...withCatalogName(v, matched ?? regular), price: displayPrice(Number(v.price), p.vat_code, restaurant), tax: { basePrice: Number(v.price), rate: vatRate(restaurant.tax_mode,restaurant.vat_registered,p.vat_code,restaurant.tax_rates), inclusive: restaurant.prices_include_vat, showGross: restaurant.menu_prices_include_vat !== false } };
+      })
       .sort((a, b) => a.sort_order - b.sort_order || a.price - b.price),
   }));
 
   const visible = visibleCategories(categories ?? []);
   const grouped = visible.map((category) => ({
-    ...category,
+    ...withCatalogName(category, catalogCategories.data?.find(source => source.id === category.source_catalog_category_id)),
     products: allProducts.filter((p) => p.category_id === category.id),
   }));
 
@@ -108,7 +121,8 @@ export const getPublicMenu = cache(async function getPublicMenu(
     grouped.push({
       id: "uncategorised",
       restaurant_id: restaurant.id,
-      name: "More",
+      name: "أصناف أخرى",
+      name_en: "More",
       description: null,
       image_url: null,
       sort_order: 9999,

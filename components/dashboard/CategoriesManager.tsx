@@ -202,6 +202,9 @@ function CategoryModal({
           />
         </Field>
 
+        <Field label={locale === 'ar' ? 'الاسم بالإنجليزية' : 'English name'} htmlFor="cat-name-en" hint={locale === 'ar' ? 'اختياري، يظهر عند اختيار English في المينيو.' : 'Optional, shown in the English menu.'}>
+          <Input id="cat-name-en" name="name_en" dir="ltr" maxLength={60} defaultValue={category?.name_en ?? ''}/>
+        </Field>
         {moduleEnabled(restaurant,"subcategories") && <Field label={locale === 'ar' ? 'القسم الرئيسي' : 'Parent category'} htmlFor="cat-parent">
           <Select id="cat-parent" name="parent_id" defaultValue={category?.parent_id ?? ''}>
             <option value="">{locale === 'ar' ? 'قسم رئيسي مستقل' : 'Top level category'}</option>

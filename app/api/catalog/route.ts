@@ -19,9 +19,10 @@ export async function GET() {
   const { data, error } = await supabase
     .from("catalog_items")
     .select(
-      "id, name, description, ingredients, category_name, image_url, variants, keywords, cuisine, is_active, sort_order"
+      "id, name, name_en, category_id, description, ingredients, category_name, image_url, variants, keywords, cuisine, is_active, sort_order"
     )
     .eq("is_active", true)
+    .is("merged_into_id", null)
     .order("sort_order", { ascending: true })
     .order("name", { ascending: true })
     .limit(1000);
