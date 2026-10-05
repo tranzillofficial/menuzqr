@@ -1,6 +1,7 @@
 "use server";
 
 import { getPlatformSettings } from "@/lib/platform";
+import { CATALOG_ACTIVITIES } from '@/lib/catalog-activities';
 import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { MENU_THEME_IDS, RESTAURANT_STATUSES, type MenuThemeId, type RestaurantStatus } from "@/lib/constants";
@@ -262,10 +263,13 @@ export async function saveCatalogCategoryAction(
   const id = String(form.get("id") ?? "").trim();
   const name = String(form.get("name") ?? "").trim().slice(0, 60);
   if (name.length < 1) return fail("A name is required.", { name: "A name is required." });
+  const businessTypes = [...new Set(form.getAll('business_types').map(String))].filter(value=>CATALOG_ACTIVITIES.some(activity=>activity.id===value));
+  if (!businessTypes.length) return fail('Choose at least one business type.');
 
   const payload = {
     name,
     name_en: String(form.get("name_en") ?? "").trim().slice(0,60) || null,
+    business_types: businessTypes,
     description: String(form.get("description") ?? "").trim().slice(0, 200) || null,
     image_url: sanitiseImageUrl(String(form.get("image_url") ?? "").trim() || null),
     is_active: form.get("is_active") !== "off",

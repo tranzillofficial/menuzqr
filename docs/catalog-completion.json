@@ -1,0 +1,321 @@
+[
+  {
+    "name_en": "Kunafa",
+    "image": "kunafa"
+  },
+  {
+    "name_en": "Onion Rings",
+    "image": "onion-rings"
+  },
+  {
+    "name_en": "Mango Mojito",
+    "image": "existing:Mango Juice"
+  },
+  {
+    "name_en": "Beef Sandwich",
+    "image": "beef-sandwich"
+  },
+  {
+    "name_en": "Fried Chicken Pieces",
+    "image": "existing:Broasted Chicken — 4 Pieces"
+  },
+  {
+    "name_en": "Chicken Sandwich",
+    "image": "club-sandwich"
+  },
+  {
+    "name_en": "Lemon Mint Mojito",
+    "image": "existing:Lemon Mint"
+  },
+  {
+    "name_en": "Tuna Sandwich",
+    "image": "tuna-sandwich"
+  },
+  {
+    "name_en": "Turkey Sandwich",
+    "image": "club-sandwich"
+  },
+  {
+    "name_en": "Spicy Chicken",
+    "image": "existing:Broasted Chicken — 4 Pieces"
+  },
+  {
+    "name_en": "Crispy Chicken Sandwich",
+    "image": "existing:Large Boneless Chicken Sandwich"
+  },
+  {
+    "name_en": "Steak Sandwich",
+    "image": "beef-sandwich"
+  },
+  {
+    "name_en": "Club Sandwich",
+    "image": "club-sandwich"
+  },
+  {
+    "name_en": "Chicken Bucket",
+    "image": "existing:Broasted Chicken — 9 Pieces"
+  },
+  {
+    "name_en": "Chicken Tenders",
+    "image": "tenders"
+  },
+  {
+    "name_en": "Espresso"
+  },
+  {
+    "name_en": "Cappuccino",
+    "price": 30
+  },
+  {
+    "name_en": "Pepsi",
+    "price": 20
+  },
+  {
+    "name_en": "V Cola",
+    "price": 20
+  },
+  {
+    "name_en": "Classic Mojito",
+    "image": "existing:Lemon Mint"
+  },
+  {
+    "name_en": "Blueberry Mojito",
+    "image": "existing:Blue Mojito",
+    "price": 80
+  },
+  {
+    "name_en": "Sunshine Mojito",
+    "image": "existing:Passion Fruit Mojito",
+    "price": 80
+  },
+  {
+    "name_en": "Cheese Fries",
+    "image": "cheese-fries"
+  },
+  {
+    "name_en": "Loaded Fries",
+    "image": "loaded-fries"
+  },
+  {
+    "name_en": "Mozzarella Sticks",
+    "image": "mozzarella"
+  },
+  {
+    "name_en": "Nachos",
+    "image": "nachos"
+  },
+  {
+    "name_en": "Alfredo Pasta",
+    "image": "alfredo"
+  },
+  {
+    "name_en": "Chicken Alfredo",
+    "image": "alfredo"
+  },
+  {
+    "name_en": "Penne Arrabbiata",
+    "image": "tomato-pasta"
+  },
+  {
+    "name_en": "Bolognese Pasta",
+    "image": "tomato-pasta"
+  },
+  {
+    "name_en": "Seafood Pasta",
+    "image": "seafood"
+  },
+  {
+    "name_en": "Four Cheese Pasta",
+    "image": "alfredo"
+  },
+  {
+    "name_en": "Pesto Pasta",
+    "image": "pesto"
+  },
+  {
+    "name_en": "Chicken Wrap",
+    "image": "wrap"
+  },
+  {
+    "name_en": "Crispy Chicken Wrap",
+    "image": "wrap"
+  },
+  {
+    "name_en": "Beef Wrap",
+    "image": "wrap"
+  },
+  {
+    "name_en": "Shawarma Wrap",
+    "image": "wrap"
+  },
+  {
+    "name_en": "Mexican Chicken Wrap",
+    "image": "wrap"
+  },
+  {
+    "name_en": "Chocolate Cake",
+    "image": "chocolate-cake"
+  },
+  {
+    "name_en": "Cheesecake",
+    "image": "cheesecake"
+  },
+  {
+    "name_en": "Brownies",
+    "image": "brownies"
+  },
+  {
+    "name_en": "Tiramisu",
+    "image": "tiramisu"
+  },
+  {
+    "name_en": "Molten Cake",
+    "image": "molten-cake"
+  },
+  {
+    "name_en": "Ice Cream",
+    "image": "existing:Vanilla Ice Cream"
+  },
+  {
+    "name_en": "Om Ali",
+    "price": 40
+  },
+  {
+    "name_en": "Fruit Salad",
+    "price": 50
+  },
+  {
+    "name_en": "Fruit Platter",
+    "price": 60
+  },
+  {
+    "name_en": "Omelette",
+    "image": "omelette-plain"
+  },
+  {
+    "name_en": "Scrambled Eggs",
+    "image": "omelette"
+  },
+  {
+    "name_en": "Fried Eggs",
+    "image": "fried-eggs"
+  },
+  {
+    "name_en": "English Breakfast",
+    "image": "english-breakfast"
+  },
+  {
+    "name_en": "Pancakes",
+    "image": "pancakes"
+  },
+  {
+    "name_en": "French Toast",
+    "image": "french-toast"
+  },
+  {
+    "name_en": "Croissant Sandwich",
+    "image": "croissant"
+  },
+  {
+    "name_en": "Curly Fries",
+    "image": "curly-fries"
+  },
+  {
+    "name_en": "Potato Wedges",
+    "image": "wedges"
+  },
+  {
+    "name_en": "Mashed Potato",
+    "image": "mashed-potato"
+  },
+  {
+    "name_en": "Rice",
+    "image": "white-rice"
+  },
+  {
+    "name_en": "Vegetables",
+    "image": "rice"
+  },
+  {
+    "name_en": "Burger Combo",
+    "image": "burger-meal"
+  },
+  {
+    "name_en": "Double Burger Combo",
+    "image": "burger-meal"
+  },
+  {
+    "name_en": "Chicken Combo",
+    "image": "tenders"
+  },
+  {
+    "name_en": "Pizza Combo",
+    "image": "existing:Cheese Pizza Library"
+  },
+  {
+    "name_en": "Family Meal",
+    "image": "existing:Broasted Chicken — 9 Pieces"
+  },
+  {
+    "name_en": "Friends Meal",
+    "image": "existing:Broasted Chicken — 6 Pieces"
+  },
+  {
+    "name_en": "Mango Milkshake",
+    "price": 90
+  },
+  {
+    "name_en": "Nutella Milkshake",
+    "price": 105
+  },
+  {
+    "name_en": "Vanilla Ice Cream",
+    "price": 40
+  },
+  {
+    "name_en": "Chocolate Ice Cream",
+    "price": 40
+  },
+  {
+    "name_en": "Pistachio Ice Cream",
+    "price": 50
+  },
+  {
+    "name_en": "Strawberry Ice Cream",
+    "price": 40
+  },
+  {
+    "name_en": "Mango Ice Cream",
+    "price": 40
+  },
+  {
+    "name_en": "Classic Shisha",
+    "price": 70
+  },
+  {
+    "name_en": "Fruit Shisha",
+    "price": 100
+  },
+  {
+    "name_en": "Small Indomie",
+    "image": "noodles",
+    "price": 30
+  },
+  {
+    "name_en": "Large Indomie",
+    "image": "noodles",
+    "price": 45
+  },
+  {
+    "name_en": "Chicken Wings",
+    "image": "wings"
+  },
+  {
+    "name_en": "Chicken Strips",
+    "image": "tenders"
+  },
+  {
+    "name_en": "French Fries",
+    "image": "fries"
+  }
+]

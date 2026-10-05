@@ -131,10 +131,12 @@ export function ProductEditor({
           key: newKey(),
           name: v.name,
           name_en: v.name_en ?? '',
-          price: v.price != null ? String(v.price) : "",
+          price: v.price != null ? String(v.price) : item.suggested_price != null ? String(item.suggested_price) : "",
           is_active: true,
         }))
       );
+    } else {
+      setVariants([{key:newKey(),name:'عادي',name_en:'Regular',price:item.suggested_price != null ? String(item.suggested_price) : '',is_active:true}]);
     }
     setCatalogSectionName(item.category_name ?? "");
     if (item.category_name) {

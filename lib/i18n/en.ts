@@ -599,7 +599,7 @@ export const en = {
   "image.uploadFailed": "Upload failed. Please try again.",
   "admin.menu": "Admin menu",
   "catalog.draftHint": "They arrive hidden. set your prices, then switch them on.",
-  "catalog.draftNotice": "Copied dishes land in Products as hidden drafts with the suggested prices. Set your own prices, then switch each one on to publish it.",
+  "catalog.draftNotice": "Images are illustrative and prices are initial suggestions. Set your prices before importing; edit images and all product details in Products afterwards. Choose to publish immediately or keep imported products hidden.",
 
   // ---------------------------------------------------------------- plans & POS
   "nav.reports": "Sales reports",

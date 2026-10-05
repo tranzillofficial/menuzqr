@@ -1,0 +1,361 @@
+[
+  {
+    "key": "alfredo",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/6d01f5c1-5b8a-4335-b186-1e96c3324205.webp",
+    "sha256": "5ab661aae9e2be83b3e2365d0af1ed9827bfdc400152962320c8d2ba71a8ef3b",
+    "source": "https://unsplash.com/photos/fettuccine-alfredo-pasta-with-parsley-garnish-S9VyNETmOlw",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "apple-juice",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/628b3be0-c831-4c15-b456-d0921e80adcb.webp",
+    "sha256": "c429ba457d7c7b24a61c4ba02ca112c351c627596671ad41a1b452ea9dfc7804",
+    "source": "https://unsplash.com/photos/two-drinking-glasses-filled-with-apple-juice-U6dWj2nhPEA",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "avocado",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/4818a570-69dc-41d7-8717-c6e5470ee87b.webp",
+    "sha256": "0574c2d45df66386394b010812465f53c747475b27cb6b9868d46d51394da5f8",
+    "source": "https://unsplash.com/photos/green-liquid-in-clear-drinking-glass-40NOdy89Mco",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "beef-sandwich",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/8391a9a6-ed85-41db-a2d7-6d188228439d.webp",
+    "sha256": "a7fee5ff31f8b85c297f47a5056eddff65e6ccabf1b5de1b3a5b1698f75b3df6",
+    "source": "https://unsplash.com/photos/a-roast-beef-sandwich-on-a-plate-with-pickles-kjRBBd3qZ1M",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "brownies",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/073021c4-9c70-48dd-a78a-e6e5a44990ef.webp",
+    "sha256": "208a9265209732dcb4ae80b2a6e1226743b24a2e1703eceb38c5c4177b468f0e",
+    "source": "https://unsplash.com/photos/a-platter-of-brownies-covered-in-powdered-sugar-E7rRMdWwnvo",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "burger-meal",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/4eef2516-43dd-436c-8d29-4572e15e7cff.webp",
+    "sha256": "aa1ff4e798abc1e976dafe5b08a817de1ef8ea078b219187d364130d31fa0e59",
+    "source": "https://unsplash.com/photos/a-burger-fries-and-drink-on-a-metal-table-i-9E_Y1shCQ",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "cashew-dates",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/3dfe6f4f-645c-4681-97b7-d07cf868ec62.webp",
+    "sha256": "f16c6cd03b052051f16c2edbcd0923fa568fa8f559f9a116f969b7f998523680",
+    "source": "Built-in image generation",
+    "prompt": "Use case: product-mockup. Asset type: shared menu product photograph. A cashew and date smoothie, pale tan creamy beverage in one clear drinking glass, with a few cashews and two dates beside it. Photorealistic food photography, centered square composition, complete glass visible on a clean warm white background, soft studio light, no people, no text, no logos or watermark. One product only.",
+    "illustrative": true
+  },
+  {
+    "key": "cheese-fries",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/32d93440-1c37-4e44-8621-85abbfc05463.webp",
+    "sha256": "bfdc14ea138c6300038dcb147527dfd04933e49e49750169472c8a9b042144de",
+    "source": "Built-in image generation",
+    "prompt": "Use case: product-mockup. Asset type: shared menu product photograph. Golden French fries covered with melted yellow cheddar cheese in one small serving bowl, no meat. Photorealistic food photography, centered square composition, complete dish visible on a clean warm white background, soft studio light, no people, no text, no logos or watermark.",
+    "illustrative": true
+  },
+  {
+    "key": "cheesecake",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/27e402a2-87e9-4f2d-83c8-1e4e109043d7.webp",
+    "sha256": "5aea1cb42f345483032064fc7478447f5e3d1f22ec43850b3196566b48a84ecb",
+    "source": "https://unsplash.com/photos/a-piece-of-cheesecake-on-a-white-plate-z9bIeGp9Kgo",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "chocolate-cake",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/136813f6-4844-4095-9880-2f784e0b96d7.webp",
+    "sha256": "f8460e5a93b02e0f3ea92c7a38f2bb3dd62454fcb087c1a7d130f13d3bb759ad",
+    "source": "https://unsplash.com/photos/a-piece-of-chocolate-cake-on-a-plate-7ow2Rv-lN7g",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "club-sandwich",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/ddef3061-8233-4bdd-89c0-5479aeeffdeb.webp",
+    "sha256": "40dc26e5b338d351516a8a1e34f8dc07545b1e30ca31f3597bca9a986f5b5f84",
+    "source": "https://unsplash.com/photos/club-sandwich-and-french-fries-in-a-metal-basket-pdbdsuFYYmc",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "croissant",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/4b7f67f5-5a36-4cc9-8ae2-3cecb05d46c1.webp",
+    "sha256": "cb05a1d8b9a588c645712acc3519e1f1ed930bea391fdb0bb57dfd10b6802a0d",
+    "source": "https://unsplash.com/photos/a-croissant-sandwich-with-lettuce-and-tomato-on-a-plate-eTClsuy-qgw",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "curly-fries",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/6be38387-e6f7-4668-9f7b-7af7d1e32c21.webp",
+    "sha256": "f0963233ee4aa94fd47b25d51ab404ed9a48bab6dea51d34c38769290ed313c9",
+    "source": "https://unsplash.com/photos/curly-fries-in-a-white-takeout-box-QvRdxzBwOE4",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "dates-milk",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/3c3363f9-7f22-401d-9dae-aa3acc527660.webp",
+    "sha256": "893bbeb3ea2b4026ab4d2a630f8bd801f27e8206b599df82a01732f78da8f8a6",
+    "source": "Built-in image generation",
+    "prompt": "Use case: product-mockup. Asset type: shared menu product photograph. Egyptian dates with milk drink, pale beige smooth creamy beverage in one clear drinking glass, two brown dates beside it, no nuts. Photorealistic food photography, centered square composition, complete glass visible on a clean warm white background, soft studio light, no people, no text, no logos or watermark. One product only.",
+    "illustrative": true
+  },
+  {
+    "key": "doum",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/74885396-2350-47f7-bc27-f8cb33963969.webp",
+    "sha256": "c4a96c9c8f8e6e30eff97a6012ac22b836ceae4c52e33f304414d0d0bad9f56f",
+    "source": "Built-in image generation",
+    "prompt": "Use case: product-mockup. Asset type: shared menu product photograph. Egyptian doum palm fruit drink, amber brown beverage in one clear drinking glass, two round reddish brown doum fruits beside it. Photorealistic food photography, centered square composition, complete glass visible on a clean warm white background, soft studio light, no people, no text, no logos or watermark. One product only.",
+    "illustrative": true
+  },
+  {
+    "key": "english-breakfast",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/07da0fd0-e870-4a76-ac26-edd3b49bba3c.webp",
+    "sha256": "8275935a60ae5248b57e121533cb80b7d365c50669715b37b4bce19cc828c3d2",
+    "source": "Built-in image generation",
+    "prompt": "Use case: product-mockup. Asset type: shared menu product photograph. One plate of English breakfast with two fried eggs, grilled beef sausages, baked beans, grilled tomato, mushrooms and toast, no pork. Photorealistic food photography, centered square composition, complete dish visible on a clean warm white background, soft studio light, no people, no text, no logos or watermark.",
+    "illustrative": true
+  },
+  {
+    "key": "french-toast",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/2927573a-e77a-4f4c-a379-e411410beb3d.webp",
+    "sha256": "63a2e7f810c4781558f0818972826cd3c0363ed7825131fd91abd7912c5e3b42",
+    "source": "https://unsplash.com/photos/a-white-plate-topped-with-french-toast-covered-in-fruit-uW6c145NuGY",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "fried-eggs",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/98db5da7-c41a-45d8-ad7d-e539a93d46f3.webp",
+    "sha256": "a40d0fd19e32e1da18f79125f25c6eb5a051b22c619c517fd7149471d42c6eca",
+    "source": "https://unsplash.com/photos/two-fried-eggs-osPCHdpXKxk",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "fries",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/1ec00052-c359-4bc7-bbc3-8af068a294fc.webp",
+    "sha256": "29c441c2d182b5ba3bdbdd57be306f76ffdf53dccb993ff9a8513a3b4c662deb",
+    "source": "https://unsplash.com/photos/french-fries-mFPlHlDLtUA",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "grape",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/90209322-b915-4f29-913f-877dad22795a.webp",
+    "sha256": "12c778698ed87186dcbf7d50bc24f486486cba3a2cf0ba62460a91a0517be363",
+    "source": "https://unsplash.com/photos/three-clear-drinking-glasses-filled-with-grape-juices-dGxSJzhgW0o",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "hibiscus",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/3e2bd0fb-92cc-4b95-99b5-cabaa7041539.webp",
+    "sha256": "2922bc35b435b3ef4bebc4337d5798644ef35d1573ad6737b826986cd0ea9546",
+    "source": "https://unsplash.com/photos/glass-mug-with-red-beverage-cinnamon-sticks-and-dried-fruit-oVACw86wCB0",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "hot-chocolate",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/da85c18f-35a5-411b-96b4-412efc02f18c.webp",
+    "sha256": "170b380296d691b38e325fd2c95bf39c8c0327cdcdb8138c6b15cb336c85f7b4",
+    "source": "https://unsplash.com/photos/a-mug-of-hot-chocolate-with-cookies-OS3p95tK5Oc",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "kiwi",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/cc9ab54b-7de6-4a15-b64c-3fe5970d2c50.webp",
+    "sha256": "728cf7cef9693f5c0363eebf6298640c8a6226cb4fd60817caf749d224bc52be",
+    "source": "https://unsplash.com/photos/a-green-drink-with-a-kiwi-slice-on-top-of-it-1kJtAIHi3_w",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "kunafa",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/ccc32fe9-c601-41fd-af59-a8e63ac6dbd0.webp",
+    "sha256": "b99b1f83cacb877476fbfe9d9641112ceda95b2b06b9be1826b0ca2e8ee6ee99",
+    "source": "https://unsplash.com/photos/a-small-pastry-with-pistachios-on-top-WEPYQ0MwzAk",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "lemon",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/a6b3f177-a21e-41ac-a175-8b08db9eb196.webp",
+    "sha256": "0d7bb1ce23017c7d66029f734ee5f60b4b642508b3665263af57c73af0fb4f3a",
+    "source": "https://unsplash.com/photos/lemon-juice-on-glass-cup-K61zjEtOnKw",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "loaded-fries",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/539c930a-aabe-48eb-9b7e-b25109eadf1c.webp",
+    "sha256": "947ee54470c5a224ef59c432e2b7959dd73e11e32475b4a536955c5de82ddd17",
+    "source": "https://unsplash.com/photos/french-fries-topped-with-cheese-and-meat-xy7BK6oDD2s",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "mashed-potato",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/e25f96fa-93d8-43c7-8fab-20d1de81a06f.webp",
+    "sha256": "14afb1d8c1b87325328732ef6f8e4a34247a4a6abd41e89755c1851183f55d13",
+    "source": "https://unsplash.com/photos/a-bowl-of-mashed-potatoes-topped-with-chives-l-mqDIEwcKk",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "melon",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/c5ad57ac-e2a7-4ed5-bc3e-ffd93c369ae1.webp",
+    "sha256": "b7c51f3a04a8f052bd6220ba6dedf5373133a1ceebe895a5e4bb1e511a163f8c",
+    "source": "https://unsplash.com/photos/yellow-fruit-juice-on-glass-cup-pPhN8HFzkDE",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "molten-cake",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/3f83440f-f241-4004-be1f-b6b4641a1465.webp",
+    "sha256": "c670bb45a875c94fb920ae5ba30c1d4f6ed2a6c054e50e22a282f87884c3ecbe",
+    "source": "Built-in image generation",
+    "prompt": "Use case: product-mockup. Asset type: shared menu product photograph. One small individual dark chocolate molten lava cake on a white ceramic plate, opened slightly so liquid chocolate flows onto the plate. Photorealistic food photography, centered square composition, complete dish visible on a clean warm white background, soft studio light, no people, no text, no logos or watermark.",
+    "illustrative": true
+  },
+  {
+    "key": "mozzarella",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/72131335-d497-43f8-bf6a-57a8e942cb0d.webp",
+    "sha256": "38bf004f4be4d9f1f971770ecc2abc9bbf9035b7a5db4a529013768694e211ea",
+    "source": "https://unsplash.com/photos/several-breaded-mozzarella-sticks-with-melted-cheese-pTwN-C1w1Vc",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "nachos",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/654afd54-8184-4c67-8fee-60df3c80d9e4.webp",
+    "sha256": "9388dfe10f2a699739d8b01949b23176585589a0c12c29b6b7c7563d2a870b5b",
+    "source": "https://unsplash.com/photos/nachos-filled-bowl-8RftnlQ5Tvs",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "noodles",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/2f6ca565-0fc4-4725-ae45-6c2f1b6391d6.webp",
+    "sha256": "b9988c77c2c6272eadd4ea5866c2b7de4e7b98a3c347e8c5457da480de0731c4",
+    "source": "https://unsplash.com/photos/bowl-of-instant-noodles-with-bok-choy-Bd64cNuzQwk",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "omelette",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/ba444cad-20b1-4de3-af36-f36909eccc65.webp",
+    "sha256": "f12fdd658dc4876099fed3867d1be7ea1fdd600517265c30814b2c29be9fb40d",
+    "source": "https://unsplash.com/photos/egg-omelet-4gmBIFraSuE",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "omelette-plain",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/1cb140b1-d898-44f3-ba46-0e146be5a20d.webp",
+    "sha256": "81cae8c9067f6332af3f82b43ac40b61d2474d4f5a3257c1661d6547b5398261",
+    "source": "Built-in image generation",
+    "prompt": "Use case: product-mockup. Asset type: shared menu product photograph. A folded golden egg omelette on one plain white ceramic plate, minimal chopped parsley garnish, no toast or side dishes. Photorealistic food photography, centered square composition, complete dish visible on a clean warm white background, soft studio light, no people, no text, no logos or watermark.",
+    "illustrative": true
+  },
+  {
+    "key": "onion-rings",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/9d858519-093c-4b8d-a099-4fd158a576ec.webp",
+    "sha256": "c502b6098d9c962e7125dcd36f964bf6688c31b57627cfd4d6f60e023ac68522",
+    "source": "https://unsplash.com/photos/onion-rings-and-dip-on-a-wooden-table-8_G6oGx674k",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "pancakes",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/2e34c241-4c78-4196-9920-8f04f695c895.webp",
+    "sha256": "bc6a3a84d7865cd3deedcbcea5d5a084b4a68dfcdb935072ade076feed7c4d38",
+    "source": "https://unsplash.com/photos/pancakes-with-strawberry-and-bananas-1JFSSXL4-_M",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "pesto",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/c623f99e-1634-4102-a400-2e74a269f048.webp",
+    "sha256": "2b26b03a047c99beb1fe9db82d9c394979aa2b6b95496a8a4070512c3cf4ab17",
+    "source": "https://unsplash.com/photos/pesto-pasta-garnished-with-basil-and-cheese-1aidrXyeuLs",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "rice",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/7e1fcec8-20fc-4678-b752-b936867d01b3.webp",
+    "sha256": "5a6d84e079810f9d16dca2eb94efcef63d2b6868d28c212ad2f2a47fbd3ddee2",
+    "source": "https://unsplash.com/photos/a-bowl-of-rice-and-vegetables-on-a-table-I7VmLWXoMJA",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "sahlab",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/60769178-0424-4e39-9182-afb947816fb8.webp",
+    "sha256": "1f7de5f81b1c74cca839eb37d12290da16775936f12a0a2752bb33e391034bd7",
+    "source": "Built-in image generation",
+    "prompt": "Use case: product-mockup. Asset type: shared menu product photograph. A warm Egyptian sahlab drink, thick ivory hot milk pudding beverage served in one clear glass mug, light cinnamon dusting on top. Photorealistic food photography, centered square composition, complete glass visible on a clean warm white background, soft studio light, no people, no text, no logos or watermark. One product only.",
+    "illustrative": true
+  },
+  {
+    "key": "seafood",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/031ced92-4ff5-4750-8dfe-0fbd5f1c43d5.webp",
+    "sha256": "b91425c799d8763fdc0cec529f23f1b0b857dcf729d4f3cb2a89726934178b16",
+    "source": "https://unsplash.com/photos/delicious-pasta-with-seafood-and-tomatoes-on-a-white-table-pmJl8bSCsSY",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "tamarind",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/a284c62f-0171-429e-becb-c9d737d4c197.webp",
+    "sha256": "590e386d55dc2172b140763ffd563036e9c7366773cfdc4730da935769c12ce3",
+    "source": "Built-in image generation",
+    "prompt": "Use case: product-mockup. Asset type: shared menu product photograph. Egyptian tamarind juice, dark amber brown cold juice in one clear drinking glass, a few tamarind pods beside it. Photorealistic food photography, centered square composition, complete glass visible on a clean warm white background, soft studio light, no people, no text, no logos or watermark. One product only.",
+    "illustrative": true
+  },
+  {
+    "key": "tea",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/0946bfc9-ff94-4ea2-839c-04661915b8fe.webp",
+    "sha256": "f666ac5fa6c790a2029a5387522034e3639d861a4d2bc9ac02046e9e50158784",
+    "source": "https://unsplash.com/photos/a-cup-of-tea-YhNjbqnG5TI",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "tenders",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/8174157b-ae59-4217-ae59-d3cd7941ae20.webp",
+    "sha256": "e91a1eeadcf566a3454a973b9472cd2206206e156f64f2d82a2969959fe219ce",
+    "source": "https://unsplash.com/photos/basket-of-fried-chicken-tenders-fries-and-popcorn-chicken-bG8sQGD8Bi8",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "tiramisu",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/795fb109-e052-40bf-8a06-2f0e71935fce.webp",
+    "sha256": "28529f8890e2c2c2d5fc29897fa09a9e1b8e1ee74854b6092042ab46b9815eb0",
+    "source": "https://unsplash.com/photos/a-slice-of-tiramisu-cake-with-a-spoon-vImq68bX9Og",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "tomato-pasta",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/6b3d2fa7-721c-4476-abd2-20076ab5fb89.webp",
+    "sha256": "07c67fb3477e53b451fddc30f8a0550f0c438e725779e4a51fd185301c7cc6ac",
+    "source": "https://unsplash.com/photos/pasta-with-red-sauce-on-white-ceramic-round-plate-qits91IZv1o",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "tuna-sandwich",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/b7f0987f-f9e6-40bd-97bf-b9509fda33f2.webp",
+    "sha256": "ad62e34f25c819968e5039a2bffeab5c7ff3fd7c8b1e99bf9640bdb29f3910b2",
+    "source": "https://unsplash.com/photos/a-white-plate-topped-with-a-sandwich-on-top-of-a-table-REZfdxxn8bY",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "wedges",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/291dc971-0214-44c5-b060-49f5c1b7bfda.webp",
+    "sha256": "4322487a46f7893c60c011527bd390b134ba8272b9d553f8b7fe6570e18583ee",
+    "source": "https://unsplash.com/photos/bowl-of-golden-potato-wedges-with-garnish-J-vSiFxdXVQ",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "white-rice",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/94ca9f72-76b9-49ca-8639-c5eb14bb4f8c.webp",
+    "sha256": "d523734b2231b5da29f79bcfc5c49561b905fc88dd1e283e1ce845fd86f01aab",
+    "source": "https://unsplash.com/photos/white-ceramic-bowl-with-white-rice-LC6wR4qdN7E",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "wings",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/fa0e8cfd-90c1-4cdc-a1bc-4ba071449e12.webp",
+    "sha256": "06dbdc56f384df6f8785af04144356529266fecdff9e9f47a8d60722d4311afd",
+    "source": "https://unsplash.com/photos/crispy-fried-chicken-wings-with-dipping-sauce-and-vegetables-GOX0o9n2oPo",
+    "license": "Unsplash License"
+  },
+  {
+    "key": "wrap",
+    "image_url": "https://hoklwbuafvhpkbvjgfhd.supabase.co/storage/v1/object/public/menu-library/catalog/c215199e-b54e-439f-84d9-d5038b19b887.webp",
+    "sha256": "cfe929f32f6ecb85339206daffa7e8956b8574da4450b1c8b9319194b2ec99b6",
+    "source": "https://unsplash.com/photos/a-black-plate-topped-with-a-burrito-and-a-salad-MdkUEKFfkTM",
+    "license": "Unsplash License"
+  }
+]

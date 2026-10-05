@@ -223,6 +223,7 @@ export type QrTemplate = {
 export type CatalogVariant = { name: string; name_en?: string | null; price?: number | null };
 
 export type CatalogCategory = {
+  business_types?: string[] | null;
   name_en?: string | null;
   id: string;
   name: string;
@@ -233,6 +234,7 @@ export type CatalogCategory = {
 };
 
 export type CatalogItem = {
+  business_types?: string[] | null;
   name_en?: string | null;
   id: string;
   category_id: string | null;

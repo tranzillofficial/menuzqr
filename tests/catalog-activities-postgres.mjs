@@ -1,0 +1,22 @@
+import {PGlite} from '@electric-sql/pglite';
+import {readFileSync,readdirSync} from 'node:fs';
+import assert from 'node:assert/strict';
+
+const db=new PGlite();
+await db.exec(`create table catalog_categories(id uuid primary key default gen_random_uuid(),name text,name_en text,sort_order integer,merged_into_id uuid);
+insert into catalog_categories(name) values('الشيشة'),('مشروبات غازية'),('الحلويات'),('المكرونة'),('الفطور');`);
+const migrations=new URL('../supabase/migrations/',import.meta.url);
+const file=readdirSync(migrations).find(name=>name.endsWith('_catalog_business_activities.sql'));
+const path=file ? new URL(file,migrations) : new URL('../supabase/catalog-activities-draft.sql',import.meta.url);
+await db.exec(readFileSync(path,'utf8'));
+const types=async name=>(await db.query('select business_types from catalog_categories where name=$1',[name])).rows[0].business_types;
+assert.deepEqual(await types('الشيشة'),['cafe']);
+assert.ok((await types('مشروبات غازية')).includes('supermarket'));
+assert.deepEqual(await types('المكرونة'),['restaurant']);
+assert.ok((await types('الحلويات')).includes('sweets'));
+assert.deepEqual(await types('أعشاب'),['cafe','restaurant']);
+for(const invalid of [[],['unknown'],['cafe',null]])await assert.rejects(()=>db.query('insert into catalog_categories(name,business_types) values($1,$2)',['invalid',invalid]),/business_types_check/);
+await db.query("insert into catalog_categories(name) values('New section')");
+assert.deepEqual(await types('New section'),['restaurant','cafe']);
+await db.close();
+console.log('PASS: category activity defaults, shared sections, herbal category, invalid assignments');
