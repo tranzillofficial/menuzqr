@@ -138,9 +138,13 @@ export async function receiptRaster(receipt: PosReceipt, restaurantName: string,
 // A print request is not proof of physical output (the user can cancel).
 export async function printBrowserReceipt(receipt: PosReceipt, restaurantName: string, currency: string, ar: boolean, width: 58 | 80) {
   const canvas = await receiptCanvas(receipt, restaurantName, currency, ar, width);
+  // Keep the paper portrait even for a short receipt. A custom page whose
+  // height is smaller than its width can be auto-rotated by the print driver.
+  const contentHeightMm = Math.ceil(canvas.height * (width - 4) / canvas.width + 4);
+  const pageHeightMm = Math.max(width + 1, contentHeightMm);
   const frame = document.createElement('iframe');
   frame.title = `MenuzQR receipt ${receipt.number}`;
-  frame.style.cssText = 'position:fixed;left:-10000px;top:0;width:800px;height:600px;border:0';
+  frame.style.cssText = `position:fixed;left:-10000px;top:0;width:${width}mm;height:${pageHeightMm}mm;border:0`;
   document.body.appendChild(frame);
   try {
     const doc = frame.contentDocument;
@@ -148,7 +152,7 @@ export async function printBrowserReceipt(receipt: PosReceipt, restaurantName: s
     if (!doc || !target) throw new Error('Print window unavailable');
     doc.title = frame.title;
     const style = doc.createElement('style');
-    style.textContent = `@page { size: ${width}mm ${Math.ceil(canvas.height * (width - 4) / canvas.width + 4)}mm; margin: 2mm; } body { margin:0; width:${width - 4}mm; } img { display:block; width:100%; height:auto; break-inside:avoid; page-break-inside:avoid; }`;
+    style.textContent = `@page { size: ${width}mm ${pageHeightMm}mm; page-orientation: upright; margin: 2mm; } html, body { margin:0; padding:0; writing-mode:horizontal-tb; direction:ltr; } body { width:${width - 4}mm; } img { display:block; width:100%; height:auto; break-inside:avoid; page-break-inside:avoid; }`;
     doc.head.appendChild(style);
     // One text row per image permits page breaks without clipping a long receipt.
     const images: HTMLImageElement[] = [];
