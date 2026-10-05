@@ -358,6 +358,9 @@ function CatalogCategoryModal({
           />
         </Field>
 
+        <Field label="English name" htmlFor="cc-name-en" hint="Shown when a guest selects English.">
+          <Input id="cc-name-en" name="name_en" dir="ltr" maxLength={60} defaultValue={category?.name_en ?? ''}/>
+        </Field>
         <Field label="Description" htmlFor="cc-description" hint="Optional, shown under the name.">
           <Textarea
             id="cc-description"
@@ -447,6 +450,9 @@ function CatalogItemModal({
             />
           </Field>
 
+          <Field label="English name" htmlFor="c-name-en" className="sm:col-span-2">
+            <Input id="c-name-en" name="name_en" dir="ltr" maxLength={90} defaultValue={item?.name_en ?? ''}/>
+          </Field>
           <Field
             label="Section"
             htmlFor="c-category"
@@ -558,6 +564,9 @@ function CatalogItemModal({
             />
           </Field>
 
+          <Field label="Size names in English" htmlFor="c-variants-en" className="sm:col-span-2" hint="Comma separated, in the same order as the sizes above.">
+            <Input id="c-variants-en" name="variants_en" dir="ltr" defaultValue={(item?.variants ?? []).map(v => v.name_en ?? '').join(', ')}/>
+          </Field>
           <Field
             label="Search keywords"
             htmlFor="c-keywords"

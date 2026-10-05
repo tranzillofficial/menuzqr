@@ -125,7 +125,11 @@ export function MenuProvider({
       orderingEnabled: (data.restaurant.ordering_enabled || (staffMode && Boolean(table))) && (Boolean(table) || Boolean(data.payments?.remote_ordering_enabled && (data.payments.cash_wallet || data.payments.instapay_address) && data.payments.payment_whatsapp)),
       waiterEnabled: (data.restaurant.waiter_calls_enabled || staffMode) && Boolean(table),
       staffMode,
-      items,
+      items: items.map(item => {
+        const product = data.categories.flatMap(category => category.products).find(product => product.id === item.productId);
+        const variant = product?.product_variants.find(variant => variant.id === item.variantId);
+        return { ...item, productName: product?.name ?? item.productName, variantName: variant?.name ?? item.variantName };
+      }),
       itemCount,
       total,
       openProduct: setActiveProduct,
@@ -133,7 +137,7 @@ export function MenuProvider({
       setQuantity,
       removeItem,
       clearCart,
-      activeProduct,
+      activeProduct: activeProduct ? data.categories.flatMap(category => category.products).find(product => product.id === activeProduct.id) ?? activeProduct : null,
       closeProduct: () => setActiveProduct(null),
       cartOpen,
       setCartOpen,

@@ -40,6 +40,7 @@ export async function saveCategoryAction(
   const payload = {
     restaurant_id: restaurant.id,
     name,
+    name_en: optionalStr(form, "name_en")?.slice(0, 60) || null,
     ...(moduleEnabled(restaurant,"subcategories") ? {parent_id: optionalStr(form,"parent_id")} : {}),
     description: optionalStr(form, "description"),
     image_url: imageUrl,
@@ -96,10 +97,12 @@ export async function createCategoryQuickAction(
   const supabase = await createServerSupabase();
 
   if (sourceId && !moduleEnabled(owned.restaurant,"catalog")) return {ok:false,message:"Catalog is disabled for this account."};
+  let englishName: string | null = null;
   if (sourceId) {
-    const {data:source,error:sourceError} = await supabase.from("catalog_categories").select("id,name").eq("id",sourceId).eq("is_active",true).maybeSingle();
+    const {data:source,error:sourceError} = await supabase.from("catalog_categories").select("id,name,name_en").eq("id",sourceId).eq("is_active",true).maybeSingle();
     if (sourceError || !source) return {ok:false,message:"That catalog section is no longer available."};
     clean = source.name.trim().slice(0,60);
+    englishName = source.name_en;
     const {data:linked,error:linkedError} = await supabase.from("categories").select("id,name").eq("restaurant_id",owned.restaurant.id).eq("source_catalog_category_id",source.id).maybeSingle();
     if (linkedError) return {ok:false,message:linkedError.message};
     if (linked) return {ok:true,category:linked};
@@ -138,6 +141,7 @@ export async function createCategoryQuickAction(
     .insert({
       restaurant_id: owned.restaurant.id,
       name: clean,
+      name_en: englishName,
       ...(sourceId ? {source_catalog_category_id:sourceId} : {}),
       sort_order: (count ?? 0) * 10,
     })

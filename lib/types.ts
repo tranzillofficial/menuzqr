@@ -51,6 +51,8 @@ export type Restaurant = TaxSettings & {
 };
 
 export type Category = {
+  name_en?: string | null;
+  name_ar?: string | null;
   parent_id?: string | null;
   source_catalog_category_id?: string | null;
   id: string;
@@ -65,6 +67,8 @@ export type Category = {
 };
 
 export type ProductVariant = {
+  name_en?: string | null;
+  name_ar?: string | null;
   tax?: { basePrice: number; rate: number; inclusive: boolean; showGross?: boolean };
   id: string;
   restaurant_id: string;
@@ -78,6 +82,9 @@ export type ProductVariant = {
 };
 
 export type Product = {
+  source_catalog_item_id?: string | null;
+  name_en?: string | null;
+  name_ar?: string | null;
   vat_code: VatCode;
   id: string;
   restaurant_id: string;
@@ -213,9 +220,10 @@ export type QrTemplate = {
   sort_order: number;
 };
 
-export type CatalogVariant = { name: string; price?: number | null };
+export type CatalogVariant = { name: string; name_en?: string | null; price?: number | null };
 
 export type CatalogCategory = {
+  name_en?: string | null;
   id: string;
   name: string;
   description: string | null;
@@ -225,6 +233,7 @@ export type CatalogCategory = {
 };
 
 export type CatalogItem = {
+  name_en?: string | null;
   id: string;
   category_id: string | null;
   name: string;

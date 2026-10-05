@@ -1,5 +1,8 @@
 "use client";
 
+import { useMemo, useState } from 'react';
+import { localizeMenu } from '@/lib/menu-localization';
+
 import { RetailMenu } from "./themes/RetailMenu";
 import { moduleEnabled } from "@/lib/business-modules";
 import { MenuProvider } from "./MenuContext";
@@ -41,18 +44,20 @@ export function MenuExperience({
   const Theme = moduleEnabled(data.restaurant,"subcategories") ? RetailMenu : THEMES[data.restaurant.menu_theme] ?? ElegantMenu;
   const lightFab = data.restaurant.menu_theme === "elegant" || data.restaurant.menu_theme === "market";
 
-  // The menu's own chrome. "Add to order", "Call waiter". follows the
-  // restaurant's chosen language, not the visitor's dashboard preference.
-  const locale: Locale = isLocale(data.restaurant.language) ? data.restaurant.language : "en";
+  // Start with the merchant's language; visitors can change their menu view
+  // without changing account settings or losing their basket.
+  const [locale, setLocale] = useState<Locale>(isLocale(data.restaurant.language) ? data.restaurant.language : "ar");
+  const localizedData = useMemo(() => localizeMenu(data, locale), [data, locale]);
   const t = createTranslator(locale);
 
   return (
     <I18nProvider locale={locale} retail={data.restaurant.enabled_modules != null && !moduleEnabled(data.restaurant,"tables")}>
-      {/* The menu reads in the restaurant's language regardless of the
-          dashboard language the visitor may have chosen. */}
       <div dir={dirOf(locale)} lang={locale}>
+      <nav aria-label={locale === 'ar' ? 'لغة المينيو' : 'Menu language'} className="flex justify-end gap-1 border-b border-ink-100 bg-white px-3 py-2">
+        {(['ar', 'en'] as const).map(language => <button key={language} type="button" lang={language} aria-pressed={locale === language} onClick={() => setLocale(language)} className={`rounded-full px-4 py-2 text-xs font-semibold ${locale === language ? 'bg-ink-900 text-white' : 'bg-ink-50 text-ink-600'}`}>{language === 'ar' ? 'العربية' : 'English'}</button>)}
+      </nav>
     <MenuProvider
-      data={data}
+      data={localizedData}
       table={table}
       showPrices={showPrices}
       showIngredients={showIngredients}
