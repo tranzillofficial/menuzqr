@@ -28,76 +28,91 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
   await document.fonts.ready;
   const canvas = document.createElement('canvas');
   const dots = width === 58 ? 384 : 576;
-  canvas.width = dots;
-  canvas.height = 1;
+  const padding = 8, usable = dots - padding * 2;
+  const fontSize = width === 58 ? 22 : 28;
+  const rowHeight = width === 58 ? 30 : 36;
+  const font = `${fontSize}px Arial, sans-serif`;
+  canvas.width = dots; canvas.height = 1;
   const context = canvas.getContext('2d');
   if (!context) throw new Error('Receipt rendering is unavailable');
-  const font = '32px Arial, sans-serif';
-  const rowHeight = 48;
-  context.font = font;
-  const rows: { text: string; bold?: boolean; center?: boolean }[] = [];
-  const wrap = (text: string, bold = false, center = false) => {
-    context.font = `${bold ? 'bold ' : ''}${font}`;
-    let line = '';
+  type Row = { text?: string; cells?: string[]; bold?: boolean; band?: boolean };
+  const rows: Row[] = [];
+  const split = (text: string, available: number, bold = false, size = fontSize) => {
+    context.font = `${bold ? 'bold ' : ''}${size}px Arial, sans-serif`;
+    const lines: string[] = []; let line = '';
     for (const word of text.replace(/[\r\n]/g, ' ').split(/\s+/)) {
-      if (context.measureText(`${line} ${word}`).width > dots - 32 && line) {
-        rows.push({ text: line, bold, center }); line = '';
-      }
-      // Split long unbroken names as well as normal words.
-      for (const char of word) {
-        if (context.measureText(line + char).width > dots - 32 && line) {
-          rows.push({ text: line, bold, center }); line = '';
-        }
+      if (line && context.measureText(`${line} ${word}`).width > available) { lines.push(line); line = ''; }
+      for (const char of (line ? ' ' : '') + word) {
+        if (line && context.measureText(line + char).width > available) { lines.push(line); line = ''; }
         line += char;
       }
-      line += ' ';
     }
-    if (line.trim()) rows.push({ text: line.trim(), bold, center });
+    if (line) lines.push(line);
+    return lines.length ? lines : [''];
   };
-  const label = (arabic: string, english: string) => ar ? arabic : english;
-  const money = (n: number) => `${n.toFixed(2)} ${currency}`;
-  const fiscal = receipt.fiscal;
-  const sign = receipt.creditNote ? -1 : 1;
-  wrap(fiscal?.legal_name ?? restaurantName, true, true);
+  const wrap = (text: string, bold = false, band = false) => {
+    for (const line of split(text, usable - 8, bold)) rows.push({text: line, bold, band});
+  };
+  const proportions = [.12, .16, .34, .18, .20];
+  const cellSize = (i: number) => i >= 3 ? (width === 58 ? 14 : 22) : i < 2 ? (width === 58 ? 14 : 18) : (width === 58 ? 20 : 24);
+  const table = (cells: string[], bold = false) => {
+    const lines = cells.map((text, i) => split(text, usable * proportions[i] - 6, bold, cellSize(i)));
+    for (let i = 0; i < Math.max(...lines.map(c => c.length)); i++) rows.push({cells: lines.map(c => c[i] ?? ''), bold});
+  };
+  const label = (a: string, e: string) => ar ? a : e;
+  const fiscal = receipt.fiscal, sign = receipt.creditNote ? -1 : 1;
+  const amount = (n: number) => n.toFixed(2);
+  const money = (n: number) => `${amount(n)} ${currency}`;
+  wrap(fiscal?.legal_name || restaurantName, true);
   if (fiscal?.address) wrap(fiscal.address);
   if (fiscal?.registered) wrap(`VAT / TRN: ${fiscal.vat_number}`);
-  if (fiscal?.customer?.name) { wrap(`${label('العميل', 'Customer')}: ${fiscal.customer.name}`); if(fiscal.customer.address) wrap(fiscal.customer.address); if(fiscal.customer.vat_number) wrap(`Customer VAT / TRN: ${fiscal.customer.vat_number}`); }
-  wrap(`${receipt.creditNote ? label('إشعار دائن', 'Credit note') : fiscal?.invoice_kind === 'full' || fiscal?.invoice_kind === 'simplified' ? label('فاتورة ضريبية', 'VAT invoice') : label('إيصال', 'Receipt')} ${receipt.creditNote ? `CN-${receipt.number}` : receipt.documentNumber ?? `#${receipt.number}`}`, true, true);
-  if(receipt.creditNote) wrap(`Original invoice: ${receipt.originalDocumentNumber ?? `#${receipt.number}`}`);
-  wrap(new Date(receipt.creditNote ? receipt.creditDate ?? receipt.createdAt : receipt.createdAt).toLocaleString(ar ? 'ar-EG' : 'en-GB', { timeZone: fiscal?.timezone ?? 'UTC' }), false, true);
-  if(receipt.paidAt) wrap(`${label('تاريخ التوريد', 'Supply date')}: ${new Date(receipt.paidAt).toLocaleString(ar ? 'ar-EG' : 'en-GB', { timeZone: fiscal?.timezone ?? 'UTC' })}`);
-  wrap(receipt.tableLabel ? `${label('الطاولة', 'Table')}: ${receipt.tableLabel}` : label('تيك أواي', 'Takeaway'));
-  rows.push({ text: '________________________', center: true });
+  wrap(`${receipt.creditNote ? label('إشعار دائن', 'Credit note') : fiscal?.invoice_kind === 'full' || fiscal?.invoice_kind === 'simplified' ? label('فاتورة ضريبية', 'VAT invoice') : label('فاتورة بيع', 'Sales receipt')} ${receipt.creditNote ? `CN-${receipt.number}` : receipt.documentNumber ?? `#${receipt.number}`}`, true);
+  wrap(new Date(receipt.creditNote ? receipt.creditDate ?? receipt.createdAt : receipt.createdAt).toLocaleString('en-GB', {timeZone: fiscal?.timezone ?? 'Africa/Cairo'}));
+  if (receipt.creditNote) wrap(`${label('الفاتورة الأصلية', 'Original invoice')}: ${receipt.originalDocumentNumber ?? receipt.number}`);
+  if (receipt.paidAt && fiscal?.invoice_kind === 'full') wrap(`${label('تاريخ التوريد', 'Supply date')}: ${new Date(receipt.paidAt).toLocaleString('en-GB', {timeZone: fiscal?.timezone ?? 'Africa/Cairo'})}`);
+  if (receipt.tableLabel) wrap(`${label('الطاولة', 'Table')}: ${receipt.tableLabel}`);
+  if (fiscal?.customer?.name) wrap(`${label('العميل', 'Customer')}: ${fiscal.customer.name}`);
+  if (fiscal?.customer?.address) wrap(fiscal.customer.address);
+  if (fiscal?.customer?.vat_number) wrap(`Customer VAT: ${fiscal.customer.vat_number}`);
+  table([label('الكمية','Qty'),label('الوحدة','Unit'),label('اسم الصنف','Item'),label('السعر','Price'),label('الإجمالي','Total')],true);
   for (const line of receipt.lines) {
-    wrap(`${line.name} ${line.variant}`, true);
-    if(fiscal?.registered && fiscal.mode !== 'egypt') wrap(`${line.code ?? ''} ${line.rate ?? 0}% | VAT ${money(sign * (line.vat ?? 0))}`);
-    if(fiscal && fiscal.mode !== 'egypt') wrap(`${line.quantity} × ${money((line.net ?? 0) / line.quantity)} ${label('قبل VAT', 'ex VAT')}`);
-    else wrap(`${line.quantity} × ${money(line.price)}`);
-    wrap(`${label('إجمالي الصنف', 'Line total')}: ${money(sign * (fiscal?.mode === 'egypt' ? line.price * line.quantity : line.gross ?? line.price * line.quantity))}`);
+    table([String(line.quantity),line.variant,line.name,amount(fiscal && fiscal.mode !== 'egypt' ? (line.net ?? 0)/line.quantity : line.price),amount(sign * (fiscal?.mode === 'egypt' ? line.price * line.quantity : line.gross ?? line.price * line.quantity))],true);
+    if (fiscal?.registered && fiscal.mode !== 'egypt') wrap(`${line.code ?? ''} ${line.rate ?? 0}% | VAT ${money(sign * (line.vat ?? 0))}`);
   }
-  rows.push({ text: '________________________', center: true });
-  wrap(`${label('قبل الضريبة', 'Subtotal')}: ${money(sign * (fiscal?.net ?? receipt.total))}`);
-  if (fiscal?.registered) wrap(`${label('الضريبة', 'VAT')}: ${money(sign * fiscal.vat)}`, true);
-  wrap(`${label('الإجمالي', 'Total')}: ${money(sign * receipt.total)}`, true);
-  for(const b of fiscal?.mode === 'egypt' ? [] : fiscal?.breakdown ?? []) wrap(`${b.code} ${b.rate}% | Net ${money(sign*b.net)} | VAT ${money(sign*b.vat)} | Gross ${money(sign*b.gross)}`);
-  if(fiscal?.mode === 'saudi') wrap(label('إيصال بيع. الربط بالفوترة الإلكترونية غير مفعّل.', 'Sales receipt. Electronic invoicing is not connected.'));
-  else if(fiscal?.registered && fiscal.invoice_kind === 'receipt') wrap(label('ليس فاتورة ضريبية كاملة.', 'Not a full VAT invoice.'));
-  wrap(`${label('الدفع', 'Payment')}: ${receipt.fiscalState==='unpaid'?label('غير مدفوع','Unpaid'):receipt.payment === 'cash' ? label('كاش', 'Cash') : receipt.payment === 'transfer' ? label('تحويل خارجي — تأكيد يدوي','External transfer — manually confirmed') : label('بطاقة', 'Card')}`);
-  if (receipt.fiscalState!=='unpaid' && receipt.payment === 'cash' && !receipt.creditNote) {
-    wrap(`${label('المستلم', 'Received')}: ${money(receipt.received)}`);
-    wrap(`${label('الباقي', 'Change')}: ${money(receipt.received - receipt.total)}`);
-  }
+  wrap(`${label('إجمالي الكميات','Total quantity')}: ${receipt.lines.reduce((sum,line)=>sum+line.quantity,0)}`,true,true);
+  wrap(`${label('الإجمالي قبل الضريبة','Subtotal')}: ${money(sign * (fiscal?.net ?? receipt.total))}`);
+  if (fiscal?.registered) wrap(`${label('الضريبة','VAT')}: ${money(sign * fiscal.vat)}`);
+  wrap(`${label('الصافي','Total')}: ${money(sign * receipt.total)}`,true,true);
+  const paid = receipt.fiscalState !== 'unpaid' && receipt.fiscalState !== 'voided';
+  wrap(`${label('المدفوع','Paid')}: ${money(paid ? sign * receipt.total : 0)}`);
+  wrap(`${label('المتبقي','Due')}: ${money(paid ? 0 : sign * receipt.total)}`);
+  if (paid && receipt.payment === 'cash' && !receipt.creditNote && receipt.received > receipt.total) wrap(`${label('الباقي للعميل','Change')}: ${money(receipt.received - receipt.total)}`);
+  for (const b of fiscal?.mode === 'egypt' ? [] : fiscal?.breakdown ?? []) wrap(`${b.code} ${b.rate}% | Net ${money(sign*b.net)} | VAT ${money(sign*b.vat)}`);
+  if (fiscal?.registered && fiscal.invoice_kind === 'receipt') wrap(fiscal.mode === 'saudi' ? label('إيصال بيع. الربط بالفوترة الإلكترونية غير مفعّل.','Sales receipt. Electronic invoicing is not connected.') : label('ليس فاتورة ضريبية كاملة.','Not a full VAT invoice.'));
   if (receipt.note) wrap(receipt.note);
-  wrap(label('شكرًا لزيارتك', 'Thank you for visiting'), false, true);
-  canvas.height = rows.length * rowHeight + 32;
+  canvas.height = rows.length * rowHeight + 16;
   if (canvas.height > 20000) throw new Error('Receipt is too long');
-  context.fillStyle = '#fff'; context.fillRect(0, 0, dots, canvas.height);
-  context.fillStyle = '#000'; context.textBaseline = 'top';
-  context.direction = ar ? 'rtl' : 'ltr';
-  rows.forEach((row, index) => {
+  context.fillStyle = '#fff'; context.fillRect(0,0,dots,canvas.height);
+  context.textBaseline = 'middle';
+  rows.forEach((row,index)=>{
+    const top = index * rowHeight + 8;
+    context.fillStyle = row.band ? '#000' : '#fff';
+    context.fillRect(padding,top,usable,rowHeight);
+    context.fillStyle = row.band ? '#fff' : '#000';
     context.font = `${row.bold ? 'bold ' : ''}${font}`;
-    context.textAlign = row.center ? 'center' : ar ? 'right' : 'left';
-    context.fillText(row.text, row.center ? dots / 2 : ar ? dots - 16 : 16, index * rowHeight + 16, dots - 32);
+    context.direction = ar ? 'rtl' : 'ltr'; context.textAlign = 'center';
+    if (row.cells) {
+      let offset = 0;
+      row.cells.forEach((text,i)=>{
+        const size = usable * proportions[i];
+        context.font = `${row.bold ? 'bold ' : ''}${cellSize(i)}px Arial, sans-serif`;
+        const x = ar ? dots - padding - offset - size : padding + offset;
+        context.strokeStyle = '#000'; context.lineWidth = 1;
+        context.strokeRect(x,top,size,rowHeight);
+        context.fillText(text,x+size/2,top+rowHeight/2,size-6);
+        offset += size;
+      });
+    } else context.fillText(row.text ?? '', dots/2,top+rowHeight/2,usable-8);
   });
   return canvas;
 }
@@ -133,12 +148,12 @@ export async function printBrowserReceipt(receipt: PosReceipt, restaurantName: s
     if (!doc || !target) throw new Error('Print window unavailable');
     doc.title = frame.title;
     const style = doc.createElement('style');
-    style.textContent = `@page { size: auto; margin: 3mm; } body { margin:0; width:${width - 8}mm; } img { display:block; width:100%; height:auto; break-inside:avoid; page-break-inside:avoid; }`;
+    style.textContent = `@page { size: ${width}mm ${Math.ceil(canvas.height * (width - 4) / canvas.width + 4)}mm; margin: 2mm; } body { margin:0; width:${width - 4}mm; } img { display:block; width:100%; height:auto; break-inside:avoid; page-break-inside:avoid; }`;
     doc.head.appendChild(style);
     // One text row per image permits page breaks without clipping a long receipt.
     const images: HTMLImageElement[] = [];
     for (let y = 0; y < canvas.height;) {
-      const height = Math.min(y === 0 ? 16 : 48, canvas.height - y);
+      const height = Math.min(y === 0 ? 8 : width === 58 ? 30 : 36, canvas.height - y);
       const strip = document.createElement('canvas');
       strip.width = canvas.width; strip.height = height;
       strip.getContext('2d')!.drawImage(canvas, 0, y, canvas.width, height, 0, 0, canvas.width, height);
