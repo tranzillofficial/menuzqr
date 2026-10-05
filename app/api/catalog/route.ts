@@ -19,7 +19,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from("catalog_items")
     .select(
-      "id, name, name_en, category_id, description, ingredients, category_name, image_url, variants, keywords, cuisine, is_active, sort_order"
+      "id, name, name_en, category_id, description, ingredients, category_name, image_url, variants, suggested_price, suggested_currency, keywords, cuisine, is_active, sort_order, section:catalog_categories(business_types)"
     )
     .eq("is_active", true)
     .is("merged_into_id", null)
@@ -30,7 +30,11 @@ export async function GET() {
   if (error) return NextResponse.json({ items: [] });
 
   return NextResponse.json(
-    { items: data ?? [] },
+    { items: (data ?? []).map(item=>{
+      // The untyped client infers an array, but this foreign key is many-to-one.
+      const section=item.section as unknown as {business_types?:string[]} | null;
+      return {...item,business_types:section?.business_types ?? []};
+    }) },
     { headers: { "cache-control": "private, max-age=60, stale-while-revalidate=600" } }
   );
 }

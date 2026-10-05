@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { catalogActivityMatches } from '@/lib/catalog-activities';
+import { CatalogActivityFilter } from './CatalogActivityFilter';
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/Card";
@@ -38,6 +40,7 @@ export function CatalogBrowser({
 
   const [query, setQuery] = useState("");
   const [activeSection, setActiveSection] = useState<string>("all");
+  const [activity, setActivity] = useState('all');
   const [picked, setPicked] = useState<Set<string>>(new Set());
   // What the owner will actually charge. Seeded from the suggestion so the
   // box is never empty, but it is theirs to change before anything is copied.
@@ -46,15 +49,17 @@ export function CatalogBrowser({
 
   const sections = useMemo(() => {
     const withItems = categories.filter((category) =>
-      items.some((item) => item.category_id === category.id)
+      catalogActivityMatches(category,activity) && items.some((item) => item.category_id === category.id)
     );
-    const unfiled = items.some((item) => !item.category_id);
+    const unfiled = activity === 'all' && items.some((item) => !item.category_id);
     return { withItems, unfiled };
-  }, [categories, items]);
+  }, [categories, items, activity]);
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     return items.filter((item) => {
+      const category=categories.find(category=>category.id===item.category_id);
+      if (activity!=='all' && (!category || !catalogActivityMatches(category,activity))) return false;
       if (activeSection === UNFILED && item.category_id) return false;
       if (activeSection !== "all" && activeSection !== UNFILED && item.category_id !== activeSection)
         return false;
@@ -63,7 +68,7 @@ export function CatalogBrowser({
         .toLowerCase()
         .includes(q);
     });
-  }, [items, query, activeSection]);
+  }, [items, query, activeSection, categories, activity]);
 
   const grouped = useMemo(() => {
     const byId = new Map<string, CatalogItem[]>();
@@ -162,6 +167,7 @@ export function CatalogBrowser({
     <div className="space-y-5 pb-24">
       {/* search + section filter */}
       <div className="space-y-3">
+        <CatalogActivityFilter value={activity} onChange={value=>{setActivity(value);setActiveSection('all');}}/>
         <div className="relative">
           <Icon.search className="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
           <input

@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test:catalog": "node tests/catalog-postgres.mjs && node tests/catalog-localization-postgres.mjs && node --experimental-strip-types --test tests/menu-localization.test.mjs",
+    "test:catalog": "node tests/catalog-postgres.mjs && node tests/catalog-localization-postgres.mjs && node tests/catalog-activities-postgres.mjs && node tests/catalog-seed-postgres.mjs && node --experimental-strip-types --test tests/menu-localization.test.mjs tests/catalog-activities.test.mjs",
     "test:tax": "node --experimental-strip-types --test tests/tax.test.mjs && node tests/fiscal-postgres.mjs",
     "test:business": "node --experimental-strip-types --test tests/business.test.mjs && node tests/business-postgres.mjs"
   },

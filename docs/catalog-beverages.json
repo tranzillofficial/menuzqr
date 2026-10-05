@@ -1,0 +1,529 @@
+[
+  {
+    "name": "شاي",
+    "name_en": "Tea",
+    "price": 7,
+    "image": "tea",
+    "category": "مشروبات ساخنة",
+    "variants": []
+  },
+  {
+    "name": "قهوة سادة",
+    "name_en": "Plain Coffee",
+    "price": 15,
+    "image": "existing:Espresso",
+    "category": "القهوة",
+    "variants": []
+  },
+  {
+    "name": "إسبريسو",
+    "name_en": "Espresso",
+    "price": 20,
+    "image": "existing:Espresso",
+    "category": "القهوة",
+    "variants": [
+      {
+        "name": "سنجل",
+        "name_en": "Single",
+        "price": 20
+      },
+      {
+        "name": "دبل",
+        "name_en": "Double",
+        "price": 30
+      }
+    ]
+  },
+  {
+    "name": "قهوة فرنساوي",
+    "name_en": "French Coffee",
+    "price": 20,
+    "image": "existing:Cappuccino",
+    "category": "القهوة",
+    "variants": []
+  },
+  {
+    "name": "قهوة كراميل",
+    "name_en": "Caramel Coffee",
+    "price": 25,
+    "image": "existing:Cappuccino",
+    "category": "القهوة",
+    "variants": []
+  },
+  {
+    "name": "قهوة بندق",
+    "name_en": "Hazelnut Coffee",
+    "price": 25,
+    "image": "existing:Cappuccino",
+    "category": "القهوة",
+    "variants": []
+  },
+  {
+    "name": "قهوة فانيليا",
+    "name_en": "Vanilla Coffee",
+    "price": 25,
+    "image": "existing:Cappuccino",
+    "category": "القهوة",
+    "variants": []
+  },
+  {
+    "name": "كابتشينو فانيليا",
+    "name_en": "Vanilla Cappuccino",
+    "price": 30,
+    "image": "existing:Cappuccino",
+    "category": "القهوة",
+    "variants": []
+  },
+  {
+    "name": "كابتشينو موكا",
+    "name_en": "Mocha Cappuccino",
+    "price": 30,
+    "image": "existing:Cappuccino",
+    "category": "القهوة",
+    "variants": []
+  },
+  {
+    "name": "كابتشينو لاتيه",
+    "name_en": "Latte Cappuccino",
+    "price": 30,
+    "image": "existing:Cappuccino",
+    "category": "القهوة",
+    "variants": []
+  },
+  {
+    "name": "كابتشينو كراميل",
+    "name_en": "Caramel Cappuccino",
+    "price": 30,
+    "image": "existing:Cappuccino",
+    "category": "القهوة",
+    "variants": []
+  },
+  {
+    "name": "كابتشينو بندق",
+    "name_en": "Hazelnut Cappuccino",
+    "price": 30,
+    "image": "existing:Cappuccino",
+    "category": "القهوة",
+    "variants": []
+  },
+  {
+    "name": "نسكافيه",
+    "name_en": "Nescafé",
+    "price": 20,
+    "image": "existing:Espresso",
+    "category": "القهوة",
+    "variants": []
+  },
+  {
+    "name": "كوفي ميكس",
+    "name_en": "Coffee Mix",
+    "price": 20,
+    "image": "existing:Cappuccino",
+    "category": "القهوة",
+    "variants": []
+  },
+  {
+    "name": "سحلب سادة",
+    "name_en": "Plain Sahlab",
+    "price": 20,
+    "image": "sahlab",
+    "category": "مشروبات ساخنة",
+    "variants": []
+  },
+  {
+    "name": "سحلب فواكه",
+    "name_en": "Fruit Sahlab",
+    "price": 30,
+    "image": "sahlab",
+    "category": "مشروبات ساخنة",
+    "variants": []
+  },
+  {
+    "name": "سحلب أوريو",
+    "name_en": "Oreo Sahlab",
+    "price": 35,
+    "image": "sahlab",
+    "category": "مشروبات ساخنة",
+    "variants": []
+  },
+  {
+    "name": "سحلب مكسرات",
+    "name_en": "Nut Sahlab",
+    "price": 25,
+    "image": "sahlab",
+    "category": "مشروبات ساخنة",
+    "variants": []
+  },
+  {
+    "name": "شوكولاتة ساخنة",
+    "name_en": "Hot Chocolate",
+    "price": 25,
+    "image": "hot-chocolate",
+    "category": "مشروبات ساخنة",
+    "variants": []
+  },
+  {
+    "name": "شوكولاتة ساخنة أوريو",
+    "name_en": "Oreo Hot Chocolate",
+    "price": 30,
+    "image": "hot-chocolate",
+    "category": "مشروبات ساخنة",
+    "variants": []
+  },
+  {
+    "name": "شوكولاتة ساخنة بالجوز",
+    "name_en": "Walnut Hot Chocolate",
+    "price": 30,
+    "image": "hot-chocolate",
+    "category": "مشروبات ساخنة",
+    "variants": []
+  },
+  {
+    "name": "مشروب تفاح ساخن",
+    "name_en": "Hot Apple Cider",
+    "price": 25,
+    "image": "apple-juice",
+    "category": "مشروبات ساخنة",
+    "variants": []
+  },
+  {
+    "name": "فلات وايت",
+    "name_en": "Flat White",
+    "price": 25,
+    "image": "existing:Cappuccino",
+    "category": "القهوة",
+    "variants": []
+  },
+  {
+    "name": "عصير مانجو",
+    "name_en": "Mango Juice",
+    "price": 25,
+    "image": "existing:Mango Juice",
+    "category": "عصائر طازجة",
+    "variants": [
+      {
+        "name": "عادي",
+        "name_en": "Regular",
+        "price": 25
+      },
+      {
+        "name": "سفري",
+        "name_en": "Takeaway",
+        "price": 35
+      }
+    ]
+  },
+  {
+    "name": "عصير فراولة",
+    "name_en": "Strawberry Juice",
+    "price": 25,
+    "image": "existing:Strawberry Juice",
+    "category": "عصائر طازجة",
+    "variants": [
+      {
+        "name": "عادي",
+        "name_en": "Regular",
+        "price": 25
+      },
+      {
+        "name": "سفري",
+        "name_en": "Takeaway",
+        "price": 35
+      }
+    ]
+  },
+  {
+    "name": "عصير جوافة",
+    "name_en": "Guava Juice",
+    "price": 25,
+    "image": "existing:Guava Juice",
+    "category": "عصائر طازجة",
+    "variants": [
+      {
+        "name": "عادي",
+        "name_en": "Regular",
+        "price": 25
+      },
+      {
+        "name": "سفري",
+        "name_en": "Takeaway",
+        "price": 35
+      }
+    ]
+  },
+  {
+    "name": "عصير برتقال",
+    "name_en": "Orange Juice",
+    "price": 20,
+    "image": "existing:Orange Juice",
+    "category": "عصائر طازجة",
+    "variants": [
+      {
+        "name": "عادي",
+        "name_en": "Regular",
+        "price": 20
+      },
+      {
+        "name": "سفري",
+        "name_en": "Takeaway",
+        "price": 35
+      }
+    ]
+  },
+  {
+    "name": "موز باللبن",
+    "name_en": "Banana Milk",
+    "price": 20,
+    "image": "existing:Banana Smoothie",
+    "category": "عصائر طازجة",
+    "variants": [
+      {
+        "name": "عادي",
+        "name_en": "Regular",
+        "price": 20
+      },
+      {
+        "name": "سفري",
+        "name_en": "Takeaway",
+        "price": 35
+      }
+    ]
+  },
+  {
+    "name": "ليمون سادة",
+    "name_en": "Plain Lemon Juice",
+    "price": 15,
+    "image": "lemon",
+    "category": "عصائر طازجة",
+    "variants": [
+      {
+        "name": "عادي",
+        "name_en": "Regular",
+        "price": 15
+      },
+      {
+        "name": "سفري",
+        "name_en": "Takeaway",
+        "price": 25
+      }
+    ]
+  },
+  {
+    "name": "ليمون بالنعناع",
+    "name_en": "Lemon Mint",
+    "price": 20,
+    "image": "existing:Lemon Mint",
+    "category": "عصائر طازجة",
+    "variants": [
+      {
+        "name": "عادي",
+        "name_en": "Regular",
+        "price": 20
+      },
+      {
+        "name": "سفري",
+        "name_en": "Takeaway",
+        "price": 25
+      }
+    ]
+  },
+  {
+    "name": "عصير كيوي",
+    "name_en": "Kiwi Juice",
+    "price": 35,
+    "image": "kiwi",
+    "category": "عصائر طازجة",
+    "variants": [
+      {
+        "name": "عادي",
+        "name_en": "Regular",
+        "price": 35
+      },
+      {
+        "name": "سفري",
+        "name_en": "Takeaway",
+        "price": 40
+      }
+    ]
+  },
+  {
+    "name": "كاجو بالتمر",
+    "name_en": "Cashew and Date Drink",
+    "price": 50,
+    "image": "cashew-dates",
+    "category": "عصائر طازجة",
+    "variants": []
+  },
+  {
+    "name": "عصير كنتالوب",
+    "name_en": "Cantaloupe Juice",
+    "price": 25,
+    "image": "melon",
+    "category": "عصائر طازجة",
+    "variants": [
+      {
+        "name": "عادي",
+        "name_en": "Regular",
+        "price": 25
+      },
+      {
+        "name": "سفري",
+        "name_en": "Takeaway",
+        "price": 30
+      }
+    ]
+  },
+  {
+    "name": "عصير عنب",
+    "name_en": "Grape Juice",
+    "price": 25,
+    "image": "grape",
+    "category": "عصائر طازجة",
+    "variants": [
+      {
+        "name": "عادي",
+        "name_en": "Regular",
+        "price": 25
+      },
+      {
+        "name": "سفري",
+        "name_en": "Takeaway",
+        "price": 35
+      }
+    ]
+  },
+  {
+    "name": "عصير تفاح",
+    "name_en": "Apple Juice",
+    "price": 25,
+    "image": "apple-juice",
+    "category": "عصائر طازجة",
+    "variants": [
+      {
+        "name": "عادي",
+        "name_en": "Regular",
+        "price": 25
+      },
+      {
+        "name": "سفري",
+        "name_en": "Takeaway",
+        "price": 35
+      }
+    ]
+  },
+  {
+    "name": "أفوكادو بالمكسرات",
+    "name_en": "Avocado with Nuts",
+    "price": 50,
+    "image": "avocado",
+    "category": "عصائر طازجة",
+    "variants": []
+  },
+  {
+    "name": "أفوكادو ميكس",
+    "name_en": "Avocado Mix",
+    "price": 65,
+    "image": "avocado",
+    "category": "عصائر طازجة",
+    "variants": []
+  },
+  {
+    "name": "عصير بطيخ",
+    "name_en": "Watermelon Juice",
+    "price": 20,
+    "image": "existing:Watermelon Juice",
+    "category": "عصائر طازجة",
+    "variants": [
+      {
+        "name": "عادي",
+        "name_en": "Regular",
+        "price": 20
+      },
+      {
+        "name": "سفري",
+        "name_en": "Takeaway",
+        "price": 35
+      }
+    ]
+  },
+  {
+    "name": "تمر هندي",
+    "name_en": "Tamarind",
+    "price": 15,
+    "image": "tamarind",
+    "category": "عصائر طازجة",
+    "variants": []
+  },
+  {
+    "name": "عناب",
+    "name_en": "Annab",
+    "price": 15,
+    "image": "hibiscus",
+    "category": "عصائر طازجة",
+    "variants": []
+  },
+  {
+    "name": "بلح باللبن",
+    "name_en": "Dates with Milk",
+    "price": 20,
+    "image": "dates-milk",
+    "category": "عصائر طازجة",
+    "variants": []
+  },
+  {
+    "name": "دوم",
+    "name_en": "Doum",
+    "price": 15,
+    "image": "doum",
+    "category": "عصائر طازجة",
+    "variants": []
+  },
+  {
+    "name": "ليمون ساخن",
+    "name_en": "Hot Lemon",
+    "price": 10,
+    "image": "tea",
+    "category": "أعشاب",
+    "variants": []
+  },
+  {
+    "name": "ينسون",
+    "name_en": "Anise",
+    "price": 10,
+    "image": "tea",
+    "category": "أعشاب",
+    "variants": []
+  },
+  {
+    "name": "كركديه",
+    "name_en": "Hibiscus",
+    "price": 10,
+    "image": "hibiscus",
+    "category": "أعشاب",
+    "variants": []
+  },
+  {
+    "name": "زنجبيل",
+    "name_en": "Ginger",
+    "price": 10,
+    "image": "tea",
+    "category": "أعشاب",
+    "variants": []
+  },
+  {
+    "name": "قرفة",
+    "name_en": "Cinnamon",
+    "price": 10,
+    "image": "tea",
+    "category": "أعشاب",
+    "variants": []
+  },
+  {
+    "name": "قرفة بالحليب",
+    "name_en": "Cinnamon Milk",
+    "price": 20,
+    "image": "sahlab",
+    "category": "أعشاب",
+    "variants": []
+  }
+]

@@ -1,6 +1,8 @@
 "use client";
 
 import { useActionState, useEffect, useMemo, useState, useTransition } from "react";
+import { CATALOG_ACTIVITIES, catalogActivityMatches } from '@/lib/catalog-activities';
+import { CatalogActivityFilter } from '@/components/dashboard/CatalogActivityFilter';
 import { useRouter } from "next/navigation";
 import {
   deleteCatalogCategoryAction,
@@ -23,8 +25,6 @@ import { CatalogImageField } from "./CatalogImageField";
 import { cn } from "@/lib/utils";
 import type { CatalogCategory, CatalogItem } from "@/lib/types";
 
-const UNFILED = "__unfiled__";
-
 /**
  * The shared menu, as the admin builds it: sections in order, dishes inside
  * them. Restaurants browse this same structure at /dashboard/catalog and copy
@@ -43,6 +43,7 @@ export function CatalogManager({
   const [newItemSection, setNewItemSection] = useState<string | null>(null);
   const [editingCategory, setEditingCategory] = useState<CatalogCategory | "new" | null>(null);
   const [query, setQuery] = useState("");
+  const [activity, setActivity] = useState('all');
   const [pending, startTransition] = useTransition();
 
   function run(fn: () => Promise<{ ok: boolean; message?: string } | null>) {
@@ -63,20 +64,21 @@ export function CatalogManager({
       : true;
 
   const sections = useMemo(() => {
-    const list = categories.map((category) => ({
+    const list = categories.filter(category=>catalogActivityMatches(category,activity)).map((category) => ({
       category,
       items: items.filter((item) => item.category_id === category.id && matches(item)),
     }));
-    const unfiled = items.filter((item) => !item.category_id && matches(item));
+    const unfiled = activity === 'all' ? items.filter((item) => !item.category_id && matches(item)) : [];
     return { list, unfiled };
     // `matches` closes over `q`, which is the only thing that changes it.
-  }, [categories, items, q]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [categories, items, q, activity]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const totalShown =
     sections.list.reduce((sum, section) => sum + section.items.length, 0) + sections.unfiled.length;
 
   return (
     <div className="space-y-5">
+      <CatalogActivityFilter value={activity} onChange={setActivity}/>
       {/* toolbar. wraps to two rows on a phone instead of overflowing */}
       <div className="flex flex-wrap items-center gap-2">
         <Button
@@ -358,6 +360,9 @@ function CatalogCategoryModal({
           />
         </Field>
 
+        <fieldset className="space-y-2"><legend className="text-sm font-medium text-ink-800">Business types</legend>
+          <div className="flex flex-wrap gap-3">{CATALOG_ACTIVITIES.map(activity=><label key={activity.id} className="flex items-center gap-2 text-sm"><input type="checkbox" name="business_types" value={activity.id} defaultChecked={(category?.business_types ?? ['restaurant','cafe']).includes(activity.id)}/>{activity.ar} · {activity.en}</label>)}</div>
+        </fieldset>
         <Field label="English name" htmlFor="cc-name-en" hint="Shown when a guest selects English.">
           <Input id="cc-name-en" name="name_en" dir="ltr" maxLength={60} defaultValue={category?.name_en ?? ''}/>
         </Field>

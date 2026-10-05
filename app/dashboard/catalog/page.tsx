@@ -18,7 +18,7 @@ export default async function DashboardCatalogPage() {
   const [{ data: categories, error: categoryError }, { data: items, error: itemError }] = await Promise.all([
     supabase
       .from("catalog_categories")
-      .select("id, name, name_en, description, image_url, sort_order, is_active")
+      .select("id, name, name_en, business_types, description, image_url, sort_order, is_active")
       .is("merged_into_id", null)
       .eq("is_active", true)
       .order("sort_order", { ascending: true })

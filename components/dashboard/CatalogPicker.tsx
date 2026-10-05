@@ -7,6 +7,8 @@ import { SmartImage } from "@/components/ui/SmartImage";
 import { cn } from "@/lib/utils";
 import { useT } from "@/components/i18n/I18nProvider";
 import type { CatalogItem } from "@/lib/types";
+import { CatalogActivityFilter } from './CatalogActivityFilter';
+import { catalogActivityMatches } from '@/lib/catalog-activities';
 
 let cache: CatalogItem[] | null = null;
 let inflight: Promise<CatalogItem[]> | null = null;
@@ -155,24 +157,27 @@ export function CatalogSuggestions({
 }
 
 /** Full catalog browser, opened from the ⓘ button. */
-export function CatalogBrowser({
-  open,
-  onClose,
-  onPick,
-  seed,
-}: {
+type CatalogBrowserProps = {
   open: boolean;
   onClose: () => void;
   onPick: (item: CatalogItem) => void;
   seed?: string;
-}) {
+};
+
+export function CatalogBrowser(props: CatalogBrowserProps) {
+  return props.open ? <CatalogBrowserContent key={props.seed ?? ''} {...props}/> : null;
+}
+
+function CatalogBrowserContent({
+  open,
+  onClose,
+  onPick,
+  seed,
+}: CatalogBrowserProps) {
   const t = useT();
   const [items, setItems] = useState<CatalogItem[] | null>(cache);
-  const [query, setQuery] = useState("");
-
-  useEffect(() => {
-    if (open) setQuery(seed?.trim() ?? "");
-  }, [open, seed]);
+  const [query, setQuery] = useState(seed?.trim() ?? '');
+  const [activity, setActivity] = useState('all');
 
   useEffect(() => {
     if (!open || items) return;
@@ -186,7 +191,7 @@ export function CatalogBrowser({
   }, [open, items]);
 
   const q = query.trim().toLowerCase();
-  const list = (items ?? []).filter((item) => (q ? haystack(item).includes(q) : true));
+  const list = (items ?? []).filter((item) => catalogActivityMatches(item,activity) && (q ? haystack(item).includes(q) : true));
 
   return (
     <Modal
@@ -196,6 +201,7 @@ export function CatalogBrowser({
       description={t("products.catalogSub")}
       size="lg"
     >
+      <div className="mb-4"><CatalogActivityFilter value={activity} onChange={setActivity}/></div>
       <div className="relative mb-4">
         <Icon.search className="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
         <input
