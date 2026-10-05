@@ -1,4 +1,5 @@
 "use client";
+import {alhamdUnitLabel} from "@/lib/alhamd-units";
 
 import { useImperativeHandle, type Ref, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Icon } from "@/components/ui/Icons";
@@ -86,7 +87,7 @@ export function ThermalPrinter({ restaurantId, restaurantName, currency, receipt
     lock.current = true; setBusy(true); setMessage(label('جاري تجهيز الإيصال…', 'Preparing receipt…'));
     if (browser || settings.mode === 'browser' || !settings.token || !settings.printer) {
       try {
-        await printBrowserReceipt(data, restaurantName, currency, ar, settings.width);
+        await printBrowserReceipt({...data,lines:data.lines.map(line=>({...line,variant:alhamdUnitLabel(line.variant,restaurantId)}))}, restaurantName, currency, ar, settings.width);
         setMessage(label('تم طلب فتح نافذة الطباعة. اختار الطابعة ومقاس الورق واضغط طباعة. لو النافذة مظهرتش أو اتلغت، اضغط طباعة الإيصال تاني؛ الطلب محفوظ.', 'Print dialog requested. Select the printer and paper size, then Print. If it did not open or was cancelled, print the receipt again; the order is saved.'));
         if (!test) await journal(data, 'browser');
       } catch {
@@ -98,7 +99,7 @@ export function ThermalPrinter({ restaurantId, restaurantName, currency, receipt
     // Reuse the job ID after a lost response so retrying cannot enqueue twice.
     if (test || job.current?.number !== data.number) job.current = { number: data.number, id: crypto.randomUUID() };
     try {
-      const bitmap = await receiptRaster(data, restaurantName, currency, ar, settings.width);
+      const bitmap = await receiptRaster({...data,lines:data.lines.map(line=>({...line,variant:alhamdUnitLabel(line.variant,restaurantId)}))}, restaurantName, currency, ar, settings.width);
       await bridgeRequest(settings, '/print', { ...bitmap, printer: settings.printer, cut: settings.cut, jobId: job.current!.id });
       job.current = null;
       if (!test) await journal(data, 'thermal');

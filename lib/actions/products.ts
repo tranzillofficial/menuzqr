@@ -1,5 +1,6 @@
 "use server";
 
+import {isAlhamd,validPackagingName} from "@/lib/alhamd-units";
 import { createCategoryQuickAction } from "./categories";
 import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -88,6 +89,9 @@ export async function saveProductAction(
     return fail(parsedVariants.message, { variants: parsedVariants.message });
   }
   const variants = parsedVariants.variants;
+  if (isAlhamd(restaurant) && (variants.some(v => !validPackagingName(v.name)) || new Set(variants.map(v=>v.name.startsWith('كرتونة')?'كرتونة':v.name)).size !== variants.length || variants.length > 2)) {
+    return fail('اختار علبة أو كرتونة، واكتب عدد العلب الصحيح في الكرتونة. لكل وحدة سعر واحد.', {variants:'راجع وحدة البيع وعدد العلب.'});
+  }
   if (variants.length === 0) {
     return fail("Add at least one size or price option.", {
       variants: "At least one size with a price is required.",

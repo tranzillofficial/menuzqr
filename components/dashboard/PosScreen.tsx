@@ -1,4 +1,5 @@
 "use client";
+import {ALHAMD_ID,alhamdUnitLabel} from "@/lib/alhamd-units";
 
 import { categoryDescendants } from "@/lib/category-tree";
 import { useRef, useState, useTransition } from 'react';
@@ -61,7 +62,7 @@ export function PosScreen({ restaurantId, restaurantName, currency, products, ca
     setCart(previous => {
       const existing = previous.find(line => line.variantId === variant.id);
       return existing ? previous.map(line => line.variantId === variant.id ? { ...line, quantity: Math.min(99, line.quantity + 1) } : line)
-        : [...previous, { variantId: variant.id, name: product.name, variant: variant.name, price: grossPrice(Number(variant.price), product), basePrice: Number(variant.price), rate: vatRate(taxSettings.tax_mode,taxSettings.vat_registered,product.vat_code,taxSettings.tax_rates), quantity: 1 }];
+        : [...previous, { variantId: variant.id, name: product.name, variant: alhamdUnitLabel(variant.name,restaurantId), price: grossPrice(Number(variant.price), product), basePrice: Number(variant.price), rate: vatRate(taxSettings.tax_mode,taxSettings.vat_registered,product.vat_code,taxSettings.tax_rates), quantity: 1 }];
     });
     setAnnouncement(`${label('اتضاف للطلب', 'Added to order')}: ${product.name}`);
   }
@@ -147,7 +148,7 @@ export function PosScreen({ restaurantId, restaurantName, currency, products, ca
               <div className="relative aspect-[4/3] bg-white"><SmartImage src={product.image_url} alt={product.name} sizes="(max-width: 640px) 33vw, 180px" className="p-2" />{added > 0 && <span className="absolute end-1 top-1 rounded-full bg-brand-600 px-2 py-0.5 text-[10px] font-semibold text-white">{added} {label('في الطلب', 'added')}</span>}</div>
               <div className="space-y-2 p-2"><h2 className="min-h-8 text-xs font-semibold leading-4">{product.name}</h2>
                 {variants.length === 0 && <p className="py-2 text-xs text-ink-400">{label('غير متاح حاليًا', 'Unavailable')}</p>}
-                {variants.map(variant => <button key={variant.id} type="button" disabled={pending || (cart.find(line => line.variantId === variant.id)?.quantity ?? 0) >= 99} onClick={() => add(product, variant)} aria-label={`${label('إضافة', 'Add')} ${product.name} ${variant.name}`} className="flex min-h-11 w-full flex-wrap items-center justify-between gap-1 rounded-lg bg-brand-50 px-2 py-2 text-xs text-brand-800 hover:bg-brand-100 active:bg-brand-200 disabled:opacity-40"><span>{variants.length > 1 ? `+ ${variant.name}` : label('+ إضافة', '+ Add')}</span><strong className="whitespace-nowrap">{money(grossPrice(Number(variant.price), product))}</strong></button>)}
+                {variants.map(variant => <button key={variant.id} type="button" disabled={pending || (cart.find(line => line.variantId === variant.id)?.quantity ?? 0) >= 99} onClick={() => add(product, variant)} aria-label={`${label('إضافة', 'Add')} ${product.name} ${alhamdUnitLabel(variant.name,restaurantId)}`} className="flex min-h-11 w-full flex-wrap items-center justify-between gap-1 rounded-lg bg-brand-50 px-2 py-2 text-xs text-brand-800 hover:bg-brand-100 active:bg-brand-200 disabled:opacity-40"><span>{(variants.length > 1 || restaurantId === ALHAMD_ID) && alhamdUnitLabel(variant.name,restaurantId) ? `+ ${alhamdUnitLabel(variant.name,restaurantId)}` : label('+ إضافة', '+ Add')}</span><strong className="whitespace-nowrap">{money(grossPrice(Number(variant.price), product))}</strong></button>)}
               </div>
             </article>;
           })}

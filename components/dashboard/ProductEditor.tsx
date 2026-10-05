@@ -1,5 +1,6 @@
 "use client";
 
+import {isAlhamd,packagingDraft,packagingName} from "@/lib/alhamd-units";
 import { moduleEnabled } from "@/lib/business-modules";
 import { CategoryPicker } from "./CategoryPicker";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
@@ -24,22 +25,23 @@ type VariantDraft = {
   id?: string;
   name: string;
   name_en?: string;
+  boxes?: string;
   price: string;
   is_active: boolean;
 };
 
 const newKey = () => Math.random().toString(36).slice(2);
 
-function toDrafts(product: ProductWithVariants | null): VariantDraft[] {
+function toDrafts(product: ProductWithVariants | null, packaging = false): VariantDraft[] {
   if (!product || product.product_variants.length === 0) {
-    return [{ key: newKey(), name: "Regular", price: "", is_active: true }];
+    return [{ key: newKey(), name: packaging ? "" : "Regular", boxes: "", price: "", is_active: true }];
   }
   return [...product.product_variants]
     .sort((a, b) => a.sort_order - b.sort_order)
     .map((v) => ({
       key: newKey(),
       id: v.id,
-      name: v.name,
+      ...(packaging ? packagingDraft(v.name) : {name:v.name}),
       name_en: v.name_en ?? '',
       price: String(v.price),
       is_active: v.is_active,
@@ -62,6 +64,7 @@ export function ProductEditor({
   const t = useT();
   const { locale } = useI18n();
   const label = (ar: string, en: string) => locale === "ar" ? ar : en;
+  const packaging = isAlhamd(restaurant);
   const [state, formAction] = useActionState(saveProductAction, null);
 
   const [name, setName] = useState(product?.name ?? "");
@@ -76,7 +79,7 @@ export function ProductEditor({
     product?.image_source ?? "none"
   );
   const [isActive, setIsActive] = useState(product?.is_active ?? true);
-  const [variants, setVariants] = useState<VariantDraft[]>(toDrafts(product));
+  const [variants, setVariants] = useState<VariantDraft[]>(toDrafts(product, packaging));
 
   // Categories can be created inline, so the editor keeps its own list rather
   // than trusting the prop. the owner must never lose a half-filled form just
@@ -129,14 +132,14 @@ export function ProductEditor({
       setVariants(
         item.variants.map((v) => ({
           key: newKey(),
-          name: v.name,
+          ...(packaging ? packagingDraft(v.name) : {name:v.name}),
           name_en: v.name_en ?? '',
           price: v.price != null ? String(v.price) : item.suggested_price != null ? String(item.suggested_price) : "",
           is_active: true,
         }))
       );
     } else {
-      setVariants([{key:newKey(),name:'عادي',name_en:'Regular',price:item.suggested_price != null ? String(item.suggested_price) : '',is_active:true}]);
+      setVariants([{key:newKey(),name:packaging?'':'عادي',name_en:packaging?'':'Regular',price:item.suggested_price != null ? String(item.suggested_price) : '',is_active:true}]);
     }
     setCatalogSectionName(item.category_name ?? "");
     if (item.category_name) {
@@ -172,8 +175,8 @@ export function ProductEditor({
       .filter((v) => v.name.trim())
       .map((v) => ({
         id: v.id,
-        name: v.name.trim(),
-        name_en: v.name_en?.trim() ?? '',
+        name: packaging ? packagingName(v.name,v.boxes ?? '') : v.name.trim(),
+        name_en: packaging ? (v.name === 'علبة' ? 'Box' : `Carton (${v.boxes} boxes)`) : v.name_en?.trim() ?? '',
         price: v.price.trim(),
         is_active: v.is_active,
       }))
@@ -356,15 +359,16 @@ export function ProductEditor({
         <div className="rounded-2xl border border-ink-200 p-4">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h3 className="text-sm font-semibold text-ink-900">{t("products.sizesTitle")}</h3>
+              <h3 className="text-sm font-semibold text-ink-900">{packaging ? label('وحدات البيع والأسعار','Units and prices') : t('products.sizesTitle')}</h3>
               <p className="text-xs text-ink-500">
-                {t("products.sizesSub")}
+                {packaging ? label('اختار علبة أو كرتونة، وحدد سعر كل وحدة.','Choose box or carton and set the unit price.') : t('products.sizesSub')}
               </p>
             </div>
             <Button
               type="button"
               size="sm"
               variant="secondary"
+              disabled={packaging && variants.length >= 2}
               onClick={() =>
                 setVariants((list) => [
                   ...list,
@@ -373,13 +377,27 @@ export function ProductEditor({
               }
             >
               <Icon.plus className="size-3.5" />
-              {t("products.addSize")}
+              {packaging ? label('إضافة وحدة بيع','Add selling unit') : t('products.addSize')}
             </Button>
           </div>
 
           <ul className="space-y-2">
             {variants.map((variant, index) => (
-              <li key={variant.key} className="flex flex-wrap items-center gap-2">
+              <li key={variant.key} className="grid min-w-0 grid-cols-1 gap-3 rounded-xl bg-ink-50 p-3 sm:grid-cols-2">
+                {packaging ? <>
+                  <label className="block min-w-0 space-y-1.5 text-sm font-medium">{label('وحدة البيع','Selling unit')}
+                    <select required value={variant.name} onChange={e=>updateVariant(variant.key,{name:e.target.value,boxes:e.target.value==='كرتونة'?variant.boxes:''})} className="h-12 w-full rounded-xl border border-ink-200 bg-white px-3 text-base">
+                      <option value="">{label('اختار الوحدة','Choose a unit')}</option><option value="علبة">{label('علبة','Box')}</option><option value="كرتونة">{label('كرتونة','Carton')}</option>
+                    </select>
+                  </label>
+                  <label className="block min-w-0 space-y-1.5 text-sm font-medium">{label('سعر الوحدة','Unit price')} ({symbol})
+                    <input required type="number" min="0" step="0.01" inputMode="decimal" value={variant.price} onChange={e=>updateVariant(variant.key,{price:e.target.value})} placeholder="0.00" className="h-12 w-full rounded-xl border border-ink-200 bg-white px-3 text-base"/>
+                  </label>
+                  {variant.name==='كرتونة'&&<label className="block min-w-0 space-y-1.5 text-sm font-medium sm:col-span-2">{label('عدد العلب في الكرتونة','Boxes per carton')}
+                    <input required type="number" min="1" max="9999" step="1" inputMode="numeric" value={variant.boxes ?? ''} onChange={e=>updateVariant(variant.key,{boxes:e.target.value})} placeholder={label('مثال: 12','Example: 12')} className="h-12 w-full rounded-xl border border-ink-200 bg-white px-3 text-base"/>
+                    <span className="block text-xs font-normal text-ink-600">{label('العدد للتوضيح، والسعر هو سعر الكرتونة بالكامل.','The price is for the whole carton.')}</span>
+                  </label>}
+                </> : <div className="grid min-w-0 grid-cols-1 gap-3 sm:col-span-2 sm:grid-cols-3">
                 <input
                   aria-label={`Size ${index + 1} name`}
                   value={variant.name}
@@ -399,12 +417,14 @@ export function ProductEditor({
                     value={variant.price}
                     onChange={(e) => updateVariant(variant.key, { price: e.target.value })}
                     placeholder="0.00"
-                    className="w-24 bg-transparent px-2 py-2 text-sm focus:outline-none"
+                    className="min-w-0 w-full bg-transparent px-2 py-3 text-base focus:outline-none"
                   />
                 </div>
+                </div>}
+
                 <Switch
                   checked={variant.is_active}
-                  label={`Show size ${index + 1}`}
+                  label={packaging ? label(`إظهار الوحدة ${index+1}`,`Show unit ${index+1}`) : `Show size ${index + 1}`}
                   onChange={(v) => updateVariant(variant.key, { is_active: v })}
                 />
                 <button
