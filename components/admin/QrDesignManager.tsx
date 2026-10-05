@@ -19,6 +19,7 @@ const LAYOUTS = [
   { id: "counter", label: "Counter card", note: "Portrait, big name on top" },
   { id: "square", label: "Clean square", note: "Square, minimal" },
   { id: "tent", label: "Table tent", note: "Portrait with a table badge" },
+  { id: "cafe", label: "Café poster", note: "Warm coffee-shop poster; table label is detachable" },
 ] as const;
 
 const SCOPES = [
@@ -87,7 +88,7 @@ export function QrDesignManager({ templates }: { templates: QrTemplate[] }) {
                   url: "https://menuzqr.shop/demo/menu",
                   title: "Cairo Café",
                   subtitle: "12 Nile St",
-                  badge: template.layout === "tent" ? "Table 7" : null,
+                  badge: template.layout === "tent" || template.layout === "cafe" ? "Table 7" : null,
                   style: toStyle(template),
                 }}
               />
@@ -287,7 +288,7 @@ function DesignModal({
               url: "https://menuzqr.shop/demo/menu",
               title: "Cairo Café",
               subtitle: "12 Nile St",
-              badge: draft.layout === "tent" ? "Table 7" : null,
+              badge: draft.layout === "tent" || draft.layout === "cafe" ? "Table 7" : null,
               style: toStyle({
                 layout: draft.layout as QrTemplate["layout"],
                 bg_color: draft.bg_color,
