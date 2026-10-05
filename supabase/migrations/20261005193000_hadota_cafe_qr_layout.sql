@@ -7,6 +7,9 @@ alter table public.qr_templates
   add constraint qr_templates_layout_check
   check (layout in ('counter', 'square', 'tent', 'cafe'));
 
+alter table public.restaurants
+  add column if not exists qr_template_id uuid references public.qr_templates(id) on delete set null;
+
 insert into public.qr_templates
   (name, layout, scope, bg_color, panel_color, accent_color, text_color, qr_color, headline, cta_text, is_active, sort_order)
 values
