@@ -32,6 +32,7 @@ export type Restaurant = TaxSettings & {
   language: string;
   restaurant_type: string | null;
   menu_theme: MenuThemeId;
+  qr_template_id?: string | null;
   ordering_enabled: boolean;
   waiter_calls_enabled: boolean;
   status: RestaurantStatus;
