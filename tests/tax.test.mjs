@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {taxAmounts,vatRate,displayPrice,summarizeSales} from '../lib/tax.ts';
+import {orderTaxAmounts,taxAmounts,vatRate,displayPrice,summarizeSales} from '../lib/tax.ts';
 import {businessDayRange} from '../lib/business-time.ts';
 test('Inclusive 20%, 5%, UAE and Saudi prices preserve gross and remove the right VAT',()=>{
  assert.deepEqual(taxAmounts(120,1,20,true),{net:100,vat:20,gross:120});
@@ -36,5 +36,13 @@ test('Egypt and configurable per-market rates support all three price choices',(
  assert.deepEqual(taxAmounts(100,1,14,false),{net:100,vat:14,gross:114});
  assert.deepEqual(taxAmounts(100,1,14,true),{net:87.72,vat:12.28,gross:100});
  assert.equal(vatRate('uk',true,'standard',{uk:{standard:18,reduced:3}}),18);
- assert.equal(vatRate('egypt',true,'exempt',{egypt:{standard:14,reduced:5}}),0);
+ assert.equal(vatRate('egypt',true,'exempt',{egypt:{standard:14,reduced:5}}),14);
+});
+
+test('Egypt rounds VAT once on the invoice total and respects disabled tax',()=>{
+ const lines=[{price:0.03,quantity:1,rate:14},{price:0.03,quantity:1,rate:14}];
+ const settings={tax_mode:'egypt',vat_registered:true,prices_include_vat:false};
+ assert.deepEqual(orderTaxAmounts(lines,settings),{net:0.06,vat:0.01,gross:0.07});
+ assert.deepEqual(orderTaxAmounts(lines,{...settings,prices_include_vat:true}),{net:0.05,vat:0.01,gross:0.06});
+ assert.deepEqual(orderTaxAmounts(lines,{...settings,vat_registered:false}),{net:0.06,vat:0,gross:0.06});
 });

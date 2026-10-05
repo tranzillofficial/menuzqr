@@ -139,7 +139,7 @@ export const getPublicMenu = cache(async function getPublicMenu(
     data: {
       menu_path:domain?"/menu":`/${slug}/menu`,
       payments: payments ?? undefined,
-      restaurant: { enabled_modules: restaurant.enabled_modules, business_kind: restaurant.business_kind, id: restaurant.id, name: restaurant.name, slug: restaurant.slug, description: restaurant.description, logo_url: restaurant.logo_url, cover_url: restaurant.cover_url, phone: restaurant.phone, address: restaurant.address, currency: restaurant.currency, language: restaurant.language, menu_theme: restaurant.menu_theme, ordering_enabled: restaurant.ordering_enabled, waiter_calls_enabled: restaurant.waiter_calls_enabled, prices_include_vat: restaurant.prices_include_vat, menu_prices_include_vat: restaurant.menu_prices_include_vat, vat_registered: restaurant.vat_registered },
+      restaurant: { enabled_modules: restaurant.enabled_modules, business_kind: restaurant.business_kind, id: restaurant.id, name: restaurant.name, slug: restaurant.slug, description: restaurant.description, logo_url: restaurant.logo_url, cover_url: restaurant.cover_url, phone: restaurant.phone, address: restaurant.address, currency: restaurant.currency, language: restaurant.language, menu_theme: restaurant.menu_theme, ordering_enabled: restaurant.ordering_enabled, waiter_calls_enabled: restaurant.waiter_calls_enabled, prices_include_vat: restaurant.prices_include_vat, menu_prices_include_vat: restaurant.menu_prices_include_vat, vat_registered: restaurant.vat_registered, tax_mode: restaurant.tax_mode, tax_rates: restaurant.tax_rates },
       categories: moduleEnabled(restaurant,"subcategories") ? grouped : grouped.filter((c) => c.products.length > 0),
     },
   };

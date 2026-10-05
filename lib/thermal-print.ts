@@ -32,10 +32,12 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
   canvas.height = 1;
   const context = canvas.getContext('2d');
   if (!context) throw new Error('Receipt rendering is unavailable');
-  const font = '24px Arial, sans-serif';
+  const font = '32px Arial, sans-serif';
+  const rowHeight = 48;
   context.font = font;
   const rows: { text: string; bold?: boolean; center?: boolean }[] = [];
   const wrap = (text: string, bold = false, center = false) => {
+    context.font = `${bold ? 'bold ' : ''}${font}`;
     let line = '';
     for (const word of text.replace(/[\r\n]/g, ' ').split(/\s+/)) {
       if (context.measureText(`${line} ${word}`).width > dots - 32 && line) {
@@ -68,16 +70,16 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
   rows.push({ text: '________________________', center: true });
   for (const line of receipt.lines) {
     wrap(`${line.name} ${line.variant}`, true);
-    if(fiscal?.registered) wrap(`${line.code ?? ''} ${line.rate ?? 0}% | VAT ${money(sign * (line.vat ?? 0))}`);
-    if(fiscal) wrap(`${line.quantity} × ${money((line.net ?? 0) / line.quantity)} ${label('قبل VAT', 'ex VAT')}`);
+    if(fiscal?.registered && fiscal.mode !== 'egypt') wrap(`${line.code ?? ''} ${line.rate ?? 0}% | VAT ${money(sign * (line.vat ?? 0))}`);
+    if(fiscal && fiscal.mode !== 'egypt') wrap(`${line.quantity} × ${money((line.net ?? 0) / line.quantity)} ${label('قبل VAT', 'ex VAT')}`);
     else wrap(`${line.quantity} × ${money(line.price)}`);
-    wrap(`${label('إجمالي الصنف', 'Line total')}: ${money(sign * (line.gross ?? line.price * line.quantity))}`);
+    wrap(`${label('إجمالي الصنف', 'Line total')}: ${money(sign * (fiscal?.mode === 'egypt' ? line.price * line.quantity : line.gross ?? line.price * line.quantity))}`);
   }
   rows.push({ text: '________________________', center: true });
-  wrap(`${label('قبل الضريبة', 'Subtotal')}: ${fiscal ? money(sign * fiscal.net) : "Unknown"}`);
-  wrap(`VAT: ${fiscal ? money(sign * fiscal.vat) : "Unknown"}`);
+  wrap(`${label('قبل الضريبة', 'Subtotal')}: ${money(sign * (fiscal?.net ?? receipt.total))}`);
+  if (fiscal?.registered) wrap(`${label('الضريبة', 'VAT')}: ${money(sign * fiscal.vat)}`, true);
   wrap(`${label('الإجمالي', 'Total')}: ${money(sign * receipt.total)}`, true);
-  for(const b of fiscal?.breakdown ?? []) wrap(`${b.code} ${b.rate}% | Net ${money(sign*b.net)} | VAT ${money(sign*b.vat)} | Gross ${money(sign*b.gross)}`);
+  for(const b of fiscal?.mode === 'egypt' ? [] : fiscal?.breakdown ?? []) wrap(`${b.code} ${b.rate}% | Net ${money(sign*b.net)} | VAT ${money(sign*b.vat)} | Gross ${money(sign*b.gross)}`);
   if(fiscal?.mode === 'saudi') wrap(label('إيصال بيع. الربط بالفوترة الإلكترونية غير مفعّل.', 'Sales receipt. Electronic invoicing is not connected.'));
   else if(fiscal?.registered && fiscal.invoice_kind === 'receipt') wrap(label('ليس فاتورة ضريبية كاملة.', 'Not a full VAT invoice.'));
   wrap(`${label('الدفع', 'Payment')}: ${receipt.fiscalState==='unpaid'?label('غير مدفوع','Unpaid'):receipt.payment === 'cash' ? label('كاش', 'Cash') : receipt.payment === 'transfer' ? label('تحويل خارجي — تأكيد يدوي','External transfer — manually confirmed') : label('بطاقة', 'Card')}`);
@@ -87,7 +89,7 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
   }
   if (receipt.note) wrap(receipt.note);
   wrap(label('شكرًا لزيارتك', 'Thank you for visiting'), false, true);
-  canvas.height = rows.length * 36 + 32;
+  canvas.height = rows.length * rowHeight + 32;
   if (canvas.height > 20000) throw new Error('Receipt is too long');
   context.fillStyle = '#fff'; context.fillRect(0, 0, dots, canvas.height);
   context.fillStyle = '#000'; context.textBaseline = 'top';
@@ -95,7 +97,7 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
   rows.forEach((row, index) => {
     context.font = `${row.bold ? 'bold ' : ''}${font}`;
     context.textAlign = row.center ? 'center' : ar ? 'right' : 'left';
-    context.fillText(row.text, row.center ? dots / 2 : ar ? dots - 16 : 16, index * 36 + 16, dots - 32);
+    context.fillText(row.text, row.center ? dots / 2 : ar ? dots - 16 : 16, index * rowHeight + 16, dots - 32);
   });
   return canvas;
 }
@@ -136,7 +138,7 @@ export async function printBrowserReceipt(receipt: PosReceipt, restaurantName: s
     // One text row per image permits page breaks without clipping a long receipt.
     const images: HTMLImageElement[] = [];
     for (let y = 0; y < canvas.height;) {
-      const height = Math.min(y === 0 ? 16 : 36, canvas.height - y);
+      const height = Math.min(y === 0 ? 16 : 48, canvas.height - y);
       const strip = document.createElement('canvas');
       strip.width = canvas.width; strip.height = height;
       strip.getContext('2d')!.drawImage(canvas, 0, y, canvas.width, height, 0, 0, canvas.width, height);

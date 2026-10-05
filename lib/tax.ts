@@ -6,6 +6,7 @@ export type MarketRates = Partial<Record<TaxMode, { standard: number; reduced: n
 export type TaxSettings = { tax_mode: TaxMode; tax_rates?: MarketRates; menu_prices_include_vat?: boolean; vat_registered: boolean; vat_number: string | null; prices_include_vat: boolean; legal_name: string | null; tax_address: string | null; business_timezone: string };
 export const MARKET = { none: { currency: '', timezone: 'Africa/Cairo', standard: 0 }, uk: { currency: 'GBP', timezone: 'Europe/London', standard: 20 }, uae: { currency: 'AED', timezone: 'Asia/Dubai', standard: 5 }, saudi: { currency: 'SAR', timezone: 'Asia/Riyadh', standard: 15 }, egypt: { currency: 'EGP', timezone: 'Africa/Cairo', standard: 14 } };
 export function vatRate(mode: TaxMode, registered: boolean, code: VatCode, rates?: MarketRates) {
+  if (registered && mode === 'egypt') return rates?.egypt?.standard ?? MARKET.egypt.standard;
   if (!registered || mode === 'none' || code === 'zero' || code === 'exempt') return 0;
   if (code === 'reduced') return rates?.[mode]?.reduced ?? (mode === 'uk' ? 5 : 0);
   return rates?.[mode]?.standard ?? MARKET[mode].standard;
@@ -50,4 +51,16 @@ export function summarizeSales(events: FinancialEvent[]): SalesSummary {
     for (const b of r.breakdown) { b.net = round(b.net); b.vat = round(b.vat); b.gross = round(b.gross); }
   }
   return { currencies: [...currencies.values()], saleCount: events.filter(e => e.kind === 'sale').length, refundCount: events.filter(e => e.kind === 'refund').length, voidCount: events.filter(e => e.kind === 'void').length };
+}
+
+// Egypt uses one invoice-wide tax amount, rounded once after summing prices.
+export function orderTaxAmounts(lines: { price: number; quantity: number; rate: number }[], settings: Pick<TaxSettings, 'tax_mode' | 'vat_registered' | 'tax_rates' | 'prices_include_vat'>) {
+  if (settings.tax_mode === 'egypt') {
+    const subtotal = lines.reduce((sum, line) => sum + Math.round(line.price * line.quantity * 100), 0) / 100;
+    return taxAmounts(subtotal, 1, vatRate('egypt', settings.vat_registered, 'standard', settings.tax_rates), settings.prices_include_vat);
+  }
+  return lines.reduce((sum, line) => {
+    const amount = taxAmounts(line.price, line.quantity, line.rate, settings.prices_include_vat);
+    return { net: Math.round((sum.net + amount.net) * 100) / 100, vat: Math.round((sum.vat + amount.vat) * 100) / 100, gross: Math.round((sum.gross + amount.gross) * 100) / 100 };
+  }, { net: 0, vat: 0, gross: 0 });
 }

@@ -27,6 +27,7 @@ alter table products add column category_id uuid;
 create table restaurant_settings(restaurant_id uuid primary key,sound_enabled boolean,show_prices boolean,show_ingredients boolean);
 grant all on restaurant_settings to authenticated,service_role;grant update on restaurants to authenticated;`);
 await db.exec(readFileSync(new URL('../supabase/migrations/20261004200000_online_orders.sql',import.meta.url),'utf8'));
+await db.exec(readFileSync(new URL('../supabase/migrations/20261005230408_invoice_total_tax.sql',import.meta.url),'utf8'));
 console.log('Migration compiled on PostgreSQL');
 const actor='10000000-0000-4000-8000-000000000001',r='20000000-0000-4000-8000-000000000001',other='20000000-0000-4000-8000-000000000002';
 await db.exec(`insert into profiles values('${actor}','Test cashier','test@example.com');insert into restaurants(id,owner_id,name,slug)values('${r}','${actor}','Test','test'),('${other}','${actor}','Other','other');insert into restaurant_members(restaurant_id,user_id,role)values('${r}','${actor}','owner');update restaurants set tax_mode='uk',vat_registered=true,vat_number='GB123456789',legal_name='Test Ltd',tax_address='1 Test Street',business_timezone='Europe/London' where id='${r}';`);
@@ -76,6 +77,16 @@ const egypt=await sale('50000000-0000-4000-8000-000000000021',[{variantId:vars[2
 await db.exec(`update restaurants set tax_rates='{"egypt":{"standard":10,"reduced":0}}',prices_include_vat=true where id='${r}';`);
 const incl=await sale('50000000-0000-4000-8000-000000000022',[{variantId:vars[2],quantity:1}]);assert.equal(incl.total,100);assert.equal(incl.fiscal_snapshot.vat,9.09);
 assert.equal((await db.query('select fiscal_snapshot from orders where id=$1',[egypt.id])).rows[0].fiscal_snapshot.vat,14);
+await db.exec(`update restaurants set tax_rates='{"egypt":{"standard":14}}',prices_include_vat=false where id='${r}';update product_variants set price=0.03 where id in ('${vars[0]}','${vars[1]}');`);
+const totalRounded=await sale('50000000-0000-4000-8000-000000000091',[{variantId:vars[0],quantity:1},{variantId:vars[1],quantity:1}]);
+assert.equal(totalRounded.fiscal_snapshot.vat,0.01);assert.equal(totalRounded.total,0.07);
+const allocated=(await db.query('select sum(vat_total) as vat,sum(line_total) as gross from order_items where order_id=$1',[totalRounded.id])).rows[0];
+assert.equal(Number(allocated.vat),0.01);assert.equal(Number(allocated.gross),0.07);
+await db.exec(`update restaurants set prices_include_vat=true where id='${r}';`);
+const inclusiveRounded=await sale('50000000-0000-4000-8000-000000000092',[{variantId:vars[0],quantity:1},{variantId:vars[1],quantity:1}]);
+assert.equal(inclusiveRounded.fiscal_snapshot.vat,0.01);assert.equal(inclusiveRounded.total,0.06);
+await db.exec(`update restaurants set vat_registered=false where id='${r}';`);
+const untaxed=await sale('50000000-0000-4000-8000-000000000093',[{variantId:vars[0],quantity:1},{variantId:vars[1],quantity:1}]);assert.equal(untaxed.fiscal_snapshot.vat,0);assert.equal(untaxed.total,0.06);
 await assert.rejects(()=>db.exec(`update restaurants set tax_rates='{"egypt":{"standard":-1}}' where id='${r}'`),/Invalid rate/);
 console.log('PASS: Egypt 14%, custom rates, exclusive 100 + 14, inclusive 100, immutable previous sale and invalid rates');
 async function online(req='50000000-0000-4000-8000-000000000031',session='online-session-123456',variant=vars[2],customer={name:'Buyer',phone:'01012345678'},payment=null){return (await db.query("select create_fiscal_order(null,$1,$2,$3,null,'', $4,null,$5,true,$6) as o",[r,req,JSON.stringify([{variantId:variant,quantity:1}]),payment,JSON.stringify(customer),session])).rows[0].o;}

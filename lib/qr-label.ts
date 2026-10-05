@@ -2,7 +2,7 @@
 
 import QRCode from "qrcode";
 
-export type QrLayout = "counter" | "square" | "tent" | "cafe";
+export type QrLayout = "counter" | "square" | "tent" | "cafe" | "plain";
 
 export type QrStyle = {
   layout: QrLayout;
@@ -33,6 +33,7 @@ const ASPECT: Record<QrLayout, number> = {
   square: 1,
   tent: 1.32,
   cafe: 1.5,
+  plain: 1,
 };
 
 export const LABEL_SIZES = [
@@ -142,6 +143,17 @@ export async function renderQrLabel(input: QrLabelInput): Promise<HTMLCanvasElem
   const cx = W / 2;
   const headline = (style.headline ?? "").toUpperCase();
   const cta = style.ctaText ?? "";
+
+  if (style.layout === "plain") {
+    const qr = document.createElement("canvas");
+    await QRCode.toCanvas(qr, input.url, {
+      errorCorrectionLevel: "Q", margin: 4, width: Math.round(W * 0.86),
+      color: { dark: style.qrColor, light: style.bgColor },
+    });
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(qr, (W - qr.width) / 2, (H - qr.height) / 2);
+    return canvas;
+  }
 
   if (style.layout === "cafe") {
     // Preserve the supplied artwork, replacing only its sample QR. The table

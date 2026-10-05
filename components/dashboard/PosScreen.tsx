@@ -11,7 +11,7 @@ import { checkoutPos, getPosTables } from '@/lib/actions/pos';
 import { CategoryPicker } from "./CategoryPicker";
 import { ThermalPrinter, type ReceiptPrinterHandle } from '@/components/dashboard/ThermalPrinter';
 import type { PosReceipt } from '@/lib/thermal-print';
-import { displayPrice, taxAmounts, vatRate, type TaxSettings } from '@/lib/tax';
+import { displayPrice, orderTaxAmounts, taxAmounts, vatRate, type TaxSettings } from '@/lib/tax';
 import { formatMoney, cn } from '@/lib/utils';
 import type { ProductWithVariants, Category, RestaurantTable } from '@/lib/types';
 
@@ -45,9 +45,9 @@ export function PosScreen({ restaurantId, restaurantName, currency, products, ca
   const printer = useRef<ReceiptPrinterHandle>(null);
   const request = useRef<string | null>(null);
   const money = (value: number) => formatMoney(value, currency);
-  const totals = cart.map(line => taxAmounts(line.basePrice, line.quantity, line.rate, taxSettings.prices_include_vat));
-  const total = Math.round(totals.reduce((sum, line) => sum + line.gross, 0) * 100) / 100;
-  const vat = Math.round(totals.reduce((sum, line) => sum + line.vat, 0) * 100) / 100;
+  const totals = orderTaxAmounts(cart.map(line => ({ price: line.basePrice, quantity: line.quantity, rate: line.rate })), taxSettings);
+  const total = totals.gross;
+  const vat = totals.vat;
   const grossPrice = (price: number, product: ProductWithVariants) => displayPrice(Number(price), product.vat_code, taxSettings);
   const count = cart.reduce((sum, line) => sum + line.quantity, 0);
   const shown = products.filter(product =>

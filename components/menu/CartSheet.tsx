@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { cartLineDisplay, cartLineVat, useMenu } from "./MenuContext";
+import { cartLineDisplay, useMenu } from "./MenuContext";
 import { placeOrderAction, placeOnlineOrderAction } from "@/lib/actions/orders";
 import { formatMoney } from "@/lib/utils";
 import { useT, useI18n } from "@/components/i18n/I18nProvider";
@@ -84,6 +84,7 @@ function CartSheet({ slug, tableToken }: { slug: string; tableToken: string }) {
     setCartOpen,
     items,
     total,
+    vat,
     currency,
     setQuantity,
     removeItem,
@@ -247,7 +248,7 @@ function CartSheet({ slug, tableToken }: { slug: string; tableToken: string }) {
             )}
 
             <div className="border-t border-ink-100 p-4">
-              {items.some(i => i.tax && i.tax.rate > 0) && <div className="mb-2 space-y-1 text-sm"><p className="flex justify-between"><span>Subtotal / قبل الضريبة</span><span>{formatMoney(total - items.reduce((sum,i) => sum + cartLineVat(i),0),currency)}</span></p><p className="flex justify-between"><span>VAT / الضريبة</span><span>{formatMoney(items.reduce((sum,i) => sum + cartLineVat(i),0),currency)}</span></p></div>}
+              {items.some(i => i.tax && i.tax.rate > 0) && <div className="mb-2 space-y-1 text-sm"><p className="flex justify-between"><span>Subtotal / قبل الضريبة</span><span>{formatMoney(total - vat,currency)}</span></p><p className="flex justify-between"><span>VAT / الضريبة</span><span>{formatMoney(vat,currency)}</span></p></div>}
               <div className="mb-3 flex items-center justify-between text-sm">
                 <span className="text-ink-500">{t("menu.total")}</span>
                 <span className="text-lg font-semibold">{formatMoney(total, currency)}</span>

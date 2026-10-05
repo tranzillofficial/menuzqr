@@ -173,7 +173,7 @@ export async function deleteLibraryImageAction(id: string): Promise<ActionState>
 
 // ------------------------------------------------------------ qr templates
 
-const QR_LAYOUTS = ["counter", "square", "tent", "cafe"];
+const QR_LAYOUTS = ["counter", "square", "tent", "cafe", "plain"];
 const QR_SCOPES = ["general", "table", "both"];
 
 function colour(form: FormData, key: string, fallback: string) {

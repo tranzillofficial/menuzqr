@@ -17,6 +17,7 @@ import type { QrTemplate } from "@/lib/types";
 
 const LAYOUTS = [
   { id: "counter", label: "Counter card", note: "Portrait, big name on top" },
+  { id: "plain", label: "QR only", note: "Plain background with QR only" },
   { id: "square", label: "Clean square", note: "Square, minimal" },
   { id: "tent", label: "Table tent", note: "Portrait with a table badge" },
   { id: "cafe", label: "Café poster", note: "Warm coffee-shop poster; table label is detachable" },

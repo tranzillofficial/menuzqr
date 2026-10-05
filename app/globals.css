@@ -196,7 +196,7 @@ body {
 @media print {
   body * { visibility: hidden !important; }
   #pos-receipt, #pos-receipt * { visibility: visible !important; }
-  #pos-receipt { display: block !important; position: absolute; inset: 0 auto auto 0; width: 72mm; padding: 3mm; color: black; background: white; font-size: 12px; }
+  #pos-receipt { display: block !important; position: absolute; inset: 0 auto auto 0; width: 72mm; padding: 3mm; color: black; background: white; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; }
   #pos-receipt h1 { font-size: 20px; text-align: center; }
   #pos-receipt div { display: flex; justify-content: space-between; gap: 10px; margin: 8px 0; }
 }
@@ -210,4 +210,9 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
   #pos-receipt[data-report] { width: 190mm; max-width: 100%; position: static; padding: 0; }
   #pos-receipt[data-report] div { display: block; }
   #pos-receipt[data-report] table { font-size: 11px; }
+}
+
+@media print {
+  #pos-receipt:not([data-report]) p, #pos-receipt:not([data-report]) li { font-size: 16px !important; color: #000 !important; }
+  #pos-receipt:not([data-report]) h1 { font-size: 24px; }
 }

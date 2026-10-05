@@ -208,7 +208,7 @@ export type LibraryImage = {
 export type QrTemplate = {
   id: string;
   name: string;
-  layout: "counter" | "square" | "tent" | "cafe";
+  layout: "counter" | "square" | "tent" | "cafe" | "plain";
   scope: "general" | "table" | "both";
   bg_color: string;
   panel_color: string;
@@ -311,6 +311,8 @@ export type MenuData = {
     | "prices_include_vat"
     | "menu_prices_include_vat"
     | "vat_registered"
+    | "tax_mode"
+    | "tax_rates"
   >;
   categories: Array<Category & { products: ProductWithVariants[] }>;
 };
