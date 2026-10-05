@@ -196,6 +196,7 @@ export function ProductEditor({
     >
       <form action={formAction} className="space-y-6">
         {product && <input type="hidden" name="id" value={product.id} />}
+        <>{packaging && <><input type="hidden" name="name_en" value={nameEn}/><input type="hidden" name="ingredients" value={ingredients}/></>}</>
         <input type="hidden" name="image_url" value={imageUrl ?? ""} />
         <input type="hidden" name="catalog_section_name" value={catalogSectionName}/><input type="hidden" name="image_source" value={imageSource} />
         <input type="hidden" name="is_active" value={isActive ? "on" : ""} />
@@ -247,12 +248,14 @@ export function ProductEditor({
             )}
           </div>
 
+          {!packaging && <>
           <div className="space-y-1.5 sm:col-span-2">
             <div className="flex items-center justify-between gap-2">
               <label htmlFor="p-name-en" className="text-sm font-medium text-ink-800">{label('الاسم بالإنجليزية (اختياري)', 'English name (optional)')}</label>
             </div>
             <Input id="p-name-en" name="name_en" dir="ltr" maxLength={90} value={nameEn} onChange={e => setNameEn(e.target.value)}/>
           </div>
+          </>}
           <div className="space-y-1.5 sm:col-span-2">
             <div className="flex items-center justify-between gap-2">
               <label htmlFor="p-category" className="text-sm font-medium text-ink-800">
@@ -330,6 +333,7 @@ export function ProductEditor({
             />
           </div>
 
+          {!packaging && <>
           <div className="space-y-1.5 sm:col-span-2">
             <div className="flex items-center justify-between gap-2">
               <label htmlFor="p-ingredients" className="text-sm font-medium text-ink-800">
@@ -346,6 +350,7 @@ export function ProductEditor({
             />
             <p className="text-xs text-ink-500">{t("products.ingredientsHint")}</p>
           </div>
+          </>}
         </div>
 
         <label className="block space-y-2 text-sm font-medium">{label('تصنيف ضريبة المنتج', 'Product VAT category')}
@@ -452,6 +457,8 @@ export function ProductEditor({
           <p className="mb-2 text-sm font-medium text-ink-800">{t("products.photo")}</p>
           <ImagePicker
             restaurantId={restaurant.id}
+            allowLibrary={!packaging}
+            chooseSource={packaging}
             kind="product"
             value={imageUrl}
             searchSeed={name}

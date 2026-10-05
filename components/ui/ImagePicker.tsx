@@ -9,7 +9,7 @@ import { Modal } from "./Modal";
 import { Icon } from "./Icons";
 import { SmartImage } from "./SmartImage";
 import { useToast } from "./Toast";
-import { useT } from "@/components/i18n/I18nProvider";
+import { useI18n, useT } from "@/components/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 
 type LibraryItem = {
@@ -56,6 +56,7 @@ export function ImagePicker({
   searchSeed = "",
   aspect = "square",
   allowLibrary = true,
+  chooseSource = false,
 }: {
   restaurantId: string;
   kind: ImageRole;
@@ -65,10 +66,15 @@ export function ImagePicker({
   searchSeed?: string;
   aspect?: "square" | "wide";
   allowLibrary?: boolean;
+  chooseSource?: boolean;
 }) {
   const toast = useToast();
   const t = useT();
+  const {locale} = useI18n();
+  const label = (ar: string, en: string) => locale === "ar" ? ar : en;
   const fileRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const [sourceOpen,setSourceOpen] = useState(false);
   const [status, setStatus] = useState<Status>({ phase: "idle" });
   const [libraryOpen, setLibraryOpen] = useState(false);
 
@@ -117,6 +123,7 @@ export function ImagePicker({
       } finally {
         setStatus({ phase: "idle" });
         if (fileRef.current) fileRef.current.value = "";
+        if (cameraRef.current) cameraRef.current.value = "";
       }
     },
     [kind, onChange, restaurantId, toast]
@@ -176,10 +183,10 @@ export function ImagePicker({
           type="button"
           variant="secondary"
           size="sm"
-          onClick={() => fileRef.current?.click()}
+          onClick={() => chooseSource ? setSourceOpen(true) : fileRef.current?.click()}
           disabled={busy}
         >
-          {value ? t("common.edit") : t("common.add")}
+          {chooseSource ? (value ? label("تغيير الصورة","Change photo") : label("إضافة صورة","Add photo")) : value ? t("common.edit") : t("common.add")}
         </Button>
         {allowLibrary && (
           <Button
@@ -205,9 +212,16 @@ export function ImagePicker({
         )}
       </div>
 
-      <p className="text-xs text-ink-500">
-        Photos are resized and compressed in your browser before upload, so your menu stays fast.
-      </p>
+      <p className="text-xs text-ink-500">{label('الصورة بتتصغّر وتتنضغط تلقائيًا قبل الرفع.','Photos are resized and compressed before upload.')}</p>
+      {chooseSource && <>
+        <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" aria-label={label('تصوير المنتج','Take product photo')} onChange={e=>{const file=e.target.files?.[0];if(file)void upload(file);}}/>
+        <Modal open={sourceOpen} onClose={()=>setSourceOpen(false)} title={label('إضافة صورة المنتج','Add product photo')} size="sm">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Button type="button" variant="secondary" className="min-h-14 w-full text-base" onClick={()=>{setSourceOpen(false);cameraRef.current?.click();}}>{label('الكاميرا','Camera')}</Button>
+            <Button type="button" variant="secondary" className="min-h-14 w-full text-base" onClick={()=>{setSourceOpen(false);fileRef.current?.click();}}>{label('المعرض','Gallery')}</Button>
+          </div>
+        </Modal>
+      </>}
 
       {allowLibrary && (
         <LibraryModal
