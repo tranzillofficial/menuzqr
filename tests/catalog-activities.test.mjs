@@ -26,4 +26,5 @@ test('photo beverages have unique bilingual names, positive editable prices, and
   }
   assert.deepEqual(drinks.find(d=>d.name==='إسبريسو').variants.map(v=>v.price),[20,30]);
   assert.deepEqual(drinks.find(d=>d.name==='عصير مانجو').variants.map(v=>v.price),[25,35]);
+  assert.deepEqual(drinks.find(d=>d.name==='عصير مانجو').variants.map(v=>v.name),['عادي','سفاري']);
 });

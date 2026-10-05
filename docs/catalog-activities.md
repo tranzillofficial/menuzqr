@@ -4,7 +4,7 @@ The platform catalog has one canonical product per name. Categories carry `busin
 
 Activities: café, restaurant, supermarket, sweets shop, and retail shop. Soft drinks appear for cafés, restaurants, supermarkets, and retail shops; shisha is café only. The filter organizes available products; it does not invent supermarket inventory or hide items from existing customer menus.
 
-`catalog-beverages.json` transcribes 48 canonical drinks from the supplied photo, excluding «صحتك بالدنيا». The two espresso rows become single and double variants of one product. The two juice price columns are represented as regular and takeaway, following the photo's takeaway cup heading; no volumes are inferred. Seven existing drinks are updated instead of duplicated, leaving 41 new items.
+`catalog-beverages.json` transcribes 48 canonical drinks from the supplied photo, excluding «صحتك بالدنيا». The two espresso rows become single and double variants of one product. The two juice price columns are represented as regular and «سفاري» (Safari), preserving the photo's heading; no volumes or fulfillment methods are inferred. Seven existing drinks are updated instead of duplicated, leaving 41 new items.
 
 Prices in the photo are initial EGP suggestions. Missing prices on other shared products receive editable suggestions. Picking a catalog suggestion in the product editor now also transfers its suggested price when it has no named variants. Existing customer prices are independent and unchanged.
 
