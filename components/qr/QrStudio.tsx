@@ -70,8 +70,11 @@ export function QrStudio({
     return scoped.length > 0 ? scoped : templates;
   }, [templates]);
 
-  const [generalId, setGeneralId] = useState(generalTemplates[0]?.id ?? "");
-  const [tableId, setTableId] = useState(tableTemplates[0]?.id ?? "");
+  const preferredId = restaurant.qr_template_id ?? "";
+  const preferredGeneral = generalTemplates.find((t) => t.id === preferredId);
+  const preferredTable = tableTemplates.find((t) => t.id === preferredId);
+  const [generalId, setGeneralId] = useState(preferredGeneral?.id ?? generalTemplates[0]?.id ?? "");
+  const [tableId, setTableId] = useState(preferredTable?.id ?? tableTemplates[0]?.id ?? "");
 
   const generalTemplate = generalTemplates.find((t) => t.id === generalId) ?? generalTemplates[0];
   const tableTemplate = tableTemplates.find((t) => t.id === tableId) ?? tableTemplates[0];
