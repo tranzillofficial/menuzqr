@@ -5,8 +5,12 @@ export type PosReceipt = {
   payment: 'cash' | 'card' | 'transfer'; fiscalState?: string; createdAt: string; note: string;
   lines: { variantId: string; name: string; variant: string; price: number; quantity: number; gross?: number; net?: number; vat?: number; rate?: number; code?: string }[];
 };
-export type PrinterSettings = { token: string; printer: string; width: 58 | 80; cut: boolean; mode?: 'browser' | 'bridge' };
-export const DEFAULT_PRINTER: PrinterSettings = { token: '', printer: '', width: 80, cut: true, mode: 'browser' };
+export type PrinterSettings = { token: string; printer: string; width: 58 | 80; cut: boolean; mode?: 'browser' | 'bridge'; dots?: 384 | 512 | 576; feedMm?: number };
+export const DEFAULT_PRINTER: PrinterSettings = { token: '', printer: '', width: 80, cut: true, mode: 'bridge', dots: 576, feedMm: 3 };
+
+export function printerDots(width: 58 | 80, dots?: number): 384 | 512 | 576 {
+  return width === 58 ? 384 : dots === 512 ? 512 : 576;
+}
 
 // Loopback only: the printer is on the cashier's computer, not on Vercel.
 export async function bridgeRequest(settings: PrinterSettings, path: '/printers' | '/print', body?: object) {
@@ -19,15 +23,15 @@ export async function bridgeRequest(settings: PrinterSettings, path: '/printers'
   });
   const result = await response.json();
   if (!response.ok) throw new Error(result.error || 'Printer connection failed');
-  return result as { printers?: string[]; ok?: boolean };
+  return result as { printers?: string[]; ok?: boolean; version?: number };
 }
 
 // Render Arabic with the browser's shaping engine, then send monochrome raster
 // commands. This avoids dependence on the printer's Arabic code page support.
-async function receiptCanvas(receipt: PosReceipt, restaurantName: string, currency: string, ar: boolean, width: 58 | 80) {
+async function receiptCanvas(receipt: PosReceipt, restaurantName: string, currency: string, ar: boolean, width: 58 | 80, printDots?: number) {
   await document.fonts.ready;
   const canvas = document.createElement('canvas');
-  const dots = width === 58 ? 384 : 576;
+  const dots = printerDots(width, printDots);
   const padding = 8, usable = dots - padding * 2;
   const fontSize = width === 58 ? 22 : 28;
   const rowHeight = width === 58 ? 30 : 36;
@@ -74,9 +78,15 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
   if (fiscal?.customer?.name) wrap(`${label('العميل', 'Customer')}: ${fiscal.customer.name}`);
   if (fiscal?.customer?.address) wrap(fiscal.customer.address);
   if (fiscal?.customer?.vat_number) wrap(`Customer VAT: ${fiscal.customer.vat_number}`);
-  table([label('الكمية','Qty'),label('الوحدة','Unit'),label('اسم الصنف','Item'),label('السعر','Price'),label('الإجمالي','Total')],true);
+  if (width !== 58) table([label('كمية','Qty'),label('وحدة','Unit'),label('الصنف','Item'),label('السعر','Price'),label('إجمالي','Total')],true);
   for (const line of receipt.lines) {
-    table([String(line.quantity),line.variant,line.name,amount(fiscal && fiscal.mode !== 'egypt' ? (line.net ?? 0)/line.quantity : line.price),amount(sign * (fiscal?.mode === 'egypt' ? line.price * line.quantity : line.gross ?? line.price * line.quantity))],true);
+    const price = amount(fiscal && fiscal.mode !== 'egypt' ? (line.net ?? 0)/line.quantity : line.price);
+    const total = amount(sign * (fiscal?.mode === 'egypt' ? line.price * line.quantity : line.gross ?? line.price * line.quantity));
+    // Five columns on a 48 mm print head made Arabic and amounts unreadable.
+    if (width === 58) {
+      wrap(`${line.name}${line.variant ? ` (${line.variant})` : ''}`, true);
+      wrap(`${line.quantity} × ${price} = ${total}`, true);
+    } else table([String(line.quantity),line.variant,line.name,price,total],true);
     if (fiscal?.registered && fiscal.mode !== 'egypt') wrap(`${line.code ?? ''} ${line.rate ?? 0}% | VAT ${money(sign * (line.vat ?? 0))}`);
   }
   wrap(`${label('إجمالي الكميات','Total quantity')}: ${receipt.lines.reduce((sum,line)=>sum+line.quantity,0)}`,true,true);
@@ -117,8 +127,8 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
   return canvas;
 }
 
-export async function receiptRaster(receipt: PosReceipt, restaurantName: string, currency: string, ar: boolean, width: 58 | 80) {
-  const canvas = await receiptCanvas(receipt, restaurantName, currency, ar, width);
+export async function receiptRaster(receipt: PosReceipt, restaurantName: string, currency: string, ar: boolean, width: 58 | 80, printDots?: number) {
+  const canvas = await receiptCanvas(receipt, restaurantName, currency, ar, width, printDots);
   const dots = canvas.width;
   const context = canvas.getContext('2d')!;
   const pixels = context.getImageData(0, 0, dots, canvas.height).data;
@@ -136,11 +146,12 @@ export async function receiptRaster(receipt: PosReceipt, restaurantName: string,
 
 // Use the installed OS driver for printers that do not speak ESC/POS.
 // A print request is not proof of physical output (the user can cancel).
-export async function printBrowserReceipt(receipt: PosReceipt, restaurantName: string, currency: string, ar: boolean, width: 58 | 80) {
-  const canvas = await receiptCanvas(receipt, restaurantName, currency, ar, width);
-  // Match the roll length to the rendered content plus the 2 mm print margins.
-  // page-orientation keeps the content upright independently of page proportions.
-  const pageHeightMm = Math.ceil(canvas.height * (width - 4) / canvas.width + 4);
+export async function printBrowserReceipt(receipt: PosReceipt, restaurantName: string, currency: string, ar: boolean, width: 58 | 80, printDots?: number) {
+  const canvas = await receiptCanvas(receipt, restaurantName, currency, ar, width, printDots);
+  // Match the physical 203 dpi print head; never stretch 48/64/72 mm to the
+  // roll width. Drivers can still override CSS sizes, so this is a fallback.
+  const imageWidthMm = canvas.width * 25.4 / 203;
+  const pageHeightMm = Math.ceil(canvas.height * 25.4 / 203 + 4);
   const frame = document.createElement('iframe');
   frame.title = `MenuzQR receipt ${receipt.number}`;
   frame.style.cssText = `position:fixed;left:-10000px;top:0;width:${width}mm;height:${pageHeightMm}mm;border:0`;
@@ -151,7 +162,7 @@ export async function printBrowserReceipt(receipt: PosReceipt, restaurantName: s
     if (!doc || !target) throw new Error('Print window unavailable');
     doc.title = frame.title;
     const style = doc.createElement('style');
-    style.textContent = `@page { size: ${width}mm ${pageHeightMm}mm; page-orientation: upright; margin: 2mm; } html, body { margin:0; padding:0; writing-mode:horizontal-tb; direction:ltr; } body { width:${width - 4}mm; } img { display:block; width:100%; height:auto; break-inside:avoid; page-break-inside:avoid; }`;
+    style.textContent = `@page { size: ${width}mm ${pageHeightMm}mm; page-orientation: upright; margin: 2mm; } html, body { margin:0; padding:0; writing-mode:horizontal-tb; direction:ltr; } body { width:${imageWidthMm}mm; } img { display:block; width:100%; height:auto; break-inside:avoid; page-break-inside:avoid; }`;
     doc.head.appendChild(style);
     // One text row per image permits page breaks without clipping a long receipt.
     const images: HTMLImageElement[] = [];

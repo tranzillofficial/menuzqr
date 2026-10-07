@@ -84,16 +84,24 @@ class BridgeTests(unittest.TestCase):
             self.assertEqual(self.request('POST', '/print', body)[0], 400)
         self.assertEqual(self.printers.jobs, [])
 
+    def test_feed_is_bounded_and_independent_of_line_spacing(self):
+        for invalid in (-1, 31, 1.5, True, '3'):
+            self.assertEqual(self.request('POST', '/print', bitmap(feedMm=invalid))[0], 400)
+        self.assertTrue(bridge.raster_commands(bitmap(cut=True, feedMm=0)).endswith(b'\x1dVA\x00'))
+        self.assertTrue(bridge.raster_commands(bitmap(cut=False, feedMm=30)).endswith(b'\x1bJ\xf0'))
+        self.assertEqual(len(bridge.raster_commands(bitmap(cut=False, feedMm=0))) + 3, len(bridge.raster_commands(bitmap(cut=False, feedMm=3))))
+
     def test_raster_dimensions_strips_and_cut(self):
-        for width in (384, 576):
+        for width in (384, 512, 576):
             body = bitmap(width, 129, cut=True)
             commands = bridge.raster_commands(body)
             stride = width // 8
-            self.assertEqual(commands[:10], b'\x1b@' + bytes([29, 118, 48, 0, stride, 0, 128, 0]))
-            offset = 10 + stride * 128
+            prefix = b'\x1b@\x1bS\x1ba\x00\x1dL\x00\x00' + bytes([29, 87, width & 255, width >> 8]) + b'\x1dP\xcb\xcb'
+            self.assertEqual(commands[:len(prefix) + 8], prefix + bytes([29, 118, 48, 0, stride, 0, 128, 0]))
+            offset = len(prefix) + 8 + stride * 128
             self.assertEqual(commands[offset:offset + 8], bytes([29, 118, 48, 0, stride, 0, 1, 0]))
-            self.assertTrue(commands.endswith(b'\n\n\n\x1dV\x00'))
-            self.assertTrue(bridge.raster_commands(bitmap(width, cut=False)).endswith(b'\n\n\n'))
+            self.assertTrue(commands.endswith(b'\x1dVA\x18'))
+            self.assertTrue(bridge.raster_commands(bitmap(width, cut=False)).endswith(b'\x1bJ\x18'))
 
 
 if __name__ == '__main__':

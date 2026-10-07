@@ -18,6 +18,7 @@ import secrets
 import uuid
 
 MAX_BODY = 2_000_000
+BRIDGE_VERSION = 2
 
 
 class WindowsPrinters:
@@ -86,22 +87,33 @@ class WindowsPrinters:
 
 def raster_commands(body):
     width, height = body.get('width'), body.get('height')
-    if type(width) is not int or width not in (384, 576) or type(height) is not int or not 1 <= height <= 20000:
+    if type(width) is not int or width not in (384, 512, 576) or type(height) is not int or not 1 <= height <= 20000:
         raise ValueError('Invalid receipt dimensions.')
+    feed_mm = body.get('feedMm', 3)
+    if type(feed_mm) is not int or not 0 <= feed_mm <= 30:
+        raise ValueError('Feed must be a whole number between 0 and 30 mm.')
     raster = base64.b64decode(body.get('raster', ''), validate=True)
     row_bytes = width // 8
     if len(raster) != row_bytes * height:
         raise ValueError('Invalid receipt bitmap.')
-    commands = bytearray(b'\x1b@')
+    # Reset and explicitly use standard (continuous roll) mode. No PDF, page
+    # dimensions, Windows orientation or scaling is involved in this RAW job.
+    commands = bytearray(b'\x1b@\x1bS\x1ba\x00\x1dL\x00\x00')
+    commands.extend(bytes([0x1d, 0x57, width & 255, width >> 8]))
+    commands.extend(b'\x1dP\xcb\xcb')  # 203 dpi motion units
     # Small raster strips reduce pressure on inexpensive printers' buffers.
     # GS v 0 is widely implemented by generic ESC/POS receipt printers.
     for offset in range(0, height, 128):
         rows = min(128, height - offset)
         commands.extend(bytes([0x1d, 0x76, 0x30, 0, row_bytes & 255, row_bytes >> 8, rows & 255, rows >> 8]))
         commands.extend(raster[offset * row_bytes:(offset + rows) * row_bytes])
-    commands.extend(b'\n\n\n')
+    feed_dots = round(feed_mm * 203 / 25.4)
     if body.get('cut') is True:
-        commands.extend(b'\x1dV\x00')
+        # Feed to the cutter plus the chosen margin; the head-to-cutter distance
+        # is mechanical and cannot be eliminated by shortening a document.
+        commands.extend(bytes([0x1d, 0x56, 65, feed_dots]))
+    elif feed_dots:
+        commands.extend(bytes([0x1b, 0x4a, feed_dots]))
     return bytes(commands)
 
 
@@ -164,7 +176,7 @@ def make_handler(printers, token, origins):
                 self.reply(404, {'error': 'Unknown endpoint.'})
                 return
             try:
-                self.reply(200, {'printers': printers.names()})
+                self.reply(200, {'printers': printers.names(), 'version': BRIDGE_VERSION})
             except Exception as error:
                 self.reply(503, {'error': str(error)})
 
@@ -222,7 +234,7 @@ def main():
         connection.settimeout(10)
         return connection, address
     server.get_request = get_request
-    print('MenuzQR print bridge is ready. Keep this window open.\nPairing code: ' + token, flush=True)
+    print(f'MenuzQR print bridge v{BRIDGE_VERSION} is ready. Keep this window open.\nPairing code: ' + token, flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
