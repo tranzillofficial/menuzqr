@@ -34,6 +34,7 @@ export function MenuExperience({
   showPrices,
   showIngredients,
   staffMode = false,
+  offersOnly = false,
 }: {
   data: MenuData;
   table: { id: string; label: string } | null;
@@ -41,6 +42,7 @@ export function MenuExperience({
   showPrices: boolean;
   showIngredients: boolean;
   staffMode?: boolean;
+  offersOnly?: boolean;
 }) {
   const Theme = data.restaurant.business_kind === "supermarket" ? SupermarketMenu : moduleEnabled(data.restaurant,"subcategories") ? RetailMenu : THEMES[data.restaurant.menu_theme] ?? ElegantMenu;
   const lightFab = data.restaurant.menu_theme === "elegant" || data.restaurant.menu_theme === "market";
@@ -75,7 +77,7 @@ export function MenuExperience({
         </div>
       )}
 
-      <Theme />
+      {data.restaurant.business_kind === "supermarket" ? <SupermarketMenu offersOnly={offersOnly}/> : <Theme />}
 
       <ProductSheet />
 

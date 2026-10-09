@@ -288,7 +288,10 @@ export type AdminAction = {
 /** Everything a public menu theme needs to render. */
 export type PaymentInstructions = { remote_ordering_enabled: boolean; cash_wallet: string; instapay_address: string; payment_whatsapp: string };
 
+export type BusinessOffer = {id:string;restaurant_id:string;title:string;description:string;image_url:string|null;product_ids:string[];starts_at:string|null;ends_at:string|null;is_active:boolean;sort_order:number;created_at:string};
+
 export type MenuData = {
+  offers?: BusinessOffer[];
   menu_path?: string;
   payments?: PaymentInstructions;
   restaurant: Pick<
@@ -312,6 +315,7 @@ export type MenuData = {
     | "menu_prices_include_vat"
     | "vat_registered"
     | "tax_mode"
+    | "business_timezone"
     | "tax_rates"
   >;
   categories: Array<Category & { products: ProductWithVariants[] }>;

@@ -53,6 +53,7 @@ export const en = {
   "nav.tables": "Tables",
   "nav.qrCodes": "QR Codes",
   "nav.customers": "Customers",
+  "nav.offers": "Offers",
   "nav.orders": "Orders",
   "nav.design": "Menu Design",
   "nav.settings": "Settings",

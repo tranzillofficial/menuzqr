@@ -1,5 +1,6 @@
 // Register a implemented feature here once: navigation and account controls share it.
 export const MODULE_REGISTRY = {
+ offers:{nav:{label:"nav.offers",icon:"sparkles"},ar:"العروض",en:"Offers",paths:["offers"]},
  customers:{nav:{label:"nav.customers",icon:"users"},ar:"العملاء",en:"Customers",paths:["customers"]},
  pos:{nav:{label:"nav.pos",icon:"receipt"},ar:'الكاشير',en:'Point of sale',paths:['pos']},
  reports:{nav:{label:"nav.reports",icon:"receipt"},ar:'تقارير المبيعات',en:'Sales reports',paths:['reports']},

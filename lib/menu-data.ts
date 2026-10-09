@@ -1,3 +1,4 @@
+import { activeOffers } from "./offers";
 import {getTenantDomain} from "./tenant-domain";
 import { withCatalogName } from './menu-localization';
 import { moduleEnabled } from "./business-modules";
@@ -36,7 +37,7 @@ export const getPublicMenu = cache(async function getPublicMenu(
   const { data: restaurant } = await supabase
     .from("restaurants")
     .select(
-      "id,business_kind,enabled_modules,name,slug,description,logo_url,cover_url,phone,address,currency,language,menu_theme,ordering_enabled,waiter_calls_enabled,status,owner_id,activation_expires_at,tax_mode,vat_registered,prices_include_vat,tax_rates,menu_prices_include_vat"
+      "id,business_kind,enabled_modules,name,slug,description,logo_url,cover_url,phone,address,currency,language,menu_theme,ordering_enabled,waiter_calls_enabled,status,owner_id,activation_expires_at,business_timezone,tax_mode,vat_registered,prices_include_vat,tax_rates,menu_prices_include_vat"
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -61,7 +62,7 @@ export const getPublicMenu = cache(async function getPublicMenu(
     restaurant.ordering_enabled = false;
     restaurant.waiter_calls_enabled = false;
   }
-  const [{ data: categories }, { data: products }, {data: payments}] = await Promise.all([
+  const [{ data: categories }, { data: products }, {data: payments}, {data: offers,error:offerError}] = await Promise.all([
     supabase
       .from("categories")
       .select("*")
@@ -76,7 +77,9 @@ export const getPublicMenu = cache(async function getPublicMenu(
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true }),
     supabase.from("restaurant_settings").select("remote_ordering_enabled,cash_wallet,instapay_address,payment_whatsapp").eq("restaurant_id",restaurant.id).maybeSingle(),
+    moduleEnabled(restaurant,"offers") ? supabase.from("business_offers").select("*").eq("restaurant_id",restaurant.id).eq("is_active",true).order("sort_order").order("created_at",{ascending:false}) : Promise.resolve({data:[],error:null}),
   ]);
+  if(offerError) throw new Error("Could not load business offers");
 
   let table: Pick<RestaurantTable, "id" | "label"> | null = null;
   if (tableToken && !preview && moduleEnabled(restaurant,"tables")) {
@@ -139,7 +142,8 @@ export const getPublicMenu = cache(async function getPublicMenu(
     data: {
       menu_path:domain?"/menu":`/${slug}/menu`,
       payments: payments ?? undefined,
-      restaurant: { enabled_modules: restaurant.enabled_modules, business_kind: restaurant.business_kind, id: restaurant.id, name: restaurant.name, slug: restaurant.slug, description: restaurant.description, logo_url: restaurant.logo_url, cover_url: restaurant.cover_url, phone: restaurant.phone, address: restaurant.address, currency: restaurant.currency, language: restaurant.language, menu_theme: restaurant.menu_theme, ordering_enabled: restaurant.ordering_enabled, waiter_calls_enabled: restaurant.waiter_calls_enabled, prices_include_vat: restaurant.prices_include_vat, menu_prices_include_vat: restaurant.menu_prices_include_vat, vat_registered: restaurant.vat_registered, tax_mode: restaurant.tax_mode, tax_rates: restaurant.tax_rates },
+      offers: preview ? [] : activeOffers(offers ?? []),
+      restaurant: { enabled_modules: restaurant.enabled_modules, business_kind: restaurant.business_kind, business_timezone:restaurant.business_timezone, id: restaurant.id, name: restaurant.name, slug: restaurant.slug, description: restaurant.description, logo_url: restaurant.logo_url, cover_url: restaurant.cover_url, phone: restaurant.phone, address: restaurant.address, currency: restaurant.currency, language: restaurant.language, menu_theme: restaurant.menu_theme, ordering_enabled: restaurant.ordering_enabled, waiter_calls_enabled: restaurant.waiter_calls_enabled, prices_include_vat: restaurant.prices_include_vat, menu_prices_include_vat: restaurant.menu_prices_include_vat, vat_registered: restaurant.vat_registered, tax_mode: restaurant.tax_mode, tax_rates: restaurant.tax_rates },
       categories: moduleEnabled(restaurant,"subcategories") ? grouped : grouped.filter((c) => c.products.length > 0),
     },
   };
