@@ -152,6 +152,7 @@ export function OrdersBoard({
                   </span>
                 </div>
 
+                {order.customer_details?.address&&<p className="mt-1 text-xs text-ink-500">{order.customer_details.address}</p>}{order.customer_details?.code&&<p className="text-xs">#{order.customer_details.code}</p>}
                 {order.customer_details?.name&&<p className="mt-2 text-sm">{order.customer_details.name} · <span dir="ltr">{order.customer_details.phone}</span></p>}
                 {order.fiscal_state==="unpaid"&&<p className="mt-2 text-xs text-amber-800">{ar?"غير مدفوع — تأكيد الدفع يدويًا بعد المراجعة":"Unpaid — confirm payment manually after checking"}</p>}
                 <ul className="mt-3 space-y-1.5">

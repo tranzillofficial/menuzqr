@@ -76,6 +76,8 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
   if (receipt.paidAt && fiscal?.invoice_kind === 'full') wrap(`${label('تاريخ التوريد', 'Supply date')}: ${new Date(receipt.paidAt).toLocaleString('en-GB', {timeZone: fiscal?.timezone ?? 'Africa/Cairo'})}`);
   if (receipt.tableLabel) wrap(`${label('الطاولة', 'Table')}: ${receipt.tableLabel}`);
   if (fiscal?.customer?.name) wrap(`${label('العميل', 'Customer')}: ${fiscal.customer.name}`);
+  if (fiscal?.customer?.phone) wrap(`${label('الموبايل', 'Phone')}: ${fiscal.customer.phone}`);
+  if (fiscal?.customer?.code) wrap(`${label('كود العميل', 'Customer code')}: ${fiscal.customer.code}`);
   if (fiscal?.customer?.address) wrap(fiscal.customer.address);
   if (fiscal?.customer?.vat_number) wrap(`Customer VAT: ${fiscal.customer.vat_number}`);
   if (width !== 58) table([label('كمية','Qty'),label('وحدة','Unit'),label('الصنف','Item'),label('السعر','Price'),label('إجمالي','Total')],true);

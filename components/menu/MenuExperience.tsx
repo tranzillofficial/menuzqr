@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { localizeMenu } from '@/lib/menu-localization';
 
+import { SupermarketMenu } from "./themes/SupermarketMenu";
 import { RetailMenu } from "./themes/RetailMenu";
 import { moduleEnabled } from "@/lib/business-modules";
 import { MenuProvider } from "./MenuContext";
@@ -41,7 +42,7 @@ export function MenuExperience({
   showIngredients: boolean;
   staffMode?: boolean;
 }) {
-  const Theme = moduleEnabled(data.restaurant,"subcategories") ? RetailMenu : THEMES[data.restaurant.menu_theme] ?? ElegantMenu;
+  const Theme = data.restaurant.business_kind === "supermarket" ? SupermarketMenu : moduleEnabled(data.restaurant,"subcategories") ? RetailMenu : THEMES[data.restaurant.menu_theme] ?? ElegantMenu;
   const lightFab = data.restaurant.menu_theme === "elegant" || data.restaurant.menu_theme === "market";
 
   // Start with the merchant's language; visitors can change their menu view

@@ -129,7 +129,7 @@ export type OrderItem = {
 
 export type Order = {
   order_source?: "online" | "table" | "pos" | null;
-  customer_details?: {name?:string;phone?:string};
+  customer_details?: {name?:string;phone?:string;address?:string;code?:string;customer_id?:string};
   fiscal_snapshot: FiscalSnapshot | null;
   fiscal_state: "unpaid" | "paid" | "refunded" | "void" | "legacy";
   paid_at: string | null;

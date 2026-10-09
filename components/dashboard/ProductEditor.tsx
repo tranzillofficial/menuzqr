@@ -65,6 +65,7 @@ export function ProductEditor({
   const { locale } = useI18n();
   const label = (ar: string, en: string) => locale === "ar" ? ar : en;
   const packaging = isAlhamd(restaurant);
+  const supermarket = restaurant.business_kind === "supermarket";
   const [state, formAction] = useActionState(saveProductAction, null);
 
   const [name, setName] = useState(product?.name ?? "");
@@ -386,6 +387,7 @@ export function ProductEditor({
             </Button>
           </div>
 
+          {supermarket && <button type="button" className="mb-3 rounded-xl border border-red-200 px-4 py-2 text-sm text-red-700" onClick={()=>setVariants(['ربع كيلو (250 جرام)','نصف كيلو (500 جرام)','750 جرام','1 كيلو'].map((name,index)=>({key:newKey(),name,price:'',is_active:true,name_en:['250 g','500 g','750 g','1 kg'][index]})))}>{label('بيع بالوزن: ربع / نصف / 750 جرام / كيلو','Sell by weight: 250 / 500 / 750 g / 1 kg')}</button>}
           <ul className="space-y-2">
             {variants.map((variant, index) => (
               <li key={variant.key} className="grid min-w-0 grid-cols-1 gap-3 rounded-xl bg-ink-50 p-3 sm:grid-cols-2">

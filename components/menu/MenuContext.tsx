@@ -123,7 +123,7 @@ export function MenuProvider({
       table,
       // A signed-in waiter or cook can still take an order from a table even
       // when the owner has switched guest ordering off.
-      orderingEnabled: (data.restaurant.ordering_enabled || (staffMode && Boolean(table))) && (Boolean(table) || Boolean(data.payments?.remote_ordering_enabled && (data.payments.cash_wallet || data.payments.instapay_address) && data.payments.payment_whatsapp)),
+      orderingEnabled: (data.restaurant.ordering_enabled || (staffMode && Boolean(table))) && (Boolean(table) || Boolean(data.restaurant.business_kind === "supermarket" || data.payments?.remote_ordering_enabled && (data.payments.cash_wallet || data.payments.instapay_address) && data.payments.payment_whatsapp)),
       waiterEnabled: (data.restaurant.waiter_calls_enabled || staffMode) && Boolean(table),
       staffMode,
       items: items.map(item => {

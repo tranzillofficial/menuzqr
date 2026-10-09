@@ -53,6 +53,7 @@ export const ar: Record<keyof typeof en, string> = {
   "nav.products": "المنتجات",
   "nav.tables": "الطاولات",
   "nav.qrCodes": "أكواد QR",
+  "nav.customers": "العملاء",
   "nav.orders": "الطلبات",
   "nav.design": "تصميم المنيو",
   "nav.settings": "الإعدادات",

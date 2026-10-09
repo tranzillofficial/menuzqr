@@ -155,15 +155,17 @@ export async function placeOrderAction(
   };
 }
 
-export async function placeOnlineOrderAction(slug:string, lines:CartLine[], note:string, session:string, request:string, customer:{name:string;phone:string}):Promise<PlaceOrderResult> {
+export async function placeOnlineOrderAction(slug:string, lines:CartLine[], note:string, session:string, request:string, customer:{name:string;phone:string;address?:string}):Promise<PlaceOrderResult> {
   const domain=await getTenantDomain();if(domain&&domain.restaurants.slug!==slug)return {ok:false,message:"This link belongs to a different business."};
  if (!Array.isArray(lines)||!lines.length||lines.length>MAX_LINES||!customer||typeof customer.name!=='string'||typeof customer.phone!=='string'||typeof note!=='string'||typeof session!=='string'||session.length<16||session.length>64||typeof request!=='string'||! /^[0-9a-f-]{36}$/i.test(request)) return {ok:false,message:'بيانات الطلب غير مكتملة.'};
  const name=customer.name.trim().slice(0,160),phone=customer.phone.replace(/[\s()-]/g,'');
  if(name.length<2||!/^\+?\d{8,15}$/.test(phone))return {ok:false,message:'اكتب الاسم ورقم الموبايل بشكل صحيح.'};
  const db=createAdminSupabase();
- const {data:r}=await db.from('restaurants').select('id,currency,enabled_modules').eq('slug',slug).maybeSingle();
+ const {data:r}=await db.from('restaurants').select('id,currency,enabled_modules,business_kind').eq('slug',slug).maybeSingle();
+ const address=typeof customer.address==='string'?customer.address.trim().slice(0,400):'';
+ if(r?.business_kind==='supermarket'&&address.length<5)return {ok:false,message:'اكتب عنوان التوصيل بالتفصيل.'};
  if(!r||!moduleEnabled(r,'orders')) return {ok:false,message:'استقبال الطلبات غير متاح.'};
- const {data:o,error}=await db.rpc('create_fiscal_order',{p_actor:null,p_restaurant:r.id,p_request:request,p_lines:lines,p_table:null,p_note:note.trim().slice(0,400),p_payment:null,p_received:null,p_customer:{name,phone},p_guest:true,p_session:session});
+ const {data:o,error}=await db.rpc('create_fiscal_order',{p_actor:null,p_restaurant:r.id,p_request:request,p_lines:lines,p_table:null,p_note:note.trim().slice(0,400),p_payment:null,p_received:null,p_customer:{name,phone,address},p_guest:true,p_session:session});
  if(error||!o)return {ok:false,message:'تعذر إرسال الطلب. راجع البيانات أو تواصل مع المكان.'};
  await publishEvent({id:`order.new:${o.id}`,kind:'order.new',restaurantId:r.id,orderId:o.id,orderNumber:o.order_number,tableLabel:null,total:Number(o.total),currency:o.currency});
  revalidatePath('/dashboard/orders');revalidatePath('/dashboard/pos');revalidatePath('/station');
