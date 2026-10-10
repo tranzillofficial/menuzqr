@@ -35,7 +35,7 @@ class FakePrinters:
 class BridgeTests(unittest.TestCase):
     def setUp(self):
         self.printers = FakePrinters()
-        self.server = HTTPServer(('127.0.0.1', 0), bridge.make_handler(self.printers, 'test-token', {'https://menuzqr.shop'}))
+        self.server = HTTPServer(('127.0.0.1', 0), bridge.make_handler(self.printers, 'test-token', {'https://menuzqr.shop'}, lambda ticket, origin: ticket == 'valid-ticket' and origin in ('https://menuzqr.shop','https://mastermart.shop')))
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
 
@@ -58,6 +58,28 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(self.request('POST', '/print', bitmap(), Origin='https://menuzqr.shop.evil.example')[0], 403)
         self.assertEqual(self.request('GET', '/printers', Host='evil.example')[0], 403)
         self.assertEqual(self.printers.jobs, [])
+
+    def test_automatic_pairing_requires_ticket_and_binds_origin(self):
+        self.assertEqual(self.request('POST', '/pair', {'ticket':'wrong'}, Authorization='')[0], 403)
+        self.assertEqual(self.request('POST', '/pair', {'ticket':'valid-ticket'}, Origin='https://evil.example', Authorization='')[0], 403)
+        status, data, _ = self.request('POST', '/pair', {'ticket':'valid-ticket'}, Origin='https://mastermart.shop', Authorization='')
+        self.assertEqual(status, 200)
+        token = data['token']
+        self.assertEqual(self.request('GET', '/printers', Origin='https://mastermart.shop', Authorization='Bearer '+token)[0], 200)
+        self.assertEqual(self.request('GET', '/printers', Origin='https://evil.example', Authorization='Bearer '+token)[0], 403)
+        self.assertEqual(self.request('GET', '/printers', Origin='https://menuzqr.shop', Authorization='Bearer '+token)[0], 401)
+        self.assertEqual(self.request('POST', '/pair', {'ticket':'valid-ticket'}, Host='evil.example')[0], 403)
+
+    def test_health_never_exposes_pairing_token(self):
+        status, body, _ = self.request('GET', '/health', Authorization='')
+        self.assertEqual(status, 200)
+        self.assertEqual(body, {'version':3,'app':'MenuzQR Print'})
+
+    def test_automatic_printer_avoids_office_and_ambiguous_queues(self):
+        self.assertEqual(bridge.automatic_printer(['Microsoft Print to PDF','POS-80']), 'POS-80')
+        self.assertIsNone(bridge.automatic_printer(['HP LaserJet','Microsoft Print to PDF']))
+        self.assertIsNone(bridge.automatic_printer(['POS-58','POS-80']))
+        self.assertIsNone(bridge.automatic_printer(['Thermal Label Printer']))
 
     def test_preflight_and_printer_discovery(self):
         status, _, headers = self.request('OPTIONS', '/print')

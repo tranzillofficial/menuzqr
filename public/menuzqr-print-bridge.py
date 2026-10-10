@@ -16,9 +16,35 @@ import os
 from pathlib import Path
 import secrets
 import uuid
+import hashlib
+import re
+import sys
+from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 
 MAX_BODY = 2_000_000
-BRIDGE_VERSION = 2
+BRIDGE_VERSION = 3
+
+
+def verify_ticket(ticket, origin):
+    if not isinstance(ticket, str) or len(ticket) > 2048:
+        return False
+    request = Request('https://menuzqr.shop/api/print-pair/verify',
+                      data=json.dumps({'ticket': ticket, 'origin': origin}).encode(),
+                      headers={'Content-Type': 'application/json'}, method='POST')
+    try:
+        with urlopen(request, timeout=8) as response:
+            return response.status == 200 and json.loads(response.read(4096)).get('ok') is True
+    except Exception:
+        return False
+
+
+def automatic_printer(names):
+    # A single recognized receipt printer is safe to suggest. Never select an
+    # office, PDF or label printer merely because Windows marks it as default.
+    candidates = [name for name in names if re.search(r'thermal|receipt|esc.?pos|pos[- _]?(58|80)|tm[- _][tmpu]|xprinter|rongta|rp[- _]?(58|80)', name, re.I)
+                  and not re.search(r'pdf|xps|onenote|fax|label|zebra', name, re.I)]
+    return candidates[0] if len(candidates) == 1 else None
 
 
 class WindowsPrinters:
@@ -132,19 +158,30 @@ def pairing_token():
     return token
 
 
-def make_handler(printers, token, origins):
+def make_handler(printers, token, origins, ticket_verifier=verify_ticket):
     jobs = {}
+
+    def scoped_token(origin):
+        return hmac.new(token.encode(), ('origin:'+origin).encode(), hashlib.sha256).hexdigest()
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *_args):
             pass  # Never log the pairing code or receipt contents.
 
+        def safe_origin(self):
+            origin = self.headers.get('Origin', '')
+            parsed = urlparse(origin)
+            return self.headers.get('Host') in ('127.0.0.1:18191', 'localhost:18191') and (origin in origins or (parsed.scheme == 'https' and bool(parsed.hostname) and parsed.path == '' and not parsed.query and not parsed.fragment and not parsed.username and not parsed.password))
+
         def valid_origin(self):
-            return self.headers.get('Origin') in origins and self.headers.get('Host') in ('127.0.0.1:18191', 'localhost:18191')
+            if not self.safe_origin():
+                return False
+            origin = self.headers.get('Origin', '')
+            return origin in origins or hmac.compare_digest(self.headers.get('Authorization', ''), 'Bearer '+scoped_token(origin))
 
         def reply(self, status, body):
             self.send_response(status)
-            if self.valid_origin():
+            if self.safe_origin() and (self.valid_origin() or self.path in ('/pair', '/health') or self.command == 'OPTIONS'):
                 self.send_header('Access-Control-Allow-Origin', self.headers['Origin'])
                 self.send_header('Vary', 'Origin')
                 self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
@@ -161,26 +198,49 @@ def make_handler(printers, token, origins):
             if not self.valid_origin():
                 self.reply(403, {'error': 'This website is not allowed.'})
                 return False
-            if not hmac.compare_digest(self.headers.get('Authorization', ''), 'Bearer ' + token):
+            origin = self.headers.get('Origin', '')
+            auth = self.headers.get('Authorization', '')
+            if not (hmac.compare_digest(auth, 'Bearer '+scoped_token(origin)) or (origin in origins and hmac.compare_digest(auth, 'Bearer '+token))):
                 self.reply(401, {'error': 'Invalid pairing code.'})
                 return False
             return True
 
         def do_OPTIONS(self):
-            self.reply(200 if self.valid_origin() else 403, {})
+            self.reply(200 if self.safe_origin() else 403, {})
 
         def do_GET(self):
+            if self.path == '/health':
+                self.reply(200 if self.safe_origin() else 403, {'version': BRIDGE_VERSION, 'app': 'MenuzQR Print'})
+                return
             if not self.authorized():
                 return
             if self.path != '/printers':
                 self.reply(404, {'error': 'Unknown endpoint.'})
                 return
             try:
-                self.reply(200, {'printers': printers.names(), 'version': BRIDGE_VERSION})
+                names = printers.names()
+                self.reply(200, {'printers': names, 'version': BRIDGE_VERSION, 'suggestedPrinter': automatic_printer(names)})
             except Exception as error:
                 self.reply(503, {'error': str(error)})
 
         def do_POST(self):
+            if self.path == '/pair':
+                if not self.safe_origin():
+                    self.reply(403, {'error': 'Invalid website origin.'})
+                    return
+                try:
+                    length = int(self.headers.get('Content-Length', '0'))
+                    if not 0 < length <= 4096 or self.headers.get('Content-Type') != 'application/json':
+                        raise ValueError('Invalid pairing request.')
+                    body = json.loads(self.rfile.read(length))
+                    origin = self.headers.get('Origin', '')
+                    if not ticket_verifier(body.get('ticket'), origin):
+                        self.reply(403, {'error': 'Sign in to MenuzQR and try connecting again.'})
+                        return
+                    self.reply(200, {'token': scoped_token(origin), 'version': BRIDGE_VERSION})
+                except (ValueError, TypeError, AttributeError):
+                    self.reply(400, {'error': 'Invalid pairing request.'})
+                return
             if not self.authorized():
                 return
             if self.path != '/print':
@@ -234,7 +294,8 @@ def main():
         connection.settimeout(10)
         return connection, address
     server.get_request = get_request
-    print(f'MenuzQR print bridge v{BRIDGE_VERSION} is ready. Keep this window open.\nPairing code: ' + token, flush=True)
+    if sys.stdout is not None:
+        print(f'MenuzQR print bridge v{BRIDGE_VERSION} is ready. Keep this window open.\nPairing code: ' + token, flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
@@ -247,5 +308,9 @@ if __name__ == '__main__':
     try:
         main()
     except Exception as error:
-        print('Could not start MenuzQR print bridge: ' + str(error))
+        if sys.stderr is not None:
+            print('Could not start MenuzQR print bridge: ' + str(error), file=sys.stderr)
+        # A second launch should quietly defer to the instance already running.
+        elif getattr(error, 'winerror', None) != 10048:
+            ctypes.windll.user32.MessageBoxW(None, 'Could not start MenuzQR Print. Restart Windows or reinstall MenuzQR Print.\n'+str(error), 'MenuzQR Print', 0x10)
         raise SystemExit(1)

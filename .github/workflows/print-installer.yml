@@ -1,0 +1,76 @@
+name: Windows print installer
+on:
+  push:
+    branches: [main]
+    paths:
+      - public/menuzqr-print-bridge.py
+      - installer/**
+      - tests/test_print_bridge.py
+      - .github/workflows/print-installer.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: print-installer-release
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: x64
+      - name: Test bridge
+        run: python -m unittest discover -s tests -p test_print_bridge.py
+      - name: Bundle runtime
+        run: |
+          python -m pip install pyinstaller==6.22.3
+          python -m PyInstaller --noconfirm --clean --onedir --noconsole --name MenuzQRPrint public/menuzqr-print-bridge.py
+      - name: Compile installer
+        shell: pwsh
+        run: |
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" installer\menuzqr-print.iss
+          if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed' }
+      - name: Verify installation, startup and uninstall
+        shell: pwsh
+        run: |
+          $setup = Start-Process installer\output\MenuzQR-Print-Setup.exe -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART' -Wait -PassThru
+          if ($setup.ExitCode -ne 0) { throw 'Installation failed' }
+          $exe = "$env:LOCALAPPDATA\Programs\MenuzQR Print\MenuzQRPrint.exe"
+          if (!(Test-Path $exe)) { throw 'Executable missing' }
+          $startup = Get-ItemPropertyValue 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' MenuzQRPrint
+          if ($startup -ne "`"$exe`"") { throw 'Startup registration missing' }
+          $ready = $false
+          for ($i=0; $i -lt 20; $i++) {
+            try {
+              $health = Invoke-RestMethod http://127.0.0.1:18191/health -Headers @{Origin='https://menuzqr.shop'}
+              if ($health.version -eq 3) { $ready=$true; break }
+            } catch {}
+            Start-Sleep -Seconds 1
+          }
+          if (!$ready) { throw 'Installed bridge did not start' }
+          Stop-Process -Name MenuzQRPrint -ErrorAction SilentlyContinue
+          $uninstall = Start-Process "$env:LOCALAPPDATA\Programs\MenuzQR Print\unins000.exe" -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART' -Wait -PassThru
+          if ($uninstall.ExitCode -ne 0) { throw 'Uninstall failed' }
+          if (Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name MenuzQRPrint -ErrorAction SilentlyContinue) { throw 'Startup entry was not removed' }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MenuzQR-Print-Windows
+          path: installer/output/MenuzQR-Print-Setup.exe
+      - name: Publish download
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $asset='installer/output/MenuzQR-Print-Setup.exe'
+          (Get-FileHash $asset -Algorithm SHA256).Hash.ToLower() + '  MenuzQR-Print-Setup.exe' | Set-Content installer/output/SHA256SUMS.txt
+          gh release view print-v3 --repo $env:GITHUB_REPOSITORY *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create print-v3 --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title 'MenuzQR Print 3 for Windows' --notes 'Windows 10/11 x64 installer. Includes the Python runtime, starts at sign-in, and supports automatic secure pairing. Requires an installed ESC/POS printer driver. This build is not Authenticode signed.'
+            if ($LASTEXITCODE -ne 0) { throw 'Release creation failed' }
+          }
+          gh release upload print-v3 $asset installer/output/SHA256SUMS.txt --clobber --repo $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE -ne 0) { throw 'Release upload failed' }
