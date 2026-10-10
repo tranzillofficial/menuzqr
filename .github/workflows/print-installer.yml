@@ -12,7 +12,7 @@ permissions:
   contents: write
 concurrency:
   group: print-installer-release
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   build:
     runs-on: windows-2022
@@ -37,7 +37,8 @@ jobs:
       - name: Verify installation, startup and uninstall
         shell: pwsh
         run: |
-          $setup = Start-Process installer\output\MenuzQR-Print-Setup.exe -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART' -Wait -PassThru
+          $setup = Start-Process installer\output\MenuzQR-Print-Setup.exe -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART' -PassThru
+          if (!$setup.WaitForExit(60000)) { throw 'Installer timed out' }
           if ($setup.ExitCode -ne 0) { throw 'Installation failed' }
           $exe = "$env:LOCALAPPDATA\Programs\MenuzQR Print\MenuzQRPrint.exe"
           if (!(Test-Path $exe)) { throw 'Executable missing' }
@@ -53,7 +54,8 @@ jobs:
           }
           if (!$ready) { throw 'Installed bridge did not start' }
           Stop-Process -Name MenuzQRPrint -ErrorAction SilentlyContinue
-          $uninstall = Start-Process "$env:LOCALAPPDATA\Programs\MenuzQR Print\unins000.exe" -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART' -Wait -PassThru
+          $uninstall = Start-Process "$env:LOCALAPPDATA\Programs\MenuzQR Print\unins000.exe" -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART' -PassThru
+          if (!$uninstall.WaitForExit(60000)) { throw 'Uninstaller timed out' }
           if ($uninstall.ExitCode -ne 0) { throw 'Uninstall failed' }
           if (Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name MenuzQRPrint -ErrorAction SilentlyContinue) { throw 'Startup entry was not removed' }
       - uses: actions/upload-artifact@v4
