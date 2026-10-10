@@ -1,65 +1,75 @@
 # Thermal receipt printing
 
-The receipt path does not generate a PDF. The browser renders Arabic and English
-to a monochrome bitmap. Browser-dialog printing remains driver-dependent: page
-size, scaling and orientation can override the CSS and add excess paper.
-
-The recommended path is the included Windows Python bridge, version 2. It sends
-RAW ESC/POS raster commands through the installed Windows printer queue. The web
-app stays in Next.js; no printer connection is made from the hosted server.
+MenuzQR Print 3 sends RAW ESC/POS raster commands to an installed Windows printer
+queue. The browser shapes Arabic and English and renders a monochrome bitmap;
+no PDF, document rotation or Windows page scaling is used in direct mode.
 
 ## Cashier setup
 
-1. Install the manufacturer's Windows printer driver and Python 3.10 or newer.
-2. Download `/menuzqr-print-bridge.py` from printer settings on the website. Close
-   an older bridge before running `py menuzqr-print-bridge.py`. The existing
-   pairing code is retained. Keep the bridge running while using POS.
-3. Open **Thermal printer setup**, choose **Direct**, paste the pairing code and
-   connect. Allow local network access if the browser asks.
-4. Explicitly select the installed ESC/POS thermal printer, not a PDF or office
-   printer. USB, Bluetooth and network connections work through the Windows queue
-   provided that the printer and its driver accept RAW ESC/POS raster commands.
-5. Select the roll width: 58 mm uses 384 dots; 80 mm offers 576 or 512 dots. Check
-   the printer specification for the printable width. These profiles target
-   203 dpi printers implementing `GS v 0` raster printing.
-6. Start with 3 mm extra feed and enable cutting only on a printer with a cutter.
-   With cutting enabled, the printer also feeds to its physical cutting position.
-   With cutting disabled, increase the feed if needed to reach the tear bar.
-7. Print the test receipt, then a short and a long real receipt. Confirm Arabic,
-   totals, right/left edges and the last line before relying on it for sales.
+The first direct print checks for the local app. If setup is missing, an in-page
+dialog offers **Download MenuzQR Print for Windows**. Download and run the installer,
+then return to the open dialog. It detects the app, pairs automatically and offers
+the saved receipt without creating another order. No Python installation, command
+line, copied token or permanently open terminal is needed.
 
-Settings persist per business in this browser on this computer. Existing browser
-mode preferences remain unchanged; switch them to Direct to use the fixed path.
-New settings default to Direct and ask for setup instead of silently opening the
-browser dialog. Orders are saved even when setup or printing is incomplete.
+The per-user installer supports Windows 10/11 x64, bundles its runtime, starts the
+app immediately and registers it for Windows sign-in. It can be removed through
+Windows Apps. The Windows driver for the actual printer must already be installed;
+manufacturer drivers cannot safely be guessed or universally bundled. Browser
+local-network permission may require one user approval. This release is not
+Authenticode signed, so Windows may show an unknown-publisher/SmartScreen prompt.
+A trusted code-signing certificate is a separate distribution requirement.
 
-## Changes in version 2
+One recognized receipt printer is selected automatically. If there are several,
+or its name is not recognized, the cashier selects one once. PDF, office and label
+printers are never chosen automatically. Settings are retained per business and
+browser on this computer. Existing explicit browser-print preferences are retained;
+choose Direct to use MenuzQR Print. The same setup UI serves all business accounts
+and their active custom domains.
 
-- Explicit standard roll mode and printable width, without page rotation/scaling.
-- Feed in millimetres rather than three fixed blank lines; feed-and-cut command
-  accounts for the physical distance between the print head and cutter.
-- 512-dot support for narrower 80 mm print heads.
-- Readable stacked item rows on 58 mm receipts; 80 mm retains the five-column table.
-- Client checks the bridge version before sending and requests an update when
-  an older version is running. No automatic browser fallback on bridge failure.
-- Browser fallback uses the same physical 203 dpi bitmap dimensions. It still
-  requires portrait, 100% scale, the correct roll size and disabled headers/footers
-  in the driver/dialog; browser CSS cannot guarantee the paper length.
+Use 58 mm/384 dots or 80 mm/576 dots (512 for narrower 80 mm heads). Recognized
+POS-58 names select 58 mm automatically; other model profiles should be confirmed
+with a test receipt. Default extra feed is 3 mm. Cutting is only supported by
+printers with cutters. The physical head-to-cutter distance cannot be eliminated.
+USB, Bluetooth and network queues work when their drivers accept RAW ESC/POS.
+macOS, Linux and mobile devices do not run this Windows installer.
 
-The bridge acknowledges Windows spooler acceptance, not physical output. After
-an uncertain response, check the printer before using the explicit browser
-fallback. Retrying the direct request reuses its job ID to prevent duplicate
-enqueueing within the running bridge process.
+## Pairing and transport
+
+The bridge binds only 127.0.0.1:18191 and validates Host and Origin. Health reports
+no printer names or credentials. A signed-in owner/manager requests a two-minute
+HMAC ticket from the website; the local app validates it against the fixed HTTPS
+MenuzQR endpoint before issuing an origin-bound local token. A token for one
+business domain is unusable from another origin. The signing secret remains on
+the hosted server. Legacy manual tokens remain usable for explicitly allowed
+origins; the normal UI no longer exposes a pairing-code field.
+
+Orders are saved before printing. After an uncertain response, check the printer
+before retrying. Repeated direct requests reuse a job ID, and the bridge remembers
+accepted and uncertain jobs within its process lifetime. Spooler acknowledgement
+is not proof that paper physically printed. There is no silent browser fallback.
+
+## Installer build and release
+
+`.github/workflows/print-installer.yml` builds on Windows using PyInstaller and
+Inno Setup, tests install/startup/health/uninstall, then publishes the EXE and
+SHA256SUMS.txt to the `print-v3` GitHub release. Website download:
+https://github.com/tranzillofficial/menuzqr/releases/download/print-v3/MenuzQR-Print-Setup.exe
+
+A new bridge build must pass the Windows smoke test before replacing the release
+asset. The installer uses the same application ID and path for upgrades. Very old
+manually launched Python bridges must be closed before the installed app can bind
+the port; do not terminate unrelated Python processes automatically.
 
 ## Verification
 
-`npm run typecheck`
+- `npm run typecheck` and `npm run build`
+- `python -m unittest discover -s tests -p test_print_bridge.py`
+- `node --experimental-strip-types --test tests/print-pairing.test.mjs`
+- `node tests/pos-print-browser.cjs` (optional esbuild, Playwright, Chromium tools)
+- Windows workflow installation, startup and uninstall smoke test
 
-`python -m unittest discover -s tests -p test_print_bridge.py`
-
-`node tests/pos-print-browser.cjs` (requires esbuild, Playwright and
-@sparticuz/chromium; supports PLAYWRIGHT_MODULE and CHROMIUM_EXECUTABLE overrides).
-
-Automated tests validate raster dimensions, protocol framing, feed/cut, setup,
-old-bridge rejection, checkout failures and retry behavior. Physical output and
-model-specific command compatibility must be checked on the cashier's printer.
+Browser tests use real POS/printer components with mocked checkout and loopback
+transport. They cover initial download, automatic pairing, installation recovery,
+manual printer choice, legacy versions, lost print responses and browser fallback.
+Physical output still requires a test on the customer's actual printer.

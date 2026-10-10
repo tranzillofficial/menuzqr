@@ -23,7 +23,24 @@ export async function bridgeRequest(settings: PrinterSettings, path: '/printers'
   });
   const result = await response.json();
   if (!response.ok) throw new Error(result.error || 'Printer connection failed');
-  return result as { printers?: string[]; ok?: boolean; version?: number };
+  return result as { printers?: string[]; ok?: boolean; version?: number; suggestedPrinter?:string|null };
+}
+
+export async function bridgeHealth(){
+ const response=await fetch('http://127.0.0.1:18191/health',{cache:'no-store',signal:AbortSignal.timeout(2500)});
+ const result=await response.json();
+ if(!response.ok||result.app!=='MenuzQR Print'||result.version<3)throw new Error('Install MenuzQR Print');
+ return result;
+}
+export async function pairPrintBridge(){
+ await bridgeHealth();
+ const grant=await fetch('/api/print-pair',{method:'POST',signal:AbortSignal.timeout(10000)});
+ const {ticket,error}=await grant.json();
+ if(!grant.ok)throw new Error(error||'Sign in to connect');
+ const response=await fetch('http://127.0.0.1:18191/pair',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ticket}),signal:AbortSignal.timeout(12000)});
+ const result=await response.json();
+ if(!response.ok||typeof result.token!=='string')throw new Error('Pairing failed');
+ return result.token as string;
 }
 
 // Render Arabic with the browser's shaping engine, then send monochrome raster

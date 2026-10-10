@@ -21,10 +21,10 @@ const result=await build({stdin:{contents:`import React from 'react';import{crea
 const server=http.createServer((q,r)=>{r.end(q.url==='/app.js'?result.outputFiles[0].text:'<html><body><div id="root"></div><script src="/app.js"></script></body></html>')}).listen(0,'127.0.0.1');
 await new Promise(r=>server.on('listening',r));
 let executablePath=process.env.CHROMIUM_EXECUTABLE; if(!executablePath){try{executablePath=await chrome.executablePath()}catch(e){if(require('fs').existsSync('/tmp/chromium'))executablePath='/tmp/chromium';else throw e}}
-const browser=await chromium.launch({executablePath,args:chrome.args,headless:true});
+const browser=await chromium.launch({executablePath,args:process.env.PRINT_TEST_DISABLE_GPU ? [...chrome.args.filter(a=>!a.startsWith('--use-gl=')&&!a.startsWith('--use-angle=')), '--disable-gpu','--disable-software-rasterizer'] : chrome.args,headless:true});
 const context=await browser.newContext({viewport:{width:1440,height:1100}});
 try{
-for(const scenario of ['setup','browser','thermal','thermal512','oldBridge','thermalFailure','auditFailure','checkoutFailure']){
+for(const scenario of ['setup','autoPair','installThenConnect','choosePrinter','browser','thermal','thermal512','oldBridge','thermalFailure','auditFailure','checkoutFailure']){
  const page=await context.newPage();let sent=[];let errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.addInitScript(({scenario})=>{
  localStorage.clear();window.printRequests=0;
@@ -34,13 +34,29 @@ for(const scenario of ['setup','browser','thermal','thermal512','oldBridge','the
  const original=Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype,'contentWindow');
  Object.defineProperty(HTMLIFrameElement.prototype,'contentWindow',{get(){const w=original.get.call(this);if(w)w.print=()=>{window.printRequests++;window.printImages=w.document.images.length;w.dispatchEvent(new Event('afterprint'))};return w;}});
  },{scenario});
- await page.route('http://127.0.0.1:18191/**',async route=>{if(route.request().method()==='GET'){await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({printers:['Thermal'],version:scenario==='oldBridge'?1:2})});return;}sent.push(JSON.parse(route.request().postData()));await route.fulfill({status:scenario==='thermalFailure'?503:200,contentType:'application/json',body:JSON.stringify({ok:scenario!=='thermalFailure'})})});
+ let bridgeAvailable = !['setup','installThenConnect'].includes(scenario), pairings=0;
+ await page.route('**/api/print-pair',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ticket:'signed-ticket'})}));
+ await page.route('http://127.0.0.1:18191/**',async route=>{
+   if(!bridgeAvailable){await route.abort();return;}
+   const url=route.request().url();
+   if(url.endsWith('/health')){await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({app:'MenuzQR Print',version:scenario==='oldBridge'?1:3})});return;}
+   if(url.endsWith('/pair')){pairings++;assert.equal(JSON.parse(route.request().postData()).ticket,'signed-ticket');await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({token:'paired',version:3})});return;}
+   if(route.request().method()==='GET'){await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({printers:['Thermal'],suggestedPrinter:scenario==='choosePrinter'?null:'Thermal',version:scenario==='oldBridge'?1:3})});return;}
+   sent.push(JSON.parse(route.request().postData()));await route.fulfill({status:scenario==='thermalFailure'?503:200,contentType:'application/json',body:JSON.stringify({ok:scenario!=='thermalFailure'})});
+ });
  await page.goto(`http://127.0.0.1:${server.address().port}`);
  await page.getByRole('button',{name:'Add Juice Regular',exact:true}).click();
  await page.getByLabel('Amount received').fill('120');
  await page.getByRole('button',{name:'Confirm payment',exact:true}).click();
  if(scenario==='checkoutFailure'){await page.getByRole('alert').waitFor();assert.equal(sent.length,0);assert.equal(await page.evaluate(()=>window.printRequests),0)}
- else if(scenario==='setup'||scenario==='oldBridge'){
+ else if(scenario==='autoPair'){
+ await page.getByText('Receipt sent to the printer.',{exact:true}).waitFor();assert.equal(pairings,1);assert.equal(sent.length,1);assert.equal(sent[0].printer,'Thermal');assert.equal(await page.evaluate(()=>window.printRequests),0);
+ }else if(scenario==='installThenConnect'||scenario==='choosePrinter'){
+ await page.getByRole('dialog').waitFor();assert.equal(sent.length,0);assert.equal(await page.evaluate(()=>window.orders),1);
+ if(scenario==='installThenConnect'){bridgeAvailable=true;await page.getByRole('button',{name:'Print saved receipt',exact:true}).waitFor({timeout:20000});}
+ else {await page.locator('select').filter({has:page.locator('option[value="Thermal"]')}).selectOption('Thermal');}
+ await page.getByRole('button',{name:'Print saved receipt',exact:true}).click();await page.waitForFunction(()=>window.toasts.includes('Receipt sent to the printer.'));assert.equal(sent.length,1);assert.equal(pairings,1);assert.equal(await page.evaluate(()=>window.orders),1);
+ }else if(scenario==='setup'||scenario==='oldBridge'){
  await page.getByRole('dialog').waitFor();assert.equal(sent.length,0);assert.equal(await page.evaluate(()=>window.printRequests),0);assert.equal(await page.evaluate(()=>window.orders),1);
  assert.ok((await page.getByRole('dialog').innerText()).includes(scenario==='oldBridge'?'Nothing was sent to the old bridge':'Set up direct printing'));
  }else if(scenario==='browser'){

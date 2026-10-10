@@ -49,3 +49,8 @@ next-env.d.ts
 
 # Supabase CLI cache
 supabase/.temp/
+
+# Local Windows installer builds and Python test caches
+__pycache__/
+/dist/
+/installer/output/
