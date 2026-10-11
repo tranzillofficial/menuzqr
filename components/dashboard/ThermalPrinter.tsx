@@ -111,7 +111,7 @@ export function ThermalPrinter({ restaurantId, restaurantName, currency, receipt
       toast(label('الطابعة مشغولة. الطلب محفوظ؛ اضغط طباعة الإيصال لما تخلص.', 'Printer busy. Order saved; use Print receipt when it finishes.'), 'error');
       return;
     }
-    const data: PosReceipt | null = test ? { number: 0, total: 10, received: 20, payment: 'cash', tableLabel: label('اختبار', 'Test'), note: label('اختبار الطابعة الحرارية', 'Thermal printer test'), createdAt: new Date().toISOString(), lines: [{ variantId: 'test', name: label('طباعة عربي وإنجليزي', 'Arabic and English printing'), variant: 'MenuzQR', price: 10, quantity: 1 }] } : override ?? receipt;
+    const data: PosReceipt | null = test ? { testPrint: true, number: 0, total: 10, received: 20, payment: 'cash', tableLabel: label('اختبار', 'Test'), note: label('اختبار الطابعة الحرارية', 'Thermal printer test'), createdAt: new Date().toISOString(), lines: [{ variantId: 'test', name: label('طباعة عربي وإنجليزي', 'Arabic and English printing'), variant: 'MenuzQR', price: 10, quantity: 1 }] } : override ?? receipt;
     if (!data) return;
     let effective = settings;
     if (!browser && settings.mode !== 'browser' && (!settings.token || !settings.printer)) {
@@ -133,7 +133,14 @@ export function ThermalPrinter({ restaurantId, restaurantName, currency, receipt
       return;
     }
     // Reuse the job ID after a lost response so retrying cannot enqueue twice.
-    if (test || job.current?.number !== data.number) job.current = { number: data.number, id: crypto.randomUUID() };
+    const jobKey = `${key}:job:${data.orderId ?? data.number}:${data.creditNote ? 'credit' : 'invoice'}`;
+    if (test || job.current?.number !== data.number) {
+      let id = crypto.randomUUID();
+      if (!test) {
+        try { id = localStorage.getItem(jobKey) || id; localStorage.setItem(jobKey, id); } catch { /* Session deduplication remains available. */ }
+      }
+      job.current = { number: data.number, id };
+    }
     let submitted = false;
     try {
       const bridge = await bridgeRequest(effective, '/printers');
@@ -145,7 +152,7 @@ export function ThermalPrinter({ restaurantId, restaurantName, currency, receipt
       const bitmap = await receiptRaster({...data,lines:data.lines.map(line=>({...line,variant:alhamdUnitLabel(line.variant,restaurantId)}))}, restaurantName, currency, ar, effective.width, effective.dots);
       submitted = true;
       await bridgeRequest(effective, '/print', { ...bitmap, printer: effective.printer, cut: effective.cut, feedMm: effective.feedMm ?? 3, jobId: job.current!.id });
-      job.current = null; pendingReceipt.current = null;
+      pendingReceipt.current = null;
       if (!test) await journal(data, 'thermal');
       toast(label('اترسل الإيصال للطابعة.', 'Receipt sent to the printer.'), 'success');
       setMessage(label('اترسل الإيصال للطابعة.', 'Receipt sent to the printer.'));

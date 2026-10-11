@@ -124,7 +124,7 @@ def raster_commands(body):
         raise ValueError('Invalid receipt bitmap.')
     # Reset and explicitly use standard (continuous roll) mode. No PDF, page
     # dimensions, Windows orientation or scaling is involved in this RAW job.
-    commands = bytearray(b'\x1b@\x1bS\x1ba\x00\x1dL\x00\x00')
+    commands = bytearray(b'\x1b@\x1bS\x1bV\x00\x1b{\x00\x1d!\x00\x1ba\x00\x1dL\x00\x00')
     commands.extend(bytes([0x1d, 0x57, width & 255, width >> 8]))
     commands.extend(b'\x1dP\xcb\xcb')  # 203 dpi motion units
     # Small raster strips reduce pressure on inexpensive printers' buffers.
