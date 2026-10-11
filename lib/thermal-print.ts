@@ -57,13 +57,13 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
   const canvas = document.createElement('canvas');
   const dots = printerDots(width, printDots);
   const padding = 8, usable = dots - padding * 2;
-  const fontSize = width === 58 ? 22 : 28;
-  const rowHeight = width === 58 ? 28 : 32;
+  const fontSize = width === 58 ? 22 : 26;
+  const rowHeight = width === 58 ? 26 : 30;
   const font = `${fontSize}px Arial, sans-serif`;
   canvas.width = dots; canvas.height = 1;
   const context = canvas.getContext('2d');
   if (!context) throw new Error('Receipt rendering is unavailable');
-  type Row = { text?: string; bold?: boolean; band?: boolean };
+  type Row = { text?: string; bold?: boolean; band?: boolean; align?: CanvasTextAlign; direction?: CanvasDirection };
   const rows: Row[] = [];
   const split = (text: string, available: number, bold = true, size = fontSize) => {
     context.font = `${bold ? 'bold ' : ''}${size}px Arial, sans-serif`;
@@ -78,18 +78,19 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
     if (line) lines.push(line);
     return lines.length ? lines : [''];
   };
-  const wrap = (text: string, bold = true, band = false) => {
-    for (const line of split(text, usable - 8, bold)) rows.push({text: line, bold, band});
+  const wrap = (text: string, bold = true, band = false, align: CanvasTextAlign = ar ? 'right' : 'left', direction: CanvasDirection = ar ? 'rtl' : 'ltr') => {
+    if (!text.trim()) return;
+    for (const line of split(text, usable - 8, bold)) rows.push({text: line, bold, band, align, direction});
   };
   const label = (a: string, e: string) => ar ? a : e;
   const fiscal = receipt.fiscal, sign = receipt.creditNote ? -1 : 1;
   const amount = (n: number) => n.toFixed(2);
   const money = (n: number) => `${amount(n)} ${currency}`;
   if (receipt.testPrint) {
-    wrap('MenuzQR TEST', true);
-    wrap('عربي واضح / English', true);
+    wrap('MenuzQR TEST', true, false, 'center', 'ltr');
+    wrap('عربي واضح / English', true, false, 'center');
   } else {
-  wrap(fiscal?.legal_name || restaurantName, true);
+  wrap(fiscal?.legal_name || restaurantName, true, false, 'center');
   if (fiscal?.address) wrap(fiscal.address);
   if (fiscal?.registered) wrap(`VAT / TRN: ${fiscal.vat_number}`);
   wrap(`${receipt.creditNote ? label('إشعار دائن', 'Credit note') : fiscal?.invoice_kind === 'full' || fiscal?.invoice_kind === 'simplified' ? label('فاتورة ضريبية', 'VAT invoice') : label('فاتورة بيع', 'Sales receipt')} ${receipt.creditNote ? `CN-${receipt.number}` : receipt.documentNumber ?? `#${receipt.number}`}`, true);
@@ -107,16 +108,15 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
     const total = amount(sign * (fiscal?.mode === 'egypt' ? line.price * line.quantity : line.gross ?? line.price * line.quantity));
     // Give the product name the full printable width on every roll size.
     wrap(`${line.name}${line.variant && line.variant !== 'Regular' ? ` (${line.variant})` : ''}`, true);
-    wrap(`${line.quantity} × ${price} = ${total}`, true);
+    wrap(`${line.quantity} × ${price} = ${total}`, true, false, 'right', 'ltr');
     if (fiscal?.registered && fiscal.mode !== 'egypt') wrap(`${line.code ?? ''} ${line.rate ?? 0}% | VAT ${money(sign * (line.vat ?? 0))}`);
   }
-  wrap(`${label('إجمالي الكميات','Total quantity')}: ${receipt.lines.reduce((sum,line)=>sum+line.quantity,0)}`,true,true);
-  wrap(`${label('الإجمالي قبل الضريبة','Subtotal')}: ${money(sign * (fiscal?.net ?? receipt.total))}`);
+
+  if (fiscal?.registered) wrap(`${label('الإجمالي قبل الضريبة','Subtotal')}: ${money(sign * fiscal.net)}`);
   if (fiscal?.registered) wrap(`${label('الضريبة','VAT')}: ${money(sign * fiscal.vat)}`);
   wrap(`${label('الصافي','Total')}: ${money(sign * receipt.total)}`,true,true);
   const paid = receipt.fiscalState !== 'unpaid' && receipt.fiscalState !== 'voided';
-  wrap(`${label('المدفوع','Paid')}: ${money(paid ? sign * receipt.total : 0)}`);
-  wrap(`${label('المتبقي','Due')}: ${money(paid ? 0 : sign * receipt.total)}`);
+  if (!paid) wrap(`${label('المتبقي','Due')}: ${money(sign * receipt.total)}`);
   if (paid && receipt.payment === 'cash' && !receipt.creditNote && receipt.received > receipt.total) wrap(`${label('الباقي للعميل','Change')}: ${money(receipt.received - receipt.total)}`);
   for (const b of fiscal?.mode === 'egypt' ? [] : fiscal?.breakdown ?? []) wrap(`${b.code} ${b.rate}% | Net ${money(sign*b.net)} | VAT ${money(sign*b.vat)}`);
   if (fiscal?.registered && fiscal.invoice_kind === 'receipt') wrap(fiscal.mode === 'saudi' ? label('إيصال بيع. الربط بالفوترة الإلكترونية غير مفعّل.','Sales receipt. Electronic invoicing is not connected.') : label('ليس فاتورة ضريبية كاملة.','Not a full VAT invoice.'));
@@ -133,8 +133,9 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
     context.fillRect(padding,top,usable,rowHeight);
     context.fillStyle = row.band ? '#fff' : '#000';
     context.font = `${row.bold ? 'bold ' : ''}${font}`;
-    context.direction = ar ? 'rtl' : 'ltr'; context.textAlign = 'center';
-    context.fillText(row.text ?? '', dots/2,top+rowHeight/2,usable-8);
+    context.direction = row.direction ?? (ar ? 'rtl' : 'ltr'); context.textAlign = row.align ?? 'center';
+    const x = row.align === 'right' ? dots-padding-4 : row.align === 'left' ? padding+4 : dots/2;
+    context.fillText(row.text ?? '', x,top+rowHeight/2,usable-8);
   });
   return canvas;
 }
@@ -179,7 +180,7 @@ export async function printBrowserReceipt(receipt: PosReceipt, restaurantName: s
     // One text row per image permits page breaks without clipping a long receipt.
     const images: HTMLImageElement[] = [];
     for (let y = 0; y < canvas.height;) {
-      const height = Math.min(y === 0 ? 8 : width === 58 ? 28 : 32, canvas.height - y);
+      const height = Math.min(y === 0 ? 8 : width === 58 ? 26 : 30, canvas.height - y);
       const strip = document.createElement('canvas');
       strip.width = canvas.width; strip.height = height;
       strip.getContext('2d')!.drawImage(canvas, 0, y, canvas.width, height, 0, 0, canvas.width, height);

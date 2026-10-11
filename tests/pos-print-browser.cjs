@@ -19,7 +19,7 @@ const mocks={
 '@/lib/actions/pos':`export async function getPosTables(){return {ok:true,tables:[]}}; export async function checkoutPos(){window.orders++; if(window.failCheckout)return {ok:false,message:'Checkout failed'};return {ok:true,receipt:{orderId:'order-'+window.orders,number:window.orders,total:114,received:120,payment:'cash',tableLabel:null,createdAt:'2026-10-03T10:00:00Z',note:'',fiscal:{legal_name:'Restaurant',registered:true,vat_number:'123',timezone:'UTC',net:100,vat:14,gross:114,breakdown:[{code:'standard',rate:14,net:100,vat:14,gross:114}]},lines:[{variantId:'v',name:'عصير Juice',variant:'Regular',price:100,quantity:1,gross:114,net:100,vat:14,rate:14,code:'standard'}]}}}`
 };
 const result=await build({stdin:{contents:`import React from 'react';import{createRoot}from'react-dom/client';import{PosScreen}from'./components/dashboard/PosScreen';window.orders=0;window.journal=[];window.toasts=[];createRoot(document.getElementById('root')).render(<PosScreen restaurantId="test" restaurantName="Test" currency="EGP" categories={[]} tables={[]} taxSettings={{tax_mode:'egypt',vat_registered:true,prices_include_vat:false,tax_rates:{egypt:{standard:14,reduced:0}}}} products={[{id:'p',name:'Juice',vat_code:'standard',product_variants:[{id:'v',name:'Regular',price:100,is_active:true}]}]}/>);`,resolveDir:root,loader:'tsx'},absWorkingDir:root,bundle:true,write:false,format:'iife',jsx:'automatic',plugins:[{name:'mock',setup(b){b.onResolve({filter:/.*/},a=>mocks[a.path]?{path:a.path,namespace:'mock'}:undefined);b.onLoad({filter:/.*/,namespace:'mock'},a=>({contents:mocks[a.path],loader:'tsx',resolveDir:root}));}}]});
-const server=http.createServer((q,r)=>{r.end(q.url==='/app.js'?result.outputFiles[0].text:'<html><body><div id="root"></div><script src="/app.js"></script></body></html>')}).listen(0,'127.0.0.1');
+const server=http.createServer((q,r)=>{r.setHeader('Content-Type',q.url==='/app.js'?'application/javascript; charset=utf-8':'text/html; charset=utf-8');r.end(q.url==='/app.js'?result.outputFiles[0].text:'<html><body><div id="root"></div><script src="/app.js"></script></body></html>')}).listen(0,'127.0.0.1');
 await new Promise(r=>server.on('listening',r));
 let executablePath=process.env.CHROMIUM_EXECUTABLE; if(!executablePath){try{executablePath=await chrome.executablePath()}catch(e){if(require('fs').existsSync('/tmp/chromium'))executablePath='/tmp/chromium';else throw e}}
 const browser=await chromium.launch({executablePath,args:process.env.PRINT_TEST_DISABLE_GPU ? [...chrome.args.filter(a=>!a.startsWith('--use-gl=')&&!a.startsWith('--use-angle=')), '--disable-gpu','--disable-software-rasterizer'] : chrome.args,headless:true});
@@ -45,36 +45,44 @@ for(const scenario of ['setup','autoPair','installThenConnect','choosePrinter','
    if(route.request().method()==='GET'){await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({printers:['Thermal'],suggestedPrinter:scenario==='choosePrinter'?null:'Thermal',version:scenario==='oldBridge'?1:4})});return;}
    const payload=JSON.parse(route.request().postData());if(payload.testPrint){tests.push(payload);assert.ok(payload.height<=160);assert.equal(payload.feedMm,0);assert.equal(payload.encoding,'column');}else sent.push(payload);await route.fulfill({status:scenario==='thermalFailure'?503:200,contentType:'application/json',body:JSON.stringify({ok:scenario!=='thermalFailure'})});
  });
- async function calibrate(){
-   await page.getByRole('button',{name:'Print test receipt',exact:true}).click();
-   await page.getByRole('button',{name:'Test is clear and short — enable receipts',exact:true}).click();
-   assert.equal(tests.length,1);assert.equal(sent.length,0);
-   await page.getByRole('button',{name:'Print saved receipt',exact:true}).click();
- }
  await page.goto(`http://127.0.0.1:${server.address().port}`);
  await page.getByRole('button',{name:'Add Juice Regular',exact:true}).click();
  await page.getByLabel('Amount received').fill('120');
  await page.getByRole('button',{name:'Confirm payment',exact:true}).click();
- if(scenario==='checkoutFailure'){await page.getByRole('alert').waitFor();assert.equal(sent.length,0);assert.equal(await page.evaluate(()=>window.printRequests),0)}
- else if(scenario==='autoPair'){
- await calibrate();
- await page.getByText('Receipt sent to the printer.',{exact:true}).first().waitFor();assert.equal(pairings,1);assert.equal(sent.length,1);assert.equal(sent[0].printer,'Thermal');assert.equal(await page.evaluate(()=>window.printRequests),0);
- }else if(scenario==='installThenConnect'||scenario==='choosePrinter'){
- await page.getByRole('dialog').waitFor();assert.equal(sent.length,0);assert.equal(await page.evaluate(()=>window.orders),1);
- if(scenario==='installThenConnect'){bridgeAvailable=true;await page.getByRole('button',{name:'Print saved receipt',exact:true}).waitFor({timeout:20000});}
- else {await page.locator('select').filter({has:page.locator('option[value="Thermal"]')}).selectOption('Thermal');}
- await calibrate();await page.waitForFunction(()=>window.toasts.includes('Receipt sent to the printer.'));assert.equal(sent.length,1);assert.equal(pairings,1);assert.equal(await page.evaluate(()=>window.orders),1);
+ if(scenario==='checkoutFailure'){
+   await page.getByRole('alert').waitFor();assert.equal(sent.length,0);
  }else if(scenario==='setup'||scenario==='oldBridge'){
- await page.getByRole('dialog').waitFor();assert.equal(sent.length,0);assert.equal(await page.evaluate(()=>window.printRequests),0);assert.equal(await page.evaluate(()=>window.orders),1);
- assert.ok((await page.getByRole('dialog').innerText()).includes(scenario==='oldBridge'?'Nothing was sent to the old bridge':'Set up direct printing'));
- }else if(scenario==='browser'){
- await page.getByText(/Print dialog requested/).waitFor();assert.equal(await page.evaluate(()=>window.printRequests),1);assert.ok(await page.evaluate(()=>window.printImages>15));assert.equal(sent.length,0);
- await page.getByRole('button',{name:'Print receipt #1',exact:true}).click();assert.equal(await page.evaluate(()=>window.orders),1);
+   await page.getByRole('dialog').waitFor();assert.equal(sent.length,0);
+   assert.ok((await page.getByRole('dialog').innerText()).includes(scenario==='oldBridge'?'new installer':'Set up direct printing'));
+ }else if(scenario==='installThenConnect'||scenario==='choosePrinter'){
+   await page.getByRole('dialog').waitFor();assert.equal(sent.length,0);
+   if(scenario==='installThenConnect'){bridgeAvailable=true;await page.getByRole('button',{name:'Print saved receipt',exact:true}).waitFor({timeout:20000});}
+   else await page.locator('select').filter({has:page.locator('option[value="Thermal"]')}).selectOption('Thermal');
+   await page.getByRole('button',{name:'Print saved receipt',exact:true}).click();
+   await page.getByText('Receipt sent to the printer.',{exact:true}).waitFor();assert.equal(sent.length,1);
+   assert.equal(await page.getByRole('dialog').count(),0);
  }else if(scenario==='thermalFailure'){
- await page.getByText(/Printing could not be confirmed/).waitFor();assert.equal(sent.length,1);assert.equal(await page.evaluate(()=>window.printRequests),0);
- await page.getByRole('button',{name:'Print receipt #1',exact:true}).click();await page.waitForFunction(()=>document.body.innerText.includes('Printing could not be confirmed'));assert.equal(sent.length,2);assert.equal(sent[0].jobId,sent[1].jobId);
- await page.getByRole('button',{name:'Print using system driver'}).click();await page.getByText(/Print dialog requested/).waitFor();assert.equal(await page.evaluate(()=>window.orders),1);
- }else{await page.getByText('Receipt sent to the printer.',{exact:true}).first().waitFor();assert.equal(sent.length,1);assert.equal(sent[0].width,scenario==='thermal512'?512:384);assert.equal(sent[0].feedMm,0);assert.equal(await page.evaluate(()=>window.printRequests),0);if(scenario==='auditFailure')assert.match((await page.evaluate(()=>window.toasts)).join(' '),/journal/)}
+   await page.getByText(/Printing could not be confirmed/).waitFor();assert.equal(sent.length,1);
+   await page.getByRole('button',{name:'Print receipt #1',exact:true}).click();
+   await page.waitForFunction(()=>window.toasts.filter(x=>x.includes('Printing could not be confirmed')).length===2);
+   assert.equal(sent.length,2);assert.equal(sent[0].jobId,sent[1].jobId);
+ }else{
+   await page.getByText('Receipt sent to the printer.',{exact:true}).waitFor();assert.equal(sent.length,1);
+   assert.equal(await page.getByRole('dialog').count(),0,'Ready printer must not open setup on payment');
+   if(scenario==='autoPair'||scenario==='browser')assert.equal(pairings,1);
+   else assert.equal(sent[0].width,scenario==='thermal512'?512:384);
+   if(scenario==='auditFailure')assert.match((await page.evaluate(()=>window.toasts)).join(' '),/journal/);
+   await page.getByRole('button',{name:'Test print',exact:true}).click();
+   await page.waitForFunction(()=>window.toasts.filter(x=>x==='Receipt sent to the printer.').length===2);
+   assert.equal(tests.length,1);assert.ok(tests[0].height<=80,'Two-line test stays compact');assert.equal(sent.length,1);
+   assert.equal(await page.getByRole('dialog').count(),0);
+ }
+ assert.equal(await page.evaluate(()=>window.printRequests),0,'Checkout and test must never invoke PDF/browser printing');
+ assert.equal(await page.evaluate(()=>window.orders),1);
+ if(process.env.RECEIPT_PREVIEW && scenario==='thermal512'){
+   const url=await page.evaluate(({width,height,raster})=>{const c=document.createElement('canvas');c.width=width;c.height=height;const ctx=c.getContext('2d'),im=ctx.createImageData(width,height),raw=atob(raster);for(let y=0;y<height;y++)for(let x=0;x<width;x++){const v=(raw.charCodeAt(y*width/8+(x>>3))&(128>>(x%8)))?0:255;const i=(y*width+x)*4;im.data[i]=im.data[i+1]=im.data[i+2]=v;im.data[i+3]=255;}ctx.putImageData(im,0,0);return c.toDataURL();},sent[0]);
+   require('fs').writeFileSync(process.env.RECEIPT_PREVIEW,Buffer.from(url.split(',')[1],'base64'));
+ }
  if(sent.length){const fonts=await page.evaluate(()=>window.receiptFonts);assert.ok(fonts.length>0);assert.ok(fonts.every(f=>f.includes('bold')),'Every receipt text row must be bold');}assert.deepEqual(errors,[]);console.log('PASS',scenario);await page.close();
 }
 }finally{await browser.close();server.close()}

@@ -90,22 +90,22 @@ Physical Windows 7 and printer validation remains required. Windows 7 and this
 legacy runtime are out of support; use the modern installer on Windows 10/11.
 All receipt text is rendered bold, with wrapping measured using the bold font.
 
-## Version 4 compatibility and calibration
+## Version 4 direct printing
 
-The v4 installers are published under `print-v4` and `print-win7-v4`. Update the
-installed bridge before testing. Existing paired settings are retained, but direct
-receipts are held until the cashier prints the two-line test and confirms its
-physical result. Reconnecting never sends a receipt. Pending orders remain saved.
-Changing the printer, width, image mode, feed or cut setting requires a new test.
+The v4 installers are published under `print-v4` and `print-win7-v4`. POS checkout
+and the small Test print button always use the local bridge. Old browser-mode
+preferences migrate to direct printing, so neither path opens a PDF dialog.
+A saved available printer prints without opening settings or requiring calibration
+confirmation. Setup appears only when a connection or printer selection is needed;
+the cashier may also open it explicitly. Reconnection alone never prints.
 
-The compatibility default uses ESC * 33 with correctly transposed 24-dot column
-bands and explicit 24-dot spacing. Raster mode uses small GS v 0 packets without
-additional line feeds. Both reset rotation and page mode. The test bitmap has a
-160-dot hard limit in the browser and bridge, and extra feed is forced to zero.
-Cutter travel remains printer-dependent. Non-ESC/POS printers require their driver
-or a model-specific integration; do not keep retrying an unreadable test.
+Compatibility mode uses ESC * 33 with correctly transposed 24-dot column bands
+and explicit spacing. Raster mode uses small GS v 0 packets without extra LF.
+Tests contain two lines, force extra feed to zero, and have a hard height limit.
+Receipts preserve product, tax and customer details while omitting redundant paid,
+zero-due and quantity summary rows. All text is bold, with full-width product names.
 
-Job outcomes (including uncertain sends) are saved in local SQLite before Windows
-receives the job, preventing retries from duplicating jobs across bridge restarts.
-No receipt content is stored in this database. A short successful test still needs
-physical confirmation: automated tests cannot prove paper output on every model.
+Local SQLite stores job outcomes before sending to Windows, preventing retries
+from duplicating jobs across bridge restarts. It stores no receipt content.
+Automated tests verify commands and UI behavior; actual paper output and cutter
+travel still depend on the installed printer model.
