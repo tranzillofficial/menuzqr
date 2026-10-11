@@ -25,7 +25,7 @@ let executablePath=process.env.CHROMIUM_EXECUTABLE; if(!executablePath){try{exec
 const browser=await chromium.launch({executablePath,args:process.env.PRINT_TEST_DISABLE_GPU ? [...chrome.args.filter(a=>!a.startsWith('--use-gl=')&&!a.startsWith('--use-angle=')), '--disable-gpu','--disable-software-rasterizer'] : chrome.args,headless:true});
 const context=await browser.newContext({viewport:{width:1440,height:1100}});
 try{
-for(const scenario of ['setup','autoPair','installThenConnect','choosePrinter','browser','thermal','thermal512','oldBridge','thermalFailure','auditFailure','checkoutFailure']){
+for(const scenario of ['unpairedOldBridge','sessionFailure','pairFailure','discoveryFailure','setup','autoPair','installThenConnect','choosePrinter','browser','thermal','thermal512','oldBridge','thermalFailure','auditFailure','checkoutFailure']){
  const page=await context.newPage();let sent=[];let tests=[];let errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.addInitScript(({scenario})=>{
  localStorage.clear();window.printRequests=0;AbortSignal.timeout=undefined;window.receiptFonts=[];const fill=CanvasRenderingContext2D.prototype.fillText;CanvasRenderingContext2D.prototype.fillText=function(...args){window.receiptFonts.push(this.font);return fill.apply(this,args)};
@@ -36,13 +36,13 @@ for(const scenario of ['setup','autoPair','installThenConnect','choosePrinter','
  Object.defineProperty(HTMLIFrameElement.prototype,'contentWindow',{get(){const w=original.get.call(this);if(w)w.print=()=>{window.printRequests++;window.printImages=w.document.images.length;w.dispatchEvent(new Event('afterprint'))};return w;}});
  },{scenario});
  let bridgeAvailable = !['setup','installThenConnect'].includes(scenario), pairings=0;
- await page.route('**/api/print-pair',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ticket:'signed-ticket'})}));
+ await page.route('**/api/print-pair',route=>route.fulfill({status:scenario==='sessionFailure'?401:200,contentType:'application/json',body:JSON.stringify({ticket:'signed-ticket'})}));
  await page.route('http://127.0.0.1:18191/**',async route=>{
    if(!bridgeAvailable){await route.abort();return;}
    const url=route.request().url();
-   if(url.endsWith('/health')){await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({app:'MenuzQR Print',version:scenario==='oldBridge'?1:5})});return;}
-   if(url.endsWith('/pair')){pairings++;assert.equal(JSON.parse(route.request().postData()).ticket,'signed-ticket');await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({token:'paired',version:5})});return;}
-   if(route.request().method()==='GET'){await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({printers:['Thermal'],suggestedPrinter:scenario==='choosePrinter'?null:'Thermal',version:scenario==='oldBridge'?1:5})});return;}
+   if(url.endsWith('/health')){await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({app:'MenuzQR Print',version:['oldBridge','unpairedOldBridge'].includes(scenario)?1:5})});return;}
+   if(url.endsWith('/pair')){pairings++;assert.equal(JSON.parse(route.request().postData()).ticket,'signed-ticket');await route.fulfill({status:scenario==='pairFailure'?403:200,contentType:'application/json',body:JSON.stringify({token:'paired',version:5})});return;}
+   if(route.request().method()==='GET'){await route.fulfill({status:scenario==='discoveryFailure'?503:200,contentType:'application/json',body:JSON.stringify({printers:['Thermal'],suggestedPrinter:scenario==='choosePrinter'?null:'Thermal',version:['oldBridge','unpairedOldBridge'].includes(scenario)?1:5})});return;}
    const payload=JSON.parse(route.request().postData());if(payload.testPrint){tests.push(payload);assert.ok(payload.height<=160);assert.equal(payload.protocol,'windows-gdi-v1');assert.ok([58,80].includes(payload.paperMm));assert.equal(payload.encoding,undefined);}else sent.push(payload);await route.fulfill({status:scenario==='thermalFailure'?503:200,contentType:'application/json',body:JSON.stringify({ok:scenario!=='thermalFailure'})});
  });
  await page.goto(`http://127.0.0.1:${server.address().port}`);
@@ -51,11 +51,18 @@ for(const scenario of ['setup','autoPair','installThenConnect','choosePrinter','
  await page.getByRole('button',{name:'Confirm payment',exact:true}).click();
  if(scenario==='checkoutFailure'){
    await page.getByRole('alert').waitFor();assert.equal(sent.length,0);
- }else if(scenario==='setup'||scenario==='oldBridge'){
-   await page.getByRole('dialog').waitFor();assert.equal(sent.length,0);
-   assert.ok((await page.getByRole('dialog').innerText()).includes(scenario==='oldBridge'?'new installer':'Set up direct printing'));
+ }else if(['setup','oldBridge','unpairedOldBridge','sessionFailure','pairFailure','discoveryFailure'].includes(scenario)){
+   const error = {setup:/Cannot reach MenuzQR Print/,oldBridge:/new installer/,unpairedOldBridge:/new installer/,sessionFailure:/Could not authorize/,pairFailure:/connecting it to the site failed/,discoveryFailure:/could not read Windows printers/}[scenario];
+   await page.getByText(error).waitFor();assert.equal(sent.length,0);
+   assert.equal(await page.getByRole('dialog').count(),0,'Connection failure must not open settings');
+   await page.getByRole('button',{name:'Test print',exact:true}).click();
+   await page.getByText(error).waitFor();
+   assert.equal(await page.getByRole('dialog').count(),0,'Failed test must not open settings');
  }else if(scenario==='installThenConnect'||scenario==='choosePrinter'){
-   await page.getByRole('dialog').waitFor();assert.equal(sent.length,0);
+   await page.getByText(scenario==='installThenConnect'? /Cannot reach MenuzQR Print/ : /Open Printer settings and choose/).waitFor();
+   assert.equal(await page.getByRole('dialog').count(),0);assert.equal(sent.length,0);
+   await page.getByRole('button',{name:'Printer settings',exact:true}).click();
+   await page.getByRole('dialog').waitFor();
    if(scenario==='installThenConnect'){bridgeAvailable=true;await page.getByRole('button',{name:'Print saved receipt',exact:true}).waitFor({timeout:20000});}
    else await page.locator('select').filter({has:page.locator('option[value="Thermal"]')}).selectOption('Thermal');
    await page.getByRole('button',{name:'Print saved receipt',exact:true}).click();

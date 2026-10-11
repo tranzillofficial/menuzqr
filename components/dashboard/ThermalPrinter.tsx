@@ -8,7 +8,7 @@ import { Modal } from '@/components/ui/Modal';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { useToast } from '@/components/ui/Toast';
 import { recordReceiptPrint } from "@/lib/actions/fiscal";
-import { bridgeHealth, pairPrintBridge, bridgeRequest, DEFAULT_PRINTER, receiptRaster, type PosReceipt, type PrinterSettings } from '@/lib/thermal-print';
+import { PrintConnectionError, bridgeHealth, pairPrintBridge, bridgeRequest, DEFAULT_PRINTER, receiptRaster, type PosReceipt, type PrinterSettings } from '@/lib/thermal-print';
 
 function subscribeSettings(callback: () => void) {
   window.addEventListener('storage', callback);
@@ -67,22 +67,31 @@ export function ThermalPrinter({ restaurantId, restaurantName, currency, receipt
         try { result = await bridgeRequest(settings, '/printers'); } catch { token = ''; }
       }
       if (!token) token = await pairPrintBridge();
-      result ??= await bridgeRequest({...settings, token}, '/printers');
+      if (!result) {
+        try { result = await bridgeRequest({...settings, token}, '/printers'); }
+        catch { throw new PrintConnectionError('discovery'); }
+      }
       if ((result.version ?? 1) < 5) {
-        setConnected(false);
-        setMessage(label('حمّل المثبّت الجديد وشغّله لتحديث برنامج الطباعة، ثم ارجع للصفحة.', 'Download and run the new installer to update MenuzQR Print, then return to this page.'));
-        return null;
+        throw new PrintConnectionError('outdated');
       }
       const names = result.printers || [];
       const printer = names.includes(settings.printer) ? settings.printer : result.suggestedPrinter ?? '';
       const width = !settings.printer && /(?:pos[- _]?58|58\s?mm)/i.test(printer) ? 58 : settings.width;
       const value: PrinterSettings = {...settings, token, printer, width};
       patch(value); setPrinters(names); setConnected(true);
-      setMessage(printer ? label('الطابعة جاهزة. يمكنك طباعة الإيصال أو تجربة طباعة اختبار.', 'Printer ready. Print your receipt or try a test receipt.') : names.length ? label('تم الاتصال. اختار الطابعة مرة واحدة، وسيتم حفظ اختيارك.', 'Connected. Choose your printer once; your choice will be saved.') : label('برنامج الطباعة جاهز، لكن Windows لا يعرض أي طابعة. وصّل الطابعة وثبّت تعريف الموديل.', 'MenuzQR Print is ready, but Windows has no printers. Connect your printer and install its model driver.'));
+      setMessage(printer ? label('الطابعة جاهزة. يمكنك طباعة الإيصال أو تجربة طباعة اختبار.', 'Printer ready. Print your receipt or try a test receipt.') : names.length ? label('تم الاتصال. افتح إعدادات الطابعة واختار طابعتك مرة واحدة.', 'Connected. Open Printer settings and choose your printer once.') : label('برنامج الطباعة جاهز، لكن Windows لا يعرض أي طابعة. وصّل الطابعة وثبّت تعريف الموديل.', 'MenuzQR Print is ready, but Windows has no printers. Connect your printer and install its model driver.'));
       return value;
-    } catch {
+    } catch (cause) {
       setConnected(false);
-      setMessage(label('جهّز الطباعة المباشرة: حمّل مثبّت Windows وشغّله مرة واحدة، ثم ارجع للصفحة. اسمح بالوصول للشبكة المحلية لو المتصفح طلبه.', 'Set up direct printing: download and run the Windows installer once, then return here. Allow local network access if your browser asks.'));
+      const code = cause instanceof PrintConnectionError ? cause.code : 'unreachable';
+      const errors = {
+        unreachable: label('تعذر الوصول لبرنامج الطباعة على الجهاز. شغّل MenuzQR Print واسمح للمتصفح بالوصول للشبكة المحلية، ثم أعد المحاولة.', 'Cannot reach MenuzQR Print on this computer. Start MenuzQR Print and allow local network access in your browser, then retry.'),
+        outdated: label('برنامج الطباعة المتصل نسخة قديمة. افتح إعدادات الطابعة لتحميل التحديث وتشغيله.', 'The connected print bridge is outdated. Open Printer settings to download and run the new installer.'),
+        session: label('تعذر الحصول على تصريح ربط الطابعة من الموقع. تحقق من الإنترنت وتسجيل الدخول ثم أعد المحاولة.', 'Could not authorize printer connection with the site. Check your internet connection and sign-in, then retry.'),
+        pairing: label('برنامج الطباعة موجود، لكن الربط بالموقع لم يكتمل. أعد تشغيل MenuzQR Print ثم أعد المحاولة.', 'MenuzQR Print was found, but connecting it to the site failed. Restart MenuzQR Print, then retry.'),
+        discovery: label('تم ربط برنامج الطباعة، لكن تعذر قراءة طابعات Windows. أعد تشغيل البرنامج وتحقق من تعريف الطابعة.', 'Connected to MenuzQR Print, but could not read Windows printers. Restart the program and check the printer driver.'),
+      };
+      setMessage(`${errors[code]} [${code}]`);
       return null;
     } finally { lock.current = false; setBusy(false); }
   }
@@ -113,12 +122,12 @@ export function ThermalPrinter({ restaurantId, restaurantName, currency, receipt
     }
     const data: PosReceipt | null = test ? { testPrint: true, number: 0, total: 10, received: 20, payment: 'cash', tableLabel: label('اختبار', 'Test'), note: label('اختبار الطابعة الحرارية', 'Thermal printer test'), createdAt: new Date().toISOString(), lines: [{ variantId: 'test', name: label('طباعة عربي وإنجليزي', 'Arabic and English printing'), variant: 'MenuzQR', price: 10, quantity: 1 }] } : override ?? receipt;
     if (!data) return;
-    // Discover/validate the saved printer without opening a modal when ready.
+    // Checkout and test printing never open settings, including on connection failure.
     // Browser/PDF printing is deliberately not part of checkout or test printing.
     const effective = await connect();
     if (!effective?.printer) {
       if (!test) pendingReceipt.current = data;
-      setOpen(true); return;
+      return;
     }
     lock.current = true; setBusy(true); setMessage(label('جاري الطباعة…', 'Printing…'));
     // Reuse the job ID after a lost response so retrying cannot enqueue twice.
@@ -134,8 +143,9 @@ export function ThermalPrinter({ restaurantId, restaurantName, currency, receipt
     try {
       const bridge = await bridgeRequest(effective, '/printers');
       if ((bridge.version ?? 1) < 5) {
-        setOpen(true);
-        setMessage(label('حدّث برنامج الربط من الرابط بالأسفل ثم أعد طباعة الإيصال المحفوظ. لم يتم إرسال الإيصال للنسخة القديمة.', 'Update the print bridge below, then retry the saved receipt. Nothing was sent to the old bridge.'));
+        setConnected(false);
+        if (!test) pendingReceipt.current = data;
+        setMessage(label('افتح إعدادات الطابعة وحدّث برنامج الربط ثم أعد طباعة الإيصال المحفوظ. لم يتم إرسال الإيصال للنسخة القديمة.', 'Open Printer settings to update the print bridge, then retry the saved receipt. Nothing was sent to the old bridge.'));
         return;
       }
       const bitmap = await receiptRaster({...data,lines:data.lines.map(line=>({...line,variant:alhamdUnitLabel(line.variant,restaurantId)}))}, restaurantName, currency, ar, effective.width);
@@ -148,7 +158,7 @@ export function ThermalPrinter({ restaurantId, restaurantName, currency, receipt
       toast(label('اترسل الإيصال للطابعة.', 'Receipt sent to the printer.'), 'success');
       setMessage(label('اترسل الإيصال للطابعة.', 'Receipt sent to the printer.'));
     } catch (cause) {
-      if (!submitted) { setConnected(false); setOpen(true); pendingReceipt.current = test ? null : data; }
+      if (!submitted) { setConnected(false); pendingReceipt.current = test ? null : data; }
       const error = label('تعذر تأكيد الطباعة. راجع برنامج الربط والطابعة والورق. لو الإيصال طلع بالفعل متعيدش طباعته.', 'Printing could not be confirmed. Check the bridge, printer and paper. If the receipt already printed, do not reprint it.');
       const detail = cause instanceof Error ? cause.message : '';
       toast(error, 'error'); setMessage(detail ? `${error} ${detail}` : error);

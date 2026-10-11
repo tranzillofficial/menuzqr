@@ -30,21 +30,36 @@ export async function bridgeRequest(settings: PrinterSettings, path: '/printers'
   return result as { printers?: string[]; ok?: boolean; version?: number; suggestedPrinter?:string|null; duplicate?:boolean };
 }
 
-export async function bridgeHealth(){
- const response=await timedFetch('http://127.0.0.1:18191/health',{cache:'no-store'},2500);
- const result=await response.json();
- if(!response.ok||result.app!=='MenuzQR Print'||result.version<5)throw new Error('Install MenuzQR Print');
- return result;
+export class PrintConnectionError extends Error {
+  constructor(public code: 'unreachable' | 'outdated' | 'session' | 'pairing' | 'discovery') {
+    super(code); this.name = 'PrintConnectionError';
+  }
 }
-export async function pairPrintBridge(){
- await bridgeHealth();
- const grant=await timedFetch('/api/print-pair',{method:'POST'},10000);
- const {ticket,error}=await grant.json();
- if(!grant.ok)throw new Error(error||'Sign in to connect');
- const response=await timedFetch('http://127.0.0.1:18191/pair',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ticket})},12000);
- const result=await response.json();
- if(!response.ok||typeof result.token!=='string')throw new Error('Pairing failed');
- return result.token as string;
+export async function bridgeHealth() {
+  let response, result;
+  try {
+    response = await timedFetch('http://127.0.0.1:18191/health', {cache:'no-store'}, 2500);
+    result = await response.json();
+  } catch { throw new PrintConnectionError('unreachable'); }
+  if (!response.ok || result.app !== 'MenuzQR Print') throw new PrintConnectionError('unreachable');
+  if (!(result.version >= 5)) throw new PrintConnectionError('outdated');
+  return result;
+}
+export async function pairPrintBridge() {
+  await bridgeHealth();
+  let ticket;
+  try {
+    const grant = await timedFetch('/api/print-pair', {method:'POST'}, 10000);
+    const result = await grant.json();
+    if (!grant.ok || typeof result.ticket !== 'string') throw new Error();
+    ticket = result.ticket;
+  } catch { throw new PrintConnectionError('session'); }
+  try {
+    const response = await timedFetch('http://127.0.0.1:18191/pair', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ticket})}, 12000);
+    const result = await response.json();
+    if (!response.ok || typeof result.token !== 'string') throw new Error();
+    return result.token as string;
+  } catch { throw new PrintConnectionError('pairing'); }
 }
 
 // Render Arabic with the browser's shaping engine, then send monochrome raster
