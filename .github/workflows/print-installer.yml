@@ -1,11 +1,10 @@
-name: Windows print installer
+name: Native Windows print installer
 on:
   push:
     branches: [main]
     paths:
-      - public/menuzqr-print-bridge.py
+      - native-print/**
       - installer/**
-      - tests/test_print_bridge.py
       - .github/workflows/print-installer.yml
   workflow_dispatch:
 permissions:
@@ -16,52 +15,80 @@ concurrency:
 jobs:
   build:
     runs-on: windows-2022
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          architecture: x64
-      - name: Test bridge
-        run: python -m unittest discover -s tests -p test_print_bridge.py
-      - name: Bundle runtime
+      - name: Download pinned build dependencies
+        shell: pwsh
         run: |
-          python -m pip install pyinstaller==6.22.3
-          python -m PyInstaller --noconfirm --clean --onedir --noconsole --name MenuzQRPrint public/menuzqr-print-bridge.py
+          New-Item -ItemType Directory -Force dist/native, dist/deps | Out-Null
+          Invoke-WebRequest https://raw.githubusercontent.com/nlohmann/json/v3.11.3/single_include/nlohmann/json.hpp -OutFile dist/deps/json.hpp
+          Invoke-WebRequest https://www.sqlite.org/2024/sqlite-amalgamation-3460100.zip -OutFile dist/deps/sqlite.zip
+          Expand-Archive dist/deps/sqlite.zip dist/deps
+          Copy-Item dist/deps/sqlite-amalgamation-3460100/sqlite3.* dist/deps/
+      - name: Compile native x86 with statically linked runtime
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars32.bat"
+          cl /nologo /O2 /MT /c /DSQLITE_THREADSAFE=1 /DSQLITE_OMIT_LOAD_EXTENSION /Fo:dist\deps\sqlite3.obj dist\deps\sqlite3.c
+          if errorlevel 1 exit /b 1
+          cl /nologo /O2 /MT /EHsc /std:c++17 /utf-8 /DUNICODE /D_UNICODE /I dist\deps native-print\MenuzQRPrint.cpp dist\deps\sqlite3.obj /Fe:dist\native\MenuzQRPrint.exe /link /SUBSYSTEM:WINDOWS,6.01
+          if errorlevel 1 exit /b 1
+          dumpbin /dependents dist\native\MenuzQRPrint.exe > dist\native\dependencies.txt
+      - name: Native validation
+        shell: pwsh
+        run: |
+          $p=Start-Process dist/native/MenuzQRPrint.exe -ArgumentList '--self-test' -PassThru
+          if (!$p.WaitForExit(30000) -or $p.ExitCode -ne 0) { throw 'Native self-test failed' }
+          $dependencies=Get-Content dist/native/dependencies.txt -Raw
+          if ($dependencies -match '(?i)python|msvcp\d+\.dll|vcruntime\d+\.dll|ucrtbase\.dll|api-ms-win-crt') { throw 'Unexpected external runtime dependency' }
       - name: Compile installer
         shell: pwsh
         run: |
           & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" installer\menuzqr-print.iss
           if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed' }
-      - name: Verify installation, startup and uninstall
+      - name: Verify installation, HTTP security, upgrade and uninstall
         shell: pwsh
         run: |
-          $setup = Start-Process installer\output\MenuzQR-Print-Setup.exe -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART' -PassThru
-          if (!$setup.WaitForExit(60000)) { throw 'Installer timed out' }
-          if ($setup.ExitCode -ne 0) { throw 'Installation failed' }
-          $exe = "$env:LOCALAPPDATA\Programs\MenuzQR Print\MenuzQRPrint.exe"
+          $setup=Start-Process installer/output/MenuzQR-Print-Setup.exe -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART' -PassThru
+          if (!$setup.WaitForExit(60000) -or $setup.ExitCode -ne 0) { throw 'Installation failed' }
+          $exe="$env:LOCALAPPDATA\Programs\MenuzQR Print\MenuzQRPrint.exe"
           if (!(Test-Path $exe)) { throw 'Executable missing' }
-          $startup = Get-ItemPropertyValue 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' MenuzQRPrint
-          if ($startup -ne "`"$exe`"") { throw 'Startup registration missing' }
-          $ready = $false
-          for ($i=0; $i -lt 20; $i++) {
-            try {
-              $health = Invoke-RestMethod http://127.0.0.1:18191/health -Headers @{Origin='https://menuzqr.shop'}
-              if ($health.version -eq 5) { $ready=$true; break }
-            } catch {}
+          $startup=Get-ItemPropertyValue 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' MenuzQRPrint
+          if ($startup -ne "`"$exe`" --background") { throw 'Startup registration missing' }
+          $ready=$false
+          for ($i=0;$i -lt 20;$i++) {
+            try { $health=Invoke-RestMethod http://127.0.0.1:18191/health; if ($health.version -eq 6 -and $health.engine -eq 'native-cpp') {$ready=$true;break} } catch {}
             Start-Sleep -Seconds 1
           }
-          if (!$ready) { throw 'Installed bridge did not start' }
+          if (!$ready) { throw 'Native bridge did not start' }
+          $origin='https://menuzqr.shop'
+          $key=[IO.File]::ReadAllText("$env:LOCALAPPDATA\MenuzQR\print-pairing-code.txt").Trim()
+          $hmac=[Security.Cryptography.HMACSHA256]::new([Text.Encoding]::UTF8.GetBytes($key))
+          $token=([BitConverter]::ToString($hmac.ComputeHash([Text.Encoding]::UTF8.GetBytes("origin:$origin")))).Replace('-','').ToLower()
+          $response=Invoke-WebRequest http://127.0.0.1:18191/printers -Headers @{Origin=$origin;Authorization="Bearer $token"}
+          if ($response.StatusCode -ne 200 -or $response.Headers['Access-Control-Allow-Origin'] -ne $origin) { throw 'Authorized discovery failed' }
+          $invalid=Invoke-WebRequest http://127.0.0.1:18191/printers -Headers @{Origin=$origin;Authorization='Bearer wrong'} -SkipHttpErrorCheck
+          if ($invalid.StatusCode -ne 401) { throw 'Invalid token accepted' }
+          $unsafe=Invoke-WebRequest http://127.0.0.1:18191/printers -Headers @{Origin='http://evil.test';Authorization="Bearer $token"} -SkipHttpErrorCheck
+          if ($unsafe.StatusCode -eq 200 -or $unsafe.Headers['Access-Control-Allow-Origin']) { throw 'Unsafe origin accepted' }
+          $bad=Invoke-WebRequest http://127.0.0.1:18191/print -Method POST -ContentType application/json -Body '{"jobId":"bad"}' -Headers @{Origin=$origin;Authorization="Bearer $token"} -SkipHttpErrorCheck
+          if ($bad.StatusCode -eq 200) { throw 'Invalid print accepted' }
+          # Reinstallation must replace our own running instance automatically.
+          $setup=Start-Process installer/output/MenuzQR-Print-Setup.exe -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART' -PassThru
+          if (!$setup.WaitForExit(60000) -or $setup.ExitCode -ne 0) { throw 'Upgrade failed' }
+          Start-Sleep -Seconds 2
+          if ((Invoke-RestMethod http://127.0.0.1:18191/health).version -ne 6) { throw 'Upgrade startup failed' }
           Stop-Process -Name MenuzQRPrint -ErrorAction SilentlyContinue
-          $uninstall = Start-Process "$env:LOCALAPPDATA\Programs\MenuzQR Print\unins000.exe" -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART' -PassThru
-          if (!$uninstall.WaitForExit(60000)) { throw 'Uninstaller timed out' }
-          if ($uninstall.ExitCode -ne 0) { throw 'Uninstall failed' }
-          if (Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name MenuzQRPrint -ErrorAction SilentlyContinue) { throw 'Startup entry was not removed' }
+          $uninstall=Start-Process "$env:LOCALAPPDATA\Programs\MenuzQR Print\unins000.exe" -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART' -PassThru
+          if (!$uninstall.WaitForExit(60000) -or $uninstall.ExitCode -ne 0) { throw 'Uninstall failed' }
+          if (Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name MenuzQRPrint -ErrorAction SilentlyContinue) { throw 'Startup entry remained' }
       - uses: actions/upload-artifact@v4
         with:
-          name: MenuzQR-Print-Windows
-          path: installer/output/MenuzQR-Print-Setup.exe
+          name: MenuzQR-Print-Native
+          path: |
+            installer/output/MenuzQR-Print-Setup.exe
+            dist/native/dependencies.txt
       - name: Publish download
         env:
           GH_TOKEN: ${{ github.token }}
@@ -69,10 +96,10 @@ jobs:
         run: |
           $asset='installer/output/MenuzQR-Print-Setup.exe'
           (Get-FileHash $asset -Algorithm SHA256).Hash.ToLower() + '  MenuzQR-Print-Setup.exe' | Set-Content installer/output/SHA256SUMS.txt
-          gh release view print-v5 --repo $env:GITHUB_REPOSITORY *> $null
+          gh release view print-v6 --repo $env:GITHUB_REPOSITORY *> $null
           if ($LASTEXITCODE -ne 0) {
-            gh release create print-v5 --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title 'MenuzQR Print 5 for Windows' --notes 'Windows 10/11 x64 installer. Includes the Python runtime, starts at sign-in, and supports automatic secure pairing. Requires an installed manufacturer graphics printer driver with custom roll size support. This build is not Authenticode signed.'
+            gh release create print-v6 --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title 'MenuzQR Print 6 - Native Windows' --notes 'Native C++ x86 executable with statically linked runtime. No Python or .NET installation. Targets Windows 7 SP1 32/64-bit and Windows 10/11. Visible status window and notification-area icon. TLS 1.2 and current Windows certificates are needed for secure pairing. Requires the manufacturer graphics printer driver. Preserves existing print journal to prevent duplicate jobs. Installation, startup, security and upgrade tested on Windows Server 2022; physical printer and Windows 7 validation still required. Not Authenticode signed.'
             if ($LASTEXITCODE -ne 0) { throw 'Release creation failed' }
           }
-          gh release upload print-v5 $asset installer/output/SHA256SUMS.txt --clobber --repo $env:GITHUB_REPOSITORY
+          gh release upload print-v6 $asset installer/output/SHA256SUMS.txt --clobber --repo $env:GITHUB_REPOSITORY
           if ($LASTEXITCODE -ne 0) { throw 'Release upload failed' }
