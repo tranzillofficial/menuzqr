@@ -59,7 +59,7 @@ export function ThermalPrinter({ restaurantId, restaurantName, currency, receipt
   }
   async function connect(): Promise<PrinterSettings | null> {
     if (lock.current) return null;
-    lock.current = true; setBusy(true); setMessage('');
+    lock.current = true; setBusy(true); setMessage(label('جاري الاتصال بالطابعة…', 'Connecting to printer…'));
     try {
       let token = settings.token;
       let result;
@@ -130,6 +130,8 @@ export function ThermalPrinter({ restaurantId, restaurantName, currency, receipt
       return;
     }
     lock.current = true; setBusy(true); setMessage(label('جاري الطباعة…', 'Printing…'));
+    let submitted = false;
+    try {
     // Reuse the job ID after a lost response so retrying cannot enqueue twice.
     const jobKey = `${key}:job:${data.orderId ?? data.number}:${data.creditNote ? 'credit' : 'invoice'}`;
     if (test || job.current?.key !== jobKey) {
@@ -139,8 +141,6 @@ export function ThermalPrinter({ restaurantId, restaurantName, currency, receipt
       }
       job.current = { key: jobKey, id };
     }
-    let submitted = false;
-    try {
       const bridge = await bridgeRequest(effective, '/printers');
       if ((bridge.version ?? 1) < 5) {
         setConnected(false);
@@ -168,8 +168,8 @@ export function ThermalPrinter({ restaurantId, restaurantName, currency, receipt
   return <div className={compact ? "space-y-2" : "space-y-2 rounded-xl border border-ink-200 bg-white p-3"}>
     <div className="flex flex-wrap items-center gap-2"><Button type="button" variant="secondary" aria-label={label('إعدادات الطابعة', 'Printer settings')} onClick={() => setOpen(true)}><Icon.settings className="size-4" />{!compact && label('إعداد الطابعة الحرارية', 'Thermal printer setup')}</Button>
       {receipt && <Button type="button" loading={busy} disabled={busy} onClick={() => print()}>{label('طباعة الإيصال', 'Print receipt')} #{receipt.number}</Button>}
-      <Button type="button" size="sm" variant="secondary" disabled={busy} onClick={() => print(true)}>{label('تست طباعة', 'Test print')}</Button></div>
-    {message && <p role="status" aria-live="polite" className="rounded-lg bg-ink-50 p-3 text-sm">{message}</p>}
+      <Button type="button" size="sm" variant="secondary" loading={busy} disabled={busy} onClick={() => print(true)}>{label('تست طباعة', 'Test print')}</Button></div>
+    {message && <p role="status" aria-live="polite" className="fixed bottom-24 left-4 right-4 z-[110] mx-auto max-w-lg rounded-xl border border-ink-200 bg-white p-4 text-sm font-semibold text-ink-900 shadow-xl" data-testid="printer-status">{message}</p>}
     {!compact && <p className="text-xs text-ink-500">{label('الطباعة المباشرة تضبط عرض الإيصال وطوله حسب المحتوى. إعداد الطابعة مرة واحدة على جهاز الكاشير، والطلب يُحفظ قبل الطباعة.', 'Direct printing sets the receipt width and length from its content. Set up the printer once on the cashier computer. Orders are saved before printing.')}</p>}
     {settings.printer && <p className="text-xs text-ink-500">{settings.printer} · {settings.width} mm</p>}
     <Modal open={open} onClose={() => { if (!busy) setOpen(false); }} title={label('الطابعة الحرارية', 'Thermal printer')} size="sm">

@@ -65,7 +65,11 @@ export async function pairPrintBridge() {
 // Render Arabic with the browser's shaping engine, then send monochrome raster
 // commands. This avoids dependence on the printer's Arabic code page support.
 async function receiptCanvas(receipt: PosReceipt, restaurantName: string, currency: string, ar: boolean, width: 58 | 80) {
-  await document.fonts.ready;
+  // Do not let a stalled web font request block the cashier indefinitely.
+  await new Promise<void>(resolve => {
+    const timer = setTimeout(resolve, 2000);
+    void document.fonts.ready.then(() => { clearTimeout(timer); resolve(); }, () => { clearTimeout(timer); resolve(); });
+  });
   const canvas = document.createElement('canvas');
   const dots = printerDots(width);
   const padding = 8, usable = dots - padding * 2;
@@ -163,8 +167,14 @@ export async function receiptRaster(receipt: PosReceipt, restaurantName: string,
     const i = (y * dots + x) * 4;
     if ((pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3 < 160) raster[y * bytesPerRow + (x >> 3)] |= 0x80 >> (x & 7);
   }
-  // Send a monochrome document; Windows GDI and the installed driver render it.
+  // Crop empty rows, keeping only two pixels of whitespace around the ink.
+  const inkRow = (row: number) => raster.subarray(row * bytesPerRow, (row + 1) * bytesPerRow).some(byte => byte !== 0);
+  let first = 0, last = canvas.height - 1;
+  while (first <= last && !inkRow(first)) first++;
+  if (first > last) throw new Error('Receipt contains no printable content');
+  while (!inkRow(last)) last--;
+  first = Math.max(0, first - 2); last = Math.min(canvas.height - 1, last + 2);
   let binary = '';
-  for (const byte of raster) binary += String.fromCharCode(byte);
-  return { protocol: 'windows-gdi-v1', paperMm: width, width: dots, height: canvas.height, raster: btoa(binary) };
+  for (const byte of raster.subarray(first * bytesPerRow, (last + 1) * bytesPerRow)) binary += String.fromCharCode(byte);
+  return { protocol: 'windows-gdi-v1', paperMm: width, width: dots, height: last - first + 1, raster: btoa(binary) };
 }

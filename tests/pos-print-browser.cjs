@@ -25,7 +25,7 @@ let executablePath=process.env.CHROMIUM_EXECUTABLE; if(!executablePath){try{exec
 const browser=await chromium.launch({executablePath,args:process.env.PRINT_TEST_DISABLE_GPU ? [...chrome.args.filter(a=>!a.startsWith('--use-gl=')&&!a.startsWith('--use-angle=')), '--disable-gpu','--disable-software-rasterizer'] : chrome.args,headless:true});
 const context=await browser.newContext({viewport:{width:1440,height:1100}});
 try{
-for(const scenario of ['unpairedOldBridge','sessionFailure','pairFailure','discoveryFailure','setup','autoPair','installThenConnect','choosePrinter','browser','thermal','thermal512','oldBridge','thermalFailure','auditFailure','checkoutFailure']){
+for(const scenario of ['delayedBridge','unpairedOldBridge','sessionFailure','pairFailure','discoveryFailure','setup','autoPair','installThenConnect','choosePrinter','browser','thermal','thermal512','oldBridge','thermalFailure','auditFailure','checkoutFailure']){
  const page=await context.newPage();let sent=[];let tests=[];let errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.addInitScript(({scenario})=>{
  localStorage.clear();window.printRequests=0;AbortSignal.timeout=undefined;window.receiptFonts=[];const fill=CanvasRenderingContext2D.prototype.fillText;CanvasRenderingContext2D.prototype.fillText=function(...args){window.receiptFonts.push(this.font);return fill.apply(this,args)};
@@ -40,7 +40,7 @@ for(const scenario of ['unpairedOldBridge','sessionFailure','pairFailure','disco
  await page.route('http://127.0.0.1:18191/**',async route=>{
    if(!bridgeAvailable){await route.abort();return;}
    const url=route.request().url();
-   if(url.endsWith('/health')){await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({app:'MenuzQR Print',version:['oldBridge','unpairedOldBridge'].includes(scenario)?1:5})});return;}
+   if(url.endsWith('/health')){if(scenario==='delayedBridge')await new Promise(resolve=>setTimeout(resolve,1000));await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({app:'MenuzQR Print',version:['oldBridge','unpairedOldBridge'].includes(scenario)?1:5})});return;}
    if(url.endsWith('/pair')){pairings++;assert.equal(JSON.parse(route.request().postData()).ticket,'signed-ticket');await route.fulfill({status:scenario==='pairFailure'?403:200,contentType:'application/json',body:JSON.stringify({token:'paired',version:5})});return;}
    if(route.request().method()==='GET'){await route.fulfill({status:scenario==='discoveryFailure'?503:200,contentType:'application/json',body:JSON.stringify({printers:['Thermal'],suggestedPrinter:scenario==='choosePrinter'?null:'Thermal',version:['oldBridge','unpairedOldBridge'].includes(scenario)?1:5})});return;}
    const payload=JSON.parse(route.request().postData());if(payload.testPrint){tests.push(payload);assert.ok(payload.height<=160);assert.equal(payload.protocol,'windows-gdi-v1');assert.ok([58,80].includes(payload.paperMm));assert.equal(payload.encoding,undefined);}else sent.push(payload);await route.fulfill({status:scenario==='thermalFailure'?503:200,contentType:'application/json',body:JSON.stringify({ok:scenario!=='thermalFailure'})});
@@ -49,6 +49,10 @@ for(const scenario of ['unpairedOldBridge','sessionFailure','pairFailure','disco
  await page.getByRole('button',{name:'Add Juice Regular',exact:true}).click();
  await page.getByLabel('Amount received').fill('120');
  await page.getByRole('button',{name:'Confirm payment',exact:true}).click();
+ if(scenario==='delayedBridge'){
+   await page.getByTestId('printer-status').filter({hasText:'Connecting to printer'}).waitFor();
+   const bounds=await page.getByTestId('printer-status').boundingBox();assert.ok(bounds && bounds.y>=0 && bounds.y+bounds.height<=1100,'Status stays in viewport');
+ }
  if(scenario==='checkoutFailure'){
    await page.getByRole('alert').waitFor();assert.equal(sent.length,0);
  }else if(['setup','oldBridge','unpairedOldBridge','sessionFailure','pairFailure','discoveryFailure'].includes(scenario)){
@@ -76,13 +80,18 @@ for(const scenario of ['unpairedOldBridge','sessionFailure','pairFailure','disco
  }else{
    await page.getByText('Receipt sent to the printer.',{exact:true}).waitFor();assert.equal(sent.length,1);
    assert.equal(await page.getByRole('dialog').count(),0,'Ready printer must not open setup on payment');
-   if(scenario==='autoPair'||scenario==='browser')assert.equal(pairings,1);
+   if(scenario==='autoPair'||scenario==='browser'||scenario==='delayedBridge')assert.equal(pairings,1);
    else assert.equal(sent[0].width,scenario==='thermal512'?576:384);
    if(scenario==='auditFailure')assert.match((await page.evaluate(()=>window.toasts)).join(' '),/journal/);
    await page.getByRole('button',{name:'Test print',exact:true}).click();
    await page.waitForFunction(()=>window.toasts.filter(x=>x==='Receipt sent to the printer.').length===2);
    assert.equal(tests.length,1);assert.ok(tests[0].height<=80,'Two-line test stays compact');assert.equal(sent.length,1);
    assert.equal(await page.getByRole('dialog').count(),0);
+ }
+ for(const bitmap of [...sent,...tests]){
+   const raw=Buffer.from(bitmap.raster,'base64'),stride=bitmap.width/8;
+   assert.ok(raw.subarray(0,3*stride).some(v=>v!==0),'At most two leading blank rows');
+   assert.ok(raw.subarray(raw.length-3*stride).some(v=>v!==0),'At most two trailing blank rows');
  }
  assert.equal(await page.evaluate(()=>window.printRequests),0,'Checkout and test must never invoke PDF/browser printing');
  assert.equal(await page.evaluate(()=>window.orders),1);
