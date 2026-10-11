@@ -1,7 +1,7 @@
 [Setup]
 AppId={{F55891DE-94BB-4AD6-A10C-ED4CDF7AD91C}
 AppName=MenuzQR Print
-AppVersion=3.0.0
+AppVersion=4.0.0
 AppPublisher=MenuzQR
 AppPublisherURL=https://menuzqr.shop
 DefaultDirName={localappdata}\Programs\MenuzQR Print

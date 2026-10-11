@@ -89,3 +89,23 @@ https://github.com/tranzillofficial/menuzqr/releases/download/print-win7-v3/Menu
 Physical Windows 7 and printer validation remains required. Windows 7 and this
 legacy runtime are out of support; use the modern installer on Windows 10/11.
 All receipt text is rendered bold, with wrapping measured using the bold font.
+
+## Version 4 compatibility and calibration
+
+The v4 installers are published under `print-v4` and `print-win7-v4`. Update the
+installed bridge before testing. Existing paired settings are retained, but direct
+receipts are held until the cashier prints the two-line test and confirms its
+physical result. Reconnecting never sends a receipt. Pending orders remain saved.
+Changing the printer, width, image mode, feed or cut setting requires a new test.
+
+The compatibility default uses ESC * 33 with correctly transposed 24-dot column
+bands and explicit 24-dot spacing. Raster mode uses small GS v 0 packets without
+additional line feeds. Both reset rotation and page mode. The test bitmap has a
+160-dot hard limit in the browser and bridge, and extra feed is forced to zero.
+Cutter travel remains printer-dependent. Non-ESC/POS printers require their driver
+or a model-specific integration; do not keep retrying an unreadable test.
+
+Job outcomes (including uncertain sends) are saved in local SQLite before Windows
+receives the job, preventing retries from duplicating jobs across bridge restarts.
+No receipt content is stored in this database. A short successful test still needs
+physical confirmation: automated tests cannot prove paper output on every model.

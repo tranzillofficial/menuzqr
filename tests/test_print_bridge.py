@@ -6,6 +6,7 @@ import importlib.util
 import json
 from pathlib import Path
 import threading
+import tempfile
 import unittest
 import uuid
 
@@ -73,7 +74,7 @@ class BridgeTests(unittest.TestCase):
     def test_health_never_exposes_pairing_token(self):
         status, body, _ = self.request('GET', '/health', Authorization='')
         self.assertEqual(status, 200)
-        self.assertEqual(body, {'version':3,'app':'MenuzQR Print'})
+        self.assertEqual(body, {'version':4,'app':'MenuzQR Print'})
 
     def test_automatic_printer_avoids_office_and_ambiguous_queues(self):
         self.assertEqual(bridge.automatic_printer(['Microsoft Print to PDF','POS-80']), 'POS-80')
@@ -116,14 +117,64 @@ class BridgeTests(unittest.TestCase):
     def test_raster_dimensions_strips_and_cut(self):
         for width in (384, 512, 576):
             body = bitmap(width, 129, cut=True)
-            commands = bridge.raster_commands(body)
-            stride = width // 8
-            prefix = b'\x1b@\x1bS\x1bV\x00\x1b{\x00\x1d!\x00\x1ba\x00\x1dL\x00\x00' + bytes([29, 87, width & 255, width >> 8]) + b'\x1dP\xcb\xcb'
-            self.assertEqual(commands[:len(prefix) + 8], prefix + bytes([29, 118, 48, 0, stride, 0, 128, 0]))
-            offset = len(prefix) + 8 + stride * 128
-            self.assertEqual(commands[offset:offset + 8], bytes([29, 118, 48, 0, stride, 0, 1, 0]))
-            self.assertTrue(commands.endswith(b'\x1dVA\x18'))
-            self.assertTrue(bridge.raster_commands(bitmap(width, cut=False)).endswith(b'\x1bJ\x18'))
+            data = bridge.raster_commands(body)
+            start = data.index(bytes([29, 118, 48, 0]))
+            decoded = bytearray()
+            offset = start
+            while data[offset:offset+4] == bytes([29, 118, 48, 0]):
+                stride = int.from_bytes(data[offset+4:offset+6], 'little')
+                rows = int.from_bytes(data[offset+6:offset+8], 'little')
+                self.assertEqual(stride, width // 8)
+                self.assertLessEqual(rows, 24)
+                decoded.extend(data[offset+8:offset+8+stride*rows])
+                offset += 8+stride*rows
+            self.assertEqual(bytes(decoded), base64.b64decode(body['raster']))
+            self.assertEqual(data[offset:], b'\x1dVA\x18')
+
+    def test_column_mode_preserves_pixels_without_rotation_or_extra_feeds(self):
+        for width in (384, 512, 576):
+            height = 49
+            raster = bytearray(width // 8 * height)
+            pixels = [(0,0),(7,1),(8,7),(width-1,23),(19,24),(37,48)]
+            for x,y in pixels:
+                raster[y*(width//8)+x//8] |= 128 >> (x%8)
+            data = bridge.raster_commands(bitmap(width,height,raster=base64.b64encode(raster).decode(),encoding='column',feedMm=0,cut=False))
+            offset = data.index(b'\x1b3\x18')+3
+            decoded = []
+            for top in range(0,height,24):
+                self.assertEqual(data[offset:offset+5], bytes([27,42,33,width & 255,width >> 8]))
+                offset += 5
+                for x in range(width):
+                    for block in range(3):
+                        value=data[offset]; offset+=1
+                        for bit in range(8):
+                            if value & (128 >> bit): decoded.append((x,top+block*8+bit))
+                self.assertEqual(data[offset],10); offset+=1
+            self.assertEqual(set(decoded),set(pixels))
+            self.assertEqual(data[offset:],b'\x1b2')
+
+    def test_short_test_has_hard_height_limit_and_no_extra_feed(self):
+        self.assertEqual(self.request('POST','/print',bitmap(height=161,testPrint=True))[0],400)
+        for encoding in ('raster','column'):
+            data=bridge.raster_commands(bitmap(height=72,testPrint=True,feedMm=30,encoding=encoding,cut=True))
+            self.assertTrue(data.endswith(b'\x1dVA\x00'))
+        self.assertEqual(self.printers.jobs,[])
+
+    def test_persistent_jobs_survive_bridge_restart(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path=Path(folder)/'jobs.sqlite3'
+            job=str(uuid.uuid4())
+            first=bridge.JobStore(path)
+            self.assertIsNone(first.get(job))
+            first.put(job,False)
+            self.assertIs(bridge.JobStore(path).get(job),False)
+            first.put(job,True)
+            self.assertIs(bridge.JobStore(path).get(job),True)
+            # Fresh handler with persisted successful job must not write again.
+            handler=bridge.make_handler(self.printers,'test-token',{'https://menuzqr.shop'},job_store=bridge.JobStore(path))
+            self.server.RequestHandlerClass=handler
+            self.assertTrue(self.request('POST','/print',bitmap(jobId=job))[1]['duplicate'])
+            self.assertEqual(self.printers.jobs,[])
 
 
 if __name__ == '__main__':

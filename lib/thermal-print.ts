@@ -5,8 +5,8 @@ export type PosReceipt = {
   payment: 'cash' | 'card' | 'transfer'; fiscalState?: string; createdAt: string; note: string;
   lines: { variantId: string; name: string; variant: string; price: number; quantity: number; gross?: number; net?: number; vat?: number; rate?: number; code?: string }[];
 };
-export type PrinterSettings = { token: string; printer: string; width: 58 | 80; cut: boolean; mode?: 'browser' | 'bridge'; dots?: 384 | 512 | 576; feedMm?: number };
-export const DEFAULT_PRINTER: PrinterSettings = { token: '', printer: '', width: 80, cut: true, mode: 'bridge', dots: 576, feedMm: 3 };
+export type PrinterSettings = { token: string; printer: string; width: 58 | 80; cut: boolean; mode?: 'browser' | 'bridge'; dots?: 384 | 512 | 576; feedMm?: number; encoding?: 'column' | 'raster'; calibrated?: string };
+export const DEFAULT_PRINTER: PrinterSettings = { token: '', printer: '', width: 80, cut: true, mode: 'bridge', dots: 576, feedMm: 0, encoding: 'column' };
 
 export function printerDots(width: 58 | 80, dots?: number): 384 | 512 | 576 {
   return width === 58 ? 384 : dots === 512 ? 512 : 576;
@@ -30,13 +30,13 @@ export async function bridgeRequest(settings: PrinterSettings, path: '/printers'
   }, body ? 30000 : 8000);
   const result = await response.json();
   if (!response.ok) throw new Error(result.error || 'Printer connection failed');
-  return result as { printers?: string[]; ok?: boolean; version?: number; suggestedPrinter?:string|null };
+  return result as { printers?: string[]; ok?: boolean; version?: number; suggestedPrinter?:string|null; duplicate?:boolean };
 }
 
 export async function bridgeHealth(){
  const response=await timedFetch('http://127.0.0.1:18191/health',{cache:'no-store'},2500);
  const result=await response.json();
- if(!response.ok||result.app!=='MenuzQR Print'||result.version<3)throw new Error('Install MenuzQR Print');
+ if(!response.ok||result.app!=='MenuzQR Print'||result.version<4)throw new Error('Install MenuzQR Print');
  return result;
 }
 export async function pairPrintBridge(){
@@ -58,7 +58,7 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
   const dots = printerDots(width, printDots);
   const padding = 8, usable = dots - padding * 2;
   const fontSize = width === 58 ? 22 : 28;
-  const rowHeight = width === 58 ? 30 : 36;
+  const rowHeight = width === 58 ? 28 : 32;
   const font = `${fontSize}px Arial, sans-serif`;
   canvas.width = dots; canvas.height = 1;
   const context = canvas.getContext('2d');
@@ -86,9 +86,8 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
   const amount = (n: number) => n.toFixed(2);
   const money = (n: number) => `${amount(n)} ${currency}`;
   if (receipt.testPrint) {
-    wrap('MenuzQR', true);
-    wrap(label('اختبار الطباعة', 'Print test'), true);
-    wrap(label('عربي واضح — English OK', 'English OK — عربي واضح'), true);
+    wrap('MenuzQR TEST', true);
+    wrap('عربي واضح / English', true);
   } else {
   wrap(fiscal?.legal_name || restaurantName, true);
   if (fiscal?.address) wrap(fiscal.address);
@@ -107,7 +106,7 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
     const price = amount(fiscal && fiscal.mode !== 'egypt' ? (line.net ?? 0)/line.quantity : line.price);
     const total = amount(sign * (fiscal?.mode === 'egypt' ? line.price * line.quantity : line.gross ?? line.price * line.quantity));
     // Give the product name the full printable width on every roll size.
-    wrap(`${line.name}${line.variant ? ` (${line.variant})` : ''}`, true);
+    wrap(`${line.name}${line.variant && line.variant !== 'Regular' ? ` (${line.variant})` : ''}`, true);
     wrap(`${line.quantity} × ${price} = ${total}`, true);
     if (fiscal?.registered && fiscal.mode !== 'egypt') wrap(`${line.code ?? ''} ${line.rate ?? 0}% | VAT ${money(sign * (line.vat ?? 0))}`);
   }
@@ -123,12 +122,13 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
   if (fiscal?.registered && fiscal.invoice_kind === 'receipt') wrap(fiscal.mode === 'saudi' ? label('إيصال بيع. الربط بالفوترة الإلكترونية غير مفعّل.','Sales receipt. Electronic invoicing is not connected.') : label('ليس فاتورة ضريبية كاملة.','Not a full VAT invoice.'));
   if (receipt.note) wrap(receipt.note);
   }
-  canvas.height = rows.length * rowHeight + 16;
+  canvas.height = rows.length * rowHeight + 8;
+  if (receipt.testPrint && canvas.height > 160) throw new Error('Test receipt exceeds 20 mm');
   if (canvas.height > 20000) throw new Error('Receipt is too long');
   context.fillStyle = '#fff'; context.fillRect(0,0,dots,canvas.height);
   context.textBaseline = 'middle';
   rows.forEach((row,index)=>{
-    const top = index * rowHeight + 8;
+    const top = index * rowHeight + 4;
     context.fillStyle = row.band ? '#000' : '#fff';
     context.fillRect(padding,top,usable,rowHeight);
     context.fillStyle = row.band ? '#fff' : '#000';
@@ -179,7 +179,7 @@ export async function printBrowserReceipt(receipt: PosReceipt, restaurantName: s
     // One text row per image permits page breaks without clipping a long receipt.
     const images: HTMLImageElement[] = [];
     for (let y = 0; y < canvas.height;) {
-      const height = Math.min(y === 0 ? 8 : width === 58 ? 30 : 36, canvas.height - y);
+      const height = Math.min(y === 0 ? 8 : width === 58 ? 28 : 32, canvas.height - y);
       const strip = document.createElement('canvas');
       strip.width = canvas.width; strip.height = height;
       strip.getContext('2d')!.drawImage(canvas, 0, y, canvas.width, height, 0, 0, canvas.width, height);

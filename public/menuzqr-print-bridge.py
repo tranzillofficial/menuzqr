@@ -15,6 +15,7 @@ import json
 import os
 from pathlib import Path
 import secrets
+import sqlite3
 import uuid
 import hashlib
 import re
@@ -23,7 +24,7 @@ from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 MAX_BODY = 2_000_000
-BRIDGE_VERSION = 3
+BRIDGE_VERSION = 4
 
 
 def verify_ticket(ticket, origin):
@@ -115,7 +116,12 @@ def raster_commands(body):
     width, height = body.get('width'), body.get('height')
     if type(width) is not int or width not in (384, 512, 576) or type(height) is not int or not 1 <= height <= 20000:
         raise ValueError('Invalid receipt dimensions.')
-    feed_mm = body.get('feedMm', 3)
+    if body.get('testPrint') is True and height > 160:
+        raise ValueError('Test receipt exceeds 20 mm content limit.')
+    encoding = body.get('encoding', 'raster')
+    if encoding not in ('raster', 'column'):
+        raise ValueError('Unknown printer image mode.')
+    feed_mm = 0 if body.get('testPrint') is True else body.get('feedMm', 3)
     if type(feed_mm) is not int or not 0 <= feed_mm <= 30:
         raise ValueError('Feed must be a whole number between 0 and 30 mm.')
     raster = base64.b64decode(body.get('raster', ''), validate=True)
@@ -127,12 +133,29 @@ def raster_commands(body):
     commands = bytearray(b'\x1b@\x1bS\x1bV\x00\x1b{\x00\x1d!\x00\x1ba\x00\x1dL\x00\x00')
     commands.extend(bytes([0x1d, 0x57, width & 255, width >> 8]))
     commands.extend(b'\x1dP\xcb\xcb')  # 203 dpi motion units
-    # Small raster strips reduce pressure on inexpensive printers' buffers.
-    # GS v 0 is widely implemented by generic ESC/POS receipt printers.
-    for offset in range(0, height, 128):
-        rows = min(128, height - offset)
-        commands.extend(bytes([0x1d, 0x76, 0x30, 0, row_bytes & 255, row_bytes >> 8, rows & 255, rows >> 8]))
-        commands.extend(raster[offset * row_bytes:(offset + rows) * row_bytes])
+    if encoding == 'column':
+        # ESC * 33 takes 3 vertical bytes per column, NOT horizontal raster
+        # bytes. One 24-dot band, one 24-dot feed; never use default line feed.
+        commands.extend(b'\x1b3\x18')
+        for top in range(0, height, 24):
+            commands.extend(bytes([27, 42, 33, width & 255, width >> 8]))
+            for x in range(width):
+                for block in range(3):
+                    value = 0
+                    for bit in range(8):
+                        y = top + block * 8 + bit
+                        if y < height and raster[y * row_bytes + x // 8] & (128 >> (x % 8)):
+                            value |= 128 >> bit
+                    commands.append(value)
+            commands.append(10)
+        commands.extend(b'\x1b2')
+    else:
+        # Limit raster packets for small printer buffers. No LF after GS v 0:
+        # this command already advances by exactly the bitmap height.
+        for offset in range(0, height, 24):
+            rows = min(24, height - offset)
+            commands.extend(bytes([29, 118, 48, 0, row_bytes, 0, rows, 0]))
+            commands.extend(raster[offset * row_bytes:(offset + rows) * row_bytes])
     feed_dots = round(feed_mm * 203 / 25.4)
     if body.get('cut') is True:
         # Feed to the cutter plus the chosen margin; the head-to-cutter distance
@@ -158,7 +181,24 @@ def pairing_token():
     return token
 
 
-def make_handler(printers, token, origins, ticket_verifier=verify_ticket):
+class JobStore:
+    """Persist the uncertain state BEFORE handing a job to Windows."""
+    def __init__(self, path):
+        self.path = str(path)
+        with sqlite3.connect(self.path) as db:
+            db.execute('CREATE TABLE IF NOT EXISTS jobs (id TEXT PRIMARY KEY, done INTEGER NOT NULL)')
+
+    def get(self, key):
+        with sqlite3.connect(self.path) as db:
+            row = db.execute('SELECT done FROM jobs WHERE id=?', (key,)).fetchone()
+            return None if row is None else bool(row[0])
+
+    def put(self, key, done):
+        with sqlite3.connect(self.path) as db:
+            db.execute('INSERT OR REPLACE INTO jobs(id,done) VALUES (?,?)', (key, int(done)))
+
+
+def make_handler(printers, token, origins, ticket_verifier=verify_ticket, job_store=None):
     jobs = {}
 
     def scoped_token(origin):
@@ -255,8 +295,9 @@ def make_handler(printers, token, origins, ticket_verifier=verify_ticket):
                 body = json.loads(self.rfile.read(length))
                 job_id = str(uuid.UUID(body['jobId']))
                 commands = raster_commands(body)
-                if job_id in jobs:
-                    self.reply(200 if jobs[job_id] else 409, {'ok': jobs[job_id], 'error': 'Job outcome uncertain. Check the printer before reprinting.'})
+                previous = job_store.get(job_id) if job_store else jobs.get(job_id)
+                if previous is not None:
+                    self.reply(200 if previous else 409, {'ok': previous, 'duplicate': True, 'error': 'Job outcome uncertain. Check the printer before reprinting.'})
                     return
                 if len(jobs) >= 10000:
                     raise ValueError('Restart the bridge before sending more jobs.')
@@ -264,9 +305,15 @@ def make_handler(printers, token, origins, ticket_verifier=verify_ticket):
                 # that may have partially reached the Windows spooler.
                 if not isinstance(body.get('printer'), str) or body['printer'] not in printers.names():
                     raise ValueError('Printer is not installed.')
-                jobs[job_id] = False
+                if job_store:
+                    job_store.put(job_id, False)
+                else:
+                    jobs[job_id] = False
                 printers.write(body['printer'], commands)
-                jobs[job_id] = True
+                if job_store:
+                    job_store.put(job_id, True)
+                else:
+                    jobs[job_id] = True
             except (ValueError, KeyError, TypeError) as error:
                 self.reply(400, {'error': str(error)})
                 return
@@ -285,7 +332,9 @@ def main():
     printers = WindowsPrinters()
     token = pairing_token()
     origins = {'https://menuzqr.shop', 'https://www.menuzqr.shop', *args.origin}
-    server = HTTPServer(('127.0.0.1', 18191), make_handler(printers, token, origins))
+    folder = Path(os.environ.get('LOCALAPPDATA', str(Path.home()))) / 'MenuzQR'
+    store = JobStore(folder / 'print-jobs.sqlite3')
+    server = HTTPServer(('127.0.0.1', 18191), make_handler(printers, token, origins, job_store=store))
     server.timeout = 10
     # Bound request reads so stalled clients cannot block the cashier forever.
     original_get_request = server.get_request
