@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { QrCard } from "@/components/qr/QrCard";
 import type { Metadata } from "next";
 import { requireRestaurant } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -30,6 +32,9 @@ export default async function QrCodesPage() {
       .order("sort_order", { ascending: true }),
   ]);
 
+  const {data: whatsappSettings}=await supabase.from("restaurant_settings").select("payment_whatsapp").eq("restaurant_id",restaurant.id).maybeSingle();
+  const whatsapp=whatsappSettings?.payment_whatsapp??"";
+
   return (
     <div className="print-sheet mx-auto max-w-5xl">
       <div className="print-hide">
@@ -44,6 +49,11 @@ export default async function QrCodesPage() {
           </div>
         )}
       </div>
+
+      <section className="mb-6 max-w-sm space-y-3">
+        {whatsapp ? <QrCard title="WhatsApp · واتساب" subtitle={restaurant.name} url={`https://wa.me/${whatsapp}`} filename={`${restaurant.slug}-whatsapp`}/> : <p className="rounded-xl border bg-white p-4 text-sm">أضف رقم واتساب من الإعدادات لإظهار QR الواتساب. Add your WhatsApp number in settings.</p>}
+        <Link className="print-hide block text-sm text-brand-700" href="/dashboard/settings">إعداد رقم واتساب · WhatsApp settings</Link>
+      </section>
 
       <QrStudio
         restaurant={restaurant}

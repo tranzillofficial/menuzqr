@@ -1,3 +1,4 @@
+import { WhatsappQrSettings } from "@/components/dashboard/WhatsappQrSettings";
 import {SettingsSections} from "@/components/dashboard/SettingsSections";
 import { moduleEnabled } from "@/lib/business-modules";
 import { ThermalPrinter } from "@/components/dashboard/ThermalPrinter";
@@ -69,6 +70,7 @@ export default async function SettingsPage() {
       />
 
 </>)},
+        {id:"whatsapp",ar:"واتساب وQR",en:"WhatsApp and QR",content:<WhatsappQrSettings number={settings?.payment_whatsapp??""}/>},
         {id:"tax",ar:"الضرائب",en:"Taxes",content:<TaxSettingsForm restaurant={restaurant}/>},
         ...(moduleEnabled(restaurant,"pos")?[{id:"print",ar:"الطباعة",en:"Printing",content:<ThermalPrinter restaurantId={restaurant.id} restaurantName={restaurant.name} currency={restaurant.currency} receipt={null}/>}]:[]),
         ...(moduleEnabled(restaurant,"reports")?[{id:"invoices",ar:"الفواتير والتصدير",en:"Invoices and export",content:<InvoiceExport/>}]:[]),

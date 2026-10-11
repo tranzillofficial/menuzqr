@@ -1,3 +1,4 @@
+import { WhatsappQrSettings } from "@/components/dashboard/WhatsappQrSettings";
 import {BusinessDomainForm} from "@/components/admin/BusinessDomainForm";
 import type {TenantDomain} from "@/lib/tenant-domain";
 import { BusinessAccountForm } from "@/components/admin/BusinessAccountForm";
@@ -62,6 +63,7 @@ export default async function AdminRestaurantPage({
   const teamEmail = new Map((teamProfiles ?? []).map((p) => [p.id, p.email]));
 
   const {data:domains}=await supabase.from("business_domains").select("*").eq("restaurant_id",id).order("created_at");
+  const {data:whatsappSettings}=await supabase.from("restaurant_settings").select("payment_whatsapp").eq("restaurant_id",id).maybeSingle();
   return (
     <div className="space-y-5">
       <Link href="/admin" className="inline-flex items-center gap-1 text-sm text-ink-500 hover:text-ink-800">
@@ -89,6 +91,7 @@ export default async function AdminRestaurantPage({
       </div>
 
       <BusinessAccountForm key={restaurant.updated_at} restaurant={restaurant} />
+      <WhatsappQrSettings restaurantId={id} number={whatsappSettings?.payment_whatsapp??""}/>
       <BusinessDomainForm restaurantId={id} domains={(domains??[]) as TenantDomain[]}/>
 
       <Card className="p-5">

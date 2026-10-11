@@ -8,6 +8,7 @@ import { MENU_THEME_IDS, CURRENCIES, LANGUAGES } from "@/lib/constants";
 import { randomSlug, slugify, validateSlug } from "@/lib/slug";
 import type { ActionState } from "@/lib/types";
 import {
+  assertAdmin,
   bool,
   deleteAssetIfOwned,
   done,
@@ -165,7 +166,9 @@ export async function updateFeatureSettingsAction(
 
   const wallet = str(form,"cash_wallet").replace(/[\s()-]/g,"");
   const instapay = str(form,"instapay_address");
-  const whatsapp = str(form,"payment_whatsapp").replace(/[\s()+-]/g,"");
+  const existingSettings = !form.has("payment_whatsapp") ? await (await createServerSupabase()).from("restaurant_settings").select("payment_whatsapp").eq("restaurant_id",owned.restaurant.id).maybeSingle() : null;
+  if(existingSettings?.error)return fail(existingSettings.error.message);
+  const whatsapp = form.has("payment_whatsapp") ? str(form,"payment_whatsapp").replace(/[\s()+-]/g,"") : existingSettings?.data?.payment_whatsapp ?? "";
   const remote = moduleEnabled(owned.restaurant,"orders") && bool(form,"remote_ordering_enabled");
   if(wallet && !/^\+?\d{8,15}$/.test(wallet) || whatsapp && !/^\d{8,15}$/.test(whatsapp) || wallet.length>30 || instapay.length>120) return fail("راجع أرقام التحويل والواتساب، واكتب كود الدولة لرقم الواتساب.");
   if(remote && (!(wallet||instapay)||!whatsapp)) return fail("أضف رقم محفظة كاش أو بيانات InstaPay ورقم واتساب قبل تفعيل طلبات الرابط.");
@@ -176,4 +179,27 @@ export async function updateFeatureSettingsAction(
   revalidatePath("/dashboard/settings");
   revalidatePath(`/${owned.restaurant.slug}/menu`);
   return done("Settings saved.");
+}
+
+export async function saveWhatsappQrAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  const adminId = str(form, "restaurant_id");
+  let restaurantId: string;
+  if (adminId) {
+    const admin = await assertAdmin();
+    if (!admin.ok) return admin.error;
+    restaurantId = adminId;
+  } else {
+    const owned = await getOwnedRestaurant("settings");
+    if (!owned.ok) return owned.error;
+    restaurantId = owned.restaurant.id;
+  }
+  const phone = str(form, "whatsapp_number").replace(/[\s()+-]/g, "");
+  if (phone && !/^[1-9]\d{7,14}$/.test(phone)) return fail("اكتب رقم واتساب بكود الدولة، مثل 201012345678. Enter a number with country code.");
+  const db = await createServerSupabase();
+  const { error } = await db.from("restaurant_settings").upsert({ restaurant_id: restaurantId, payment_whatsapp: phone }, { onConflict: "restaurant_id" });
+  if (error) return fail("تعذر حفظ الرقم. لو طلبات التحويل مفعلة، يلزم الاحتفاظ برقم واتساب. Could not save WhatsApp number.");
+  revalidatePath("/dashboard/settings");
+  revalidatePath("/dashboard/qr-codes");
+  revalidatePath(`/admin/restaurants/${restaurantId}`);
+  return done("تم حفظ رقم واتساب. WhatsApp number saved.");
 }
