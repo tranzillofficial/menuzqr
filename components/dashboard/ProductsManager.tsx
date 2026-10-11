@@ -1,5 +1,7 @@
 "use client";
 
+import { ProductBarcodeScanner } from "./ProductBarcodeScanner";
+import { lookupProductBarcode } from "@/lib/actions/barcode";
 import { moduleEnabled } from "@/lib/business-modules";
 import { categoryPath, categoryDescendants } from "@/lib/category-tree";
 import { useMemo, useState, useTransition } from "react";
@@ -17,7 +19,7 @@ import { EmptyState } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icons";
 import { Select, Switch } from "@/components/ui/Field";
 import { useToast } from "@/components/ui/Toast";
-import { useT } from "@/components/i18n/I18nProvider";
+import { useI18n, useT } from "@/components/i18n/I18nProvider";
 import { priceRange } from "@/lib/utils";
 import type { Category, ProductWithVariants, Restaurant } from "@/lib/types";
 
@@ -33,6 +35,8 @@ export function ProductsManager({
   const router = useRouter();
   const toast = useToast();
   const t = useT();
+  const {locale}=useI18n();
+  const ar=locale==="ar";
   const [editing, setEditing] = useState<ProductWithVariants | null | "new">(null);
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
@@ -49,10 +53,20 @@ export function ProductsManager({
       return false;
     if (query.trim()) {
       const q = query.trim().toLowerCase();
-      return `${product.name} ${product.description ?? ""}`.toLowerCase().includes(q);
+      return `${product.name} ${product.barcode ?? ""} ${product.description ?? ""}`.toLowerCase().includes(q);
     }
     return true;
   });
+
+  function scanProduct(code: string) {
+    startTransition(async () => {
+      try {
+        const result = await lookupProductBarcode(code);
+        if (result.ok) setEditing(result.product);
+        else toast(result.message, "error");
+      } catch { toast(ar ? "تعذر الاتصال. حاول مرة أخرى." : "Connection failed. Please retry.", "error"); }
+    });
+  }
 
   function run(fn: () => Promise<{ ok: boolean; message?: string } | null>) {
     startTransition(async () => {
@@ -72,12 +86,13 @@ export function ProductsManager({
           {t("products.add")}
         </Button>
 
-        <div className="relative min-w-40 flex-1 sm:max-w-xs">
+        {restaurant.business_kind==="supermarket" && <ProductBarcodeScanner onScan={scanProduct}/>}
+        <div className="relative min-w-0 basis-full sm:basis-auto flex-1 sm:max-w-xs">
           <Icon.search className="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={t("products.searchPlaceholder")}
+            placeholder={ar ? "بحث بالاسم أو الباركود" : "Search name or barcode"}
             aria-label={t("products.searchPlaceholder")}
             className="h-10 w-full rounded-xl border border-ink-200 bg-white ps-9 pe-3 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
           />
@@ -87,7 +102,7 @@ export function ProductsManager({
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           aria-label={t("products.category")}
-          className="h-10 w-auto py-0"
+          className="h-11 w-full sm:w-auto py-0"
         >
           <option value="all">{t("products.allCategories")}</option>
           {categories.map((c) => (
@@ -116,7 +131,7 @@ export function ProductsManager({
             return (
               <li
                 key={product.id}
-                className="flex items-center gap-3 rounded-2xl border border-ink-200 bg-white p-3 sm:p-4"
+                className="flex flex-wrap items-center gap-3 rounded-2xl border border-ink-200 bg-white p-3 sm:p-4"
               >
                 <div className="hidden flex-col sm:flex">
                   <button
@@ -141,7 +156,7 @@ export function ProductsManager({
                   </button>
                 </div>
 
-                <div className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-ink-100">
+                <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-ink-100">
                   {product.image_url ? (
                     <SmartImage src={product.image_url} alt="" sizes="112px" />
                   ) : (
@@ -151,17 +166,18 @@ export function ProductsManager({
                   )}
                 </div>
 
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-ink-900">{product.name}</p>
+                <div className="min-w-0 flex-1 basis-[calc(100%-6rem)] sm:basis-0">
+                  <p className="break-words font-medium text-ink-900">{product.name}</p>
                   <p className="truncate text-xs text-ink-500">
                     {product.category_id
                       ? categoryName[product.category_id]
                       : t("products.uncategorised")}{" "}
                     · {product.product_variants.length}
+                    {product.barcode && <span className="mt-1 block font-mono" dir="ltr">{product.barcode}</span>}
                   </p>
                 </div>
 
-                <p className="ltr-nums hidden whitespace-nowrap text-sm font-medium text-ink-900 sm:block">
+                <p className="ltr-nums me-auto whitespace-nowrap text-sm font-medium text-ink-900">
                   {priceRange(prices, restaurant.currency)}
                 </p>
 

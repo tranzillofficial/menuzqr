@@ -1,4 +1,5 @@
 "use server";
+import {moduleEnabled} from '@/lib/business-modules';
 import {normalizeBarcode, validBarcode} from '@/lib/barcode';
 import {getMembership} from '@/lib/membership';
 import {getPlatformSettings} from '@/lib/platform';
@@ -19,5 +20,17 @@ export async function lookupPosBarcode(raw: string) {
   const {data,error}=await db.from('products').select('*,product_variants(*)').eq('restaurant_id',member.restaurant.id).eq('barcode',barcode).eq('is_active',true).maybeSingle();
   if(error)return {ok:false as const,message:l('تعذر البحث عن الباركود. حاول مرة أخرى.','Could not look up barcode. Please retry.')};
   if(!data)return {ok:false as const,message:l('الباركود غير موجود أو المنتج غير مفعّل.','Barcode not found or product is inactive.')};
+  return {ok:true as const,product:data as ProductWithVariants};
+}
+
+export async function lookupProductBarcode(raw: string) {
+  const member = await getMembership();
+  if (!member?.isManager || !moduleEnabled(member.restaurant, 'products')) return {ok:false as const,message:'غير مسموح بالبحث عن المنتجات. Product manager access required.'};
+  const code = typeof raw === 'string' ? normalizeBarcode(raw) : '';
+  if (!validBarcode(code)) return {ok:false as const,message:'الباركود غير صحيح. Invalid barcode.'};
+  const db = await createServerSupabase();
+  const {data,error} = await db.from('products').select('*,product_variants(*)').eq('restaurant_id',member.restaurant.id).eq('barcode',code).maybeSingle();
+  if (error) return {ok:false as const,message:'تعذر البحث عن المنتج. Could not find product.'};
+  if (!data) return {ok:false as const,message:'الباركود غير موجود في منتجات هذا الحساب. Barcode not found in this account.'};
   return {ok:true as const,product:data as ProductWithVariants};
 }

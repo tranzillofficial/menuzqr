@@ -7,7 +7,7 @@ import {formatMoney} from '@/lib/utils';
 import type {OrderWithDetails} from '@/lib/types';
 export function IncomingOrders({orders}:{orders:OrderWithDetails[];retail?:boolean}) {
  const router=useRouter();const {locale}=useI18n();const ar=locale==='ar';
- useEffect(()=>{const id=window.setInterval(()=>{if(document.visibilityState==='visible')router.refresh();},20000);return ()=>clearInterval(id);},[router]);
+ useEffect(()=>{const id=window.setInterval(()=>{if(document.visibilityState==='visible')router.refresh();},5000);return ()=>clearInterval(id);},[router]);
  return <section className="mb-4 rounded-xl border border-brand-200 bg-white p-3">
   <h2 className="text-sm font-semibold">{ar?'الطلبات الواردة':'Incoming orders'} ({orders.length})</h2>
   {!orders.length?<p className="mt-2 text-xs text-ink-500">{ar?'الطلبات الجديدة هتظهر هنا.':'New orders appear here.'}</p>:

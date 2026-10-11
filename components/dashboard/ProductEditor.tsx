@@ -196,7 +196,7 @@ export function ProductEditor({
       description={t("products.modalSub")}
       size="lg"
     >
-      <form action={formAction} className="space-y-6">
+      <form action={formAction} className={supermarket ? "space-y-4 [&_input]:min-h-10 [&_input]:text-base [&_input]:py-2 [&_textarea]:text-base [&_textarea]:py-2" : "space-y-6"}>
         {product && <input type="hidden" name="id" value={product.id} />}
         <>{packaging && <><input type="hidden" name="name_en" value={nameEn}/><input type="hidden" name="ingredients" value={ingredients}/></>}</>
         <input type="hidden" name="image_url" value={imageUrl ?? ""} />
@@ -206,7 +206,7 @@ export function ProductEditor({
         <input type="hidden" name="category_id" value={categoryId} />
 
         {/* --- basics --- */}
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1.5 sm:col-span-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <label htmlFor="p-name" className="text-sm font-medium text-ink-800">
@@ -397,7 +397,7 @@ export function ProductEditor({
           {supermarket && <button type="button" className="mb-3 rounded-xl border border-red-200 px-4 py-2 text-sm text-red-700" onClick={()=>setVariants(['ربع كيلو (250 جرام)','نصف كيلو (500 جرام)','750 جرام','1 كيلو'].map((name,index)=>({key:newKey(),name,price:'',is_active:true,name_en:['250 g','500 g','750 g','1 kg'][index]})))}>{label('بيع بالوزن: ربع / نصف / 750 جرام / كيلو','Sell by weight: 250 / 500 / 750 g / 1 kg')}</button>}
           <ul className="space-y-2">
             {variants.map((variant, index) => (
-              <li key={variant.key} className="grid min-w-0 grid-cols-1 gap-3 rounded-xl bg-ink-50 p-3 sm:grid-cols-2">
+              <li key={variant.key} className="grid min-w-0 grid-cols-2 gap-2 rounded-xl bg-ink-50 p-2">
                 {packaging ? <>
                   <label className="block min-w-0 space-y-1.5 text-sm font-medium">{label('وحدة البيع','Selling unit')}
                     <select required value={variant.name} onChange={e=>updateVariant(variant.key,{name:e.target.value,boxes:e.target.value==='كرتونة'?variant.boxes:''})} className="h-12 w-full rounded-xl border border-ink-200 bg-white px-3 text-base">
@@ -411,7 +411,7 @@ export function ProductEditor({
                     <input required type="number" min="1" max="9999" step="1" inputMode="numeric" value={variant.boxes ?? ''} onChange={e=>updateVariant(variant.key,{boxes:e.target.value})} placeholder={label('مثال: 12','Example: 12')} className="h-12 w-full rounded-xl border border-ink-200 bg-white px-3 text-base"/>
                     <span className="block text-xs font-normal text-ink-600">{label('العدد للتوضيح، والسعر هو سعر الكرتونة بالكامل.','The price is for the whole carton.')}</span>
                   </label>}
-                </> : <div className="grid min-w-0 grid-cols-1 gap-3 sm:col-span-2 sm:grid-cols-3">
+                </> : <div className="grid min-w-0 col-span-2 grid-cols-1 gap-2 sm:grid-cols-3">
                 <input
                   aria-label={`Size ${index + 1} name`}
                   value={variant.name}
