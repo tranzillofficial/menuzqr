@@ -16,6 +16,7 @@ import os
 from pathlib import Path
 import secrets
 import sqlite3
+from contextlib import closing
 import uuid
 import hashlib
 import re
@@ -185,16 +186,16 @@ class JobStore:
     """Persist the uncertain state BEFORE handing a job to Windows."""
     def __init__(self, path):
         self.path = str(path)
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db, db:
             db.execute('CREATE TABLE IF NOT EXISTS jobs (id TEXT PRIMARY KEY, done INTEGER NOT NULL)')
 
     def get(self, key):
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db, db:
             row = db.execute('SELECT done FROM jobs WHERE id=?', (key,)).fetchone()
             return None if row is None else bool(row[0])
 
     def put(self, key, done):
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db, db:
             db.execute('INSERT OR REPLACE INTO jobs(id,done) VALUES (?,?)', (key, int(done)))
 
 
