@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""MenuzQR Windows ESC/POS bridge. Python 3.8+, no pip packages required.
-
-Install the thermal printer's Windows driver, run this file and paste the
-pairing code into POS > Thermal printer setup. Keep this process running.
-Only installed ESC/POS receipt printers are supported (not PDF printers).
-"""
+"""MenuzQR Windows driver printing service. Bundled runtime; no manual Python setup."""
 import argparse
 import base64
 import ctypes
@@ -16,7 +11,9 @@ import os
 from pathlib import Path
 import secrets
 import sqlite3
-from contextlib import closing
+from contextlib import closing, contextmanager
+import struct
+import math
 import uuid
 import hashlib
 import re
@@ -25,7 +22,7 @@ from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 MAX_BODY = 2_000_000
-BRIDGE_VERSION = 4
+BRIDGE_VERSION = 5
 
 
 def verify_ticket(ticket, origin):
@@ -49,122 +46,137 @@ def automatic_printer(names):
     return candidates[0] if len(candidates) == 1 else None
 
 
+def receipt_bitmap(body):
+    if body.get('protocol') != 'windows-gdi-v1':
+        raise ValueError('Update the website and MenuzQR Print together.')
+    width, height, paper = body.get('width'), body.get('height'), body.get('paperMm')
+    if type(width) is not int or width not in (384, 512, 576) or type(height) is not int or not 1 <= height <= 20000:
+        raise ValueError('Invalid receipt dimensions.')
+    if type(paper) is not int or paper not in (58, 80) or (paper == 58 and width != 384):
+        raise ValueError('Invalid roll width.')
+    if body.get('testPrint') is True and height > 160:
+        raise ValueError('Test receipt exceeds 20 mm content limit.')
+    raster = base64.b64decode(body.get('raster', ''), validate=True)
+    if len(raster) != width // 8 * height:
+        raise ValueError('Invalid receipt bitmap.')
+    return {'width': width, 'height': height, 'paper': paper,
+            'length': max(25, math.ceil(height * 25.4 / 203 + 4)), 'raster': raster}
+
+
+def configure_devmode(buffer, paper, length):
+    # DEVMODEW public offsets are fixed on both x86 and x64; retain the entire
+    # driver-specific tail returned by DocumentProperties (never fabricate it).
+    if len(buffer) < 220 or struct.unpack_from('<H', buffer, 68)[0] < 220:
+        raise ValueError('Printer driver returned an invalid DEVMODE.')
+    fields = struct.unpack_from('<I', buffer, 72)[0]
+    fields = (fields & ~0x10000) | 0x1 | 0x2 | 0x4 | 0x8 | 0x10 | 0x100 | 0x1000
+    struct.pack_into('<I', buffer, 72, fields)
+    struct.pack_into('<hhhhhh', buffer, 76, 1, 0, length * 10, paper * 10, 100, 1)
+    struct.pack_into('<h', buffer, 94, 1)  # simplex; exactly one copy
+
+
+def page_geometry(job, caps):
+    # GetDeviceCaps: LOGPIXELSX/Y, PHYSICALWIDTH/HEIGHT, HORZRES/VERTRES.
+    dx, dy, pw, ph, available_w, available_h = caps
+    if min(caps) <= 0:
+        raise ValueError('Printer driver did not report valid page dimensions.')
+    actual_w, actual_h = pw * 25.4 / dx, ph * 25.4 / dy
+    if abs(actual_w - job['paper']) > 3 or not job['length'] - 3 <= actual_h <= job['length'] + 15:
+        raise ValueError('Printer driver rejected the receipt paper size. Install the manufacturer thermal driver and choose continuous roll paper.')
+    # Preserve aspect ratio if the physical head is narrower than expected.
+    scale = min(dx / 203, available_w / job['width'])
+    w = round(job['width'] * scale)
+    h = round(job['height'] * scale * dy / dx)
+    if h > available_h or w < job['width'] * dx / 203 * 0.8:
+        raise ValueError('Printer margins would clip the receipt. Check the roll width in the driver.')
+    return w, h
+
+
 class WindowsPrinters:
     def __init__(self):
         if os.name != 'nt':
-            raise RuntimeError('This bridge requires Windows and an installed ESC/POS printer.')
+            raise RuntimeError('MenuzQR Print requires Windows.')
         self.api = ctypes.WinDLL('winspool.drv', use_last_error=True)
-        api = self.api
-        api.EnumPrintersW.argtypes = [wintypes.DWORD, wintypes.LPWSTR, wintypes.DWORD, ctypes.c_void_p, wintypes.DWORD, ctypes.POINTER(wintypes.DWORD), ctypes.POINTER(wintypes.DWORD)]
-        api.EnumPrintersW.restype = wintypes.BOOL
-        api.OpenPrinterW.argtypes = [wintypes.LPWSTR, ctypes.POINTER(wintypes.HANDLE), ctypes.c_void_p]
-        api.OpenPrinterW.restype = wintypes.BOOL
-        api.StartDocPrinterW.argtypes = [wintypes.HANDLE, wintypes.DWORD, ctypes.c_void_p]
-        api.StartDocPrinterW.restype = wintypes.DWORD
-        for name in ('StartPagePrinter', 'EndPagePrinter', 'EndDocPrinter', 'ClosePrinter', 'AbortPrinter'):
-            function = getattr(api, name)
-            function.argtypes = [wintypes.HANDLE]
-            function.restype = wintypes.BOOL
-        api.WritePrinter.argtypes = [wintypes.HANDLE, ctypes.c_void_p, wintypes.DWORD, ctypes.POINTER(wintypes.DWORD)]
-        api.WritePrinter.restype = wintypes.BOOL
+        self.gdi = ctypes.WinDLL('gdi32.dll', use_last_error=True)
+        ptr, integer, text = ctypes.c_void_p, ctypes.c_int, wintypes.LPCWSTR
+        signatures = [
+            (self.api, 'EnumPrintersW', [wintypes.DWORD,text,wintypes.DWORD,ptr,wintypes.DWORD,ptr,ptr],wintypes.BOOL),
+            (self.api, 'OpenPrinterW', [text,ptr,ptr],wintypes.BOOL),
+            (self.api, 'ClosePrinter', [ptr],wintypes.BOOL),
+            (self.api, 'DocumentPropertiesW', [ptr,ptr,text,ptr,ptr,wintypes.DWORD],wintypes.LONG),
+            (self.gdi, 'CreateDCW', [text,text,text,ptr],ptr),
+            (self.gdi, 'DeleteDC', [ptr],wintypes.BOOL),
+            (self.gdi, 'GetDeviceCaps', [ptr,integer],integer),
+            (self.gdi, 'StartDocW', [ptr,ptr],integer),
+            (self.gdi, 'StartPage', [ptr],integer),
+            (self.gdi, 'EndPage', [ptr],integer),
+            (self.gdi, 'EndDoc', [ptr],integer),
+            (self.gdi, 'AbortDoc', [ptr],integer),
+            (self.gdi, 'StretchDIBits', [ptr]+[integer]*8+[ptr,ptr,wintypes.UINT,wintypes.DWORD],integer),
+        ]
+        for dll, name, args, result in signatures:
+            fn = getattr(dll,name); fn.argtypes=args; fn.restype=result
 
     def names(self):
-        class PrinterInfo(ctypes.Structure):
-            _fields_ = [('pPrinterName', wintypes.LPWSTR), ('pServerName', wintypes.LPWSTR), ('Attributes', wintypes.DWORD)]
+        class Info(ctypes.Structure):
+            _fields_ = [('name',wintypes.LPWSTR),('server',wintypes.LPWSTR),('flags',wintypes.DWORD)]
         needed, count = wintypes.DWORD(), wintypes.DWORD()
-        self.api.EnumPrintersW(6, None, 4, None, 0, ctypes.byref(needed), ctypes.byref(count))
+        self.api.EnumPrintersW(6,None,4,None,0,ctypes.byref(needed),ctypes.byref(count))
         if not needed.value:
-            error = ctypes.get_last_error()
-            if error not in (0, 122):
-                raise ctypes.WinError(error)
             return []
-        buffer = ctypes.create_string_buffer(needed.value)
-        if not self.api.EnumPrintersW(6, None, 4, buffer, needed.value, ctypes.byref(needed), ctypes.byref(count)):
+        buffer=ctypes.create_string_buffer(needed.value)
+        if not self.api.EnumPrintersW(6,None,4,buffer,needed.value,ctypes.byref(needed),ctypes.byref(count)):
             raise ctypes.WinError(ctypes.get_last_error())
-        items = ctypes.cast(buffer, ctypes.POINTER(PrinterInfo))
-        return sorted({items[i].pPrinterName for i in range(count.value) if items[i].pPrinterName})
+        items=ctypes.cast(buffer,ctypes.POINTER(Info))
+        return sorted({items[i].name for i in range(count.value)
+                       if items[i].name and not re.search(r'pdf|xps|onenote|fax',items[i].name,re.I)})
 
-    def write(self, name, data):
+    @contextmanager
+    def prepare(self, name, job):
         if name not in self.names():
-            raise ValueError('Printer is not installed. Reconnect and select a printer.')
-        class DocInfo(ctypes.Structure):
-            _fields_ = [('pDocName', wintypes.LPWSTR), ('pOutputFile', wintypes.LPWSTR), ('pDatatype', wintypes.LPWSTR)]
-        handle = wintypes.HANDLE()
-        if not self.api.OpenPrinterW(name, ctypes.byref(handle), None):
+            raise ValueError('Printer is not installed or is a virtual PDF printer.')
+        handle=wintypes.HANDLE(); dc=None
+        if not self.api.OpenPrinterW(name,ctypes.byref(handle),None):
             raise ctypes.WinError(ctypes.get_last_error())
-        started = False
         try:
-            doc = DocInfo('MenuzQR receipt', None, 'RAW')
-            if not self.api.StartDocPrinterW(handle, 1, ctypes.byref(doc)):
-                raise ctypes.WinError(ctypes.get_last_error())
-            started = True
-            if not self.api.StartPagePrinter(handle):
-                raise ctypes.WinError(ctypes.get_last_error())
-            written = wintypes.DWORD()
-            buffer = ctypes.create_string_buffer(data)
-            if not self.api.WritePrinter(handle, buffer, len(data), ctypes.byref(written)) or written.value != len(data):
-                raise RuntimeError('Windows could not accept the complete receipt.')
-            if not self.api.EndPagePrinter(handle) or not self.api.EndDocPrinter(handle):
-                raise RuntimeError('Windows could not finish the print job.')
-            started = False
+            size=self.api.DocumentPropertiesW(None,handle,name,None,None,0)
+            if size < 220: raise ValueError('Install the manufacturer graphics printer driver; Generic/Text Only is not supported.')
+            dev=ctypes.create_string_buffer(size)
+            if self.api.DocumentPropertiesW(None,handle,name,dev,None,2) != 1:
+                raise ValueError('Could not read printer preferences.')
+            configure_devmode(dev,job['paper'],job['length'])
+            if self.api.DocumentPropertiesW(None,handle,name,dev,dev,10) != 1:
+                raise ValueError('Printer rejected the custom receipt size.')
+            if struct.unpack_from('<h',dev,76)[0] != 1 or struct.unpack_from('<h',dev,86)[0] != 1:
+                raise ValueError('Printer driver did not accept portrait orientation and one copy.')
+            dc=self.gdi.CreateDCW('WINSPOOL',name,None,dev)
+            if not dc: raise ctypes.WinError(ctypes.get_last_error())
+            dims=page_geometry(job,[self.gdi.GetDeviceCaps(dc,c) for c in (88,90,110,111,8,10)])
+            yield dc, dims, job
         finally:
-            if started:
-                self.api.AbortPrinter(handle)
+            if dc: self.gdi.DeleteDC(dc)
             self.api.ClosePrinter(handle)
 
-
-def raster_commands(body):
-    width, height = body.get('width'), body.get('height')
-    if type(width) is not int or width not in (384, 512, 576) or type(height) is not int or not 1 <= height <= 20000:
-        raise ValueError('Invalid receipt dimensions.')
-    if body.get('testPrint') is True and height > 160:
-        raise ValueError('Test receipt exceeds 20 mm content limit.')
-    encoding = body.get('encoding', 'raster')
-    if encoding not in ('raster', 'column'):
-        raise ValueError('Unknown printer image mode.')
-    feed_mm = 0 if body.get('testPrint') is True else body.get('feedMm', 3)
-    if type(feed_mm) is not int or not 0 <= feed_mm <= 30:
-        raise ValueError('Feed must be a whole number between 0 and 30 mm.')
-    raster = base64.b64decode(body.get('raster', ''), validate=True)
-    row_bytes = width // 8
-    if len(raster) != row_bytes * height:
-        raise ValueError('Invalid receipt bitmap.')
-    # Reset and explicitly use standard (continuous roll) mode. No PDF, page
-    # dimensions, Windows orientation or scaling is involved in this RAW job.
-    commands = bytearray(b'\x1b@\x1bS\x1bV\x00\x1b{\x00\x1d!\x00\x1ba\x00\x1dL\x00\x00')
-    commands.extend(bytes([0x1d, 0x57, width & 255, width >> 8]))
-    commands.extend(b'\x1dP\xcb\xcb')  # 203 dpi motion units
-    if encoding == 'column':
-        # ESC * 33 takes 3 vertical bytes per column, NOT horizontal raster
-        # bytes. One 24-dot band, one 24-dot feed; never use default line feed.
-        commands.extend(b'\x1b3\x18')
-        for top in range(0, height, 24):
-            commands.extend(bytes([27, 42, 33, width & 255, width >> 8]))
-            for x in range(width):
-                for block in range(3):
-                    value = 0
-                    for bit in range(8):
-                        y = top + block * 8 + bit
-                        if y < height and raster[y * row_bytes + x // 8] & (128 >> (x % 8)):
-                            value |= 128 >> bit
-                    commands.append(value)
-            commands.append(10)
-        commands.extend(b'\x1b2')
-    else:
-        # Limit raster packets for small printer buffers. No LF after GS v 0:
-        # this command already advances by exactly the bitmap height.
-        for offset in range(0, height, 24):
-            rows = min(24, height - offset)
-            commands.extend(bytes([29, 118, 48, 0, row_bytes, 0, rows, 0]))
-            commands.extend(raster[offset * row_bytes:(offset + rows) * row_bytes])
-    feed_dots = round(feed_mm * 203 / 25.4)
-    if body.get('cut') is True:
-        # Feed to the cutter plus the chosen margin; the head-to-cutter distance
-        # is mechanical and cannot be eliminated by shortening a document.
-        commands.extend(bytes([0x1d, 0x56, 65, feed_dots]))
-    elif feed_dots:
-        commands.extend(bytes([0x1b, 0x4a, feed_dots]))
-    return bytes(commands)
+    def write(self, name, prepared):
+        dc, (w,h), job=prepared
+        class DocInfo(ctypes.Structure):
+            _fields_=[('size',ctypes.c_int),('name',wintypes.LPCWSTR),('output',wintypes.LPCWSTR),('datatype',wintypes.LPCWSTR),('flags',wintypes.DWORD)]
+        doc=DocInfo(ctypes.sizeof(DocInfo),'MenuzQR receipt',None,None,0)
+        started=False
+        try:
+            if self.gdi.StartDocW(dc,ctypes.byref(doc)) <= 0: raise RuntimeError('Windows could not create the print job.')
+            started=True
+            if self.gdi.StartPage(dc) <= 0: raise RuntimeError('Windows could not start the receipt page.')
+            # Top-down 1-bit DIB: white=0, black=1. No printer-language commands.
+            header=struct.pack('<IiiHHIIiiII',40,job['width'],-job['height'],1,1,0,len(job['raster']),0,0,2,2)
+            info=ctypes.create_string_buffer(header+struct.pack('<II',0x00ffffff,0))
+            pixels=ctypes.create_string_buffer(job['raster'])
+            result=self.gdi.StretchDIBits(dc,0,0,w,h,0,0,job['width'],job['height'],pixels,info,0,0x00CC0020)
+            if result in (0,-1): raise RuntimeError('Printer driver could not render the receipt.')
+            if self.gdi.EndPage(dc) <= 0 or self.gdi.EndDoc(dc) <= 0: raise RuntimeError('Windows could not complete the print job.')
+            started=False
+        finally:
+            if started: self.gdi.AbortDoc(dc)
 
 
 def pairing_token():
@@ -295,7 +307,7 @@ def make_handler(printers, token, origins, ticket_verifier=verify_ticket, job_st
                     raise ValueError('JSON required.')
                 body = json.loads(self.rfile.read(length))
                 job_id = str(uuid.UUID(body['jobId']))
-                commands = raster_commands(body)
+                bitmap = receipt_bitmap(body)
                 previous = job_store.get(job_id) if job_store else jobs.get(job_id)
                 if previous is not None:
                     self.reply(200 if previous else 409, {'ok': previous, 'duplicate': True, 'error': 'Job outcome uncertain. Check the printer before reprinting.'})
@@ -306,15 +318,14 @@ def make_handler(printers, token, origins, ticket_verifier=verify_ticket, job_st
                 # that may have partially reached the Windows spooler.
                 if not isinstance(body.get('printer'), str) or body['printer'] not in printers.names():
                     raise ValueError('Printer is not installed.')
-                if job_store:
-                    job_store.put(job_id, False)
-                else:
-                    jobs[job_id] = False
-                printers.write(body['printer'], commands)
-                if job_store:
-                    job_store.put(job_id, True)
-                else:
-                    jobs[job_id] = True
+                # Validate the driver page BEFORE reserving the ID or starting
+                # a spooler job. Rejected paper settings never consume paper.
+                with printers.prepare(body['printer'], bitmap) as prepared:
+                    if job_store: job_store.put(job_id, False)
+                    else: jobs[job_id] = False
+                    printers.write(body['printer'], prepared)
+                    if job_store: job_store.put(job_id, True)
+                    else: jobs[job_id] = True
             except (ValueError, KeyError, TypeError) as error:
                 self.reply(400, {'error': str(error)})
                 return

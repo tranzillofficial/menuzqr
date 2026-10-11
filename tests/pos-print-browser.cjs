@@ -40,10 +40,10 @@ for(const scenario of ['setup','autoPair','installThenConnect','choosePrinter','
  await page.route('http://127.0.0.1:18191/**',async route=>{
    if(!bridgeAvailable){await route.abort();return;}
    const url=route.request().url();
-   if(url.endsWith('/health')){await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({app:'MenuzQR Print',version:scenario==='oldBridge'?1:4})});return;}
-   if(url.endsWith('/pair')){pairings++;assert.equal(JSON.parse(route.request().postData()).ticket,'signed-ticket');await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({token:'paired',version:4})});return;}
-   if(route.request().method()==='GET'){await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({printers:['Thermal'],suggestedPrinter:scenario==='choosePrinter'?null:'Thermal',version:scenario==='oldBridge'?1:4})});return;}
-   const payload=JSON.parse(route.request().postData());if(payload.testPrint){tests.push(payload);assert.ok(payload.height<=160);assert.equal(payload.feedMm,0);assert.equal(payload.encoding,'column');}else sent.push(payload);await route.fulfill({status:scenario==='thermalFailure'?503:200,contentType:'application/json',body:JSON.stringify({ok:scenario!=='thermalFailure'})});
+   if(url.endsWith('/health')){await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({app:'MenuzQR Print',version:scenario==='oldBridge'?1:5})});return;}
+   if(url.endsWith('/pair')){pairings++;assert.equal(JSON.parse(route.request().postData()).ticket,'signed-ticket');await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({token:'paired',version:5})});return;}
+   if(route.request().method()==='GET'){await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({printers:['Thermal'],suggestedPrinter:scenario==='choosePrinter'?null:'Thermal',version:scenario==='oldBridge'?1:5})});return;}
+   const payload=JSON.parse(route.request().postData());if(payload.testPrint){tests.push(payload);assert.ok(payload.height<=160);assert.equal(payload.protocol,'windows-gdi-v1');assert.ok([58,80].includes(payload.paperMm));assert.equal(payload.encoding,undefined);}else sent.push(payload);await route.fulfill({status:scenario==='thermalFailure'?503:200,contentType:'application/json',body:JSON.stringify({ok:scenario!=='thermalFailure'})});
  });
  await page.goto(`http://127.0.0.1:${server.address().port}`);
  await page.getByRole('button',{name:'Add Juice Regular',exact:true}).click();
@@ -70,7 +70,7 @@ for(const scenario of ['setup','autoPair','installThenConnect','choosePrinter','
    await page.getByText('Receipt sent to the printer.',{exact:true}).waitFor();assert.equal(sent.length,1);
    assert.equal(await page.getByRole('dialog').count(),0,'Ready printer must not open setup on payment');
    if(scenario==='autoPair'||scenario==='browser')assert.equal(pairings,1);
-   else assert.equal(sent[0].width,scenario==='thermal512'?512:384);
+   else assert.equal(sent[0].width,scenario==='thermal512'?576:384);
    if(scenario==='auditFailure')assert.match((await page.evaluate(()=>window.toasts)).join(' '),/journal/);
    await page.getByRole('button',{name:'Test print',exact:true}).click();
    await page.waitForFunction(()=>window.toasts.filter(x=>x==='Receipt sent to the printer.').length===2);

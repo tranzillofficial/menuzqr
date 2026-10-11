@@ -5,12 +5,9 @@ export type PosReceipt = {
   payment: 'cash' | 'card' | 'transfer'; fiscalState?: string; createdAt: string; note: string;
   lines: { variantId: string; name: string; variant: string; price: number; quantity: number; gross?: number; net?: number; vat?: number; rate?: number; code?: string }[];
 };
-export type PrinterSettings = { token: string; printer: string; width: 58 | 80; cut: boolean; mode?: 'browser' | 'bridge'; dots?: 384 | 512 | 576; feedMm?: number; encoding?: 'column' | 'raster'; calibrated?: string };
-export const DEFAULT_PRINTER: PrinterSettings = { token: '', printer: '', width: 80, cut: true, mode: 'bridge', dots: 576, feedMm: 0, encoding: 'column' };
-
-export function printerDots(width: 58 | 80, dots?: number): 384 | 512 | 576 {
-  return width === 58 ? 384 : dots === 512 ? 512 : 576;
-}
+export type PrinterSettings = { token: string; printer: string; width: 58 | 80 };
+export const DEFAULT_PRINTER: PrinterSettings = { token: '', printer: '', width: 80 };
+export function printerDots(width: 58 | 80): 384 | 576 { return width === 58 ? 384 : 576; }
 
 // Older Windows browsers do not implement AbortSignal.timeout.
 async function timedFetch(url: string, options: RequestInit, timeout: number) {
@@ -36,7 +33,7 @@ export async function bridgeRequest(settings: PrinterSettings, path: '/printers'
 export async function bridgeHealth(){
  const response=await timedFetch('http://127.0.0.1:18191/health',{cache:'no-store'},2500);
  const result=await response.json();
- if(!response.ok||result.app!=='MenuzQR Print'||result.version<4)throw new Error('Install MenuzQR Print');
+ if(!response.ok||result.app!=='MenuzQR Print'||result.version<5)throw new Error('Install MenuzQR Print');
  return result;
 }
 export async function pairPrintBridge(){
@@ -52,10 +49,10 @@ export async function pairPrintBridge(){
 
 // Render Arabic with the browser's shaping engine, then send monochrome raster
 // commands. This avoids dependence on the printer's Arabic code page support.
-async function receiptCanvas(receipt: PosReceipt, restaurantName: string, currency: string, ar: boolean, width: 58 | 80, printDots?: number) {
+async function receiptCanvas(receipt: PosReceipt, restaurantName: string, currency: string, ar: boolean, width: 58 | 80) {
   await document.fonts.ready;
   const canvas = document.createElement('canvas');
-  const dots = printerDots(width, printDots);
+  const dots = printerDots(width);
   const padding = 8, usable = dots - padding * 2;
   const fontSize = width === 58 ? 22 : 26;
   const rowHeight = width === 58 ? 26 : 30;
@@ -140,8 +137,8 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
   return canvas;
 }
 
-export async function receiptRaster(receipt: PosReceipt, restaurantName: string, currency: string, ar: boolean, width: 58 | 80, printDots?: number) {
-  const canvas = await receiptCanvas(receipt, restaurantName, currency, ar, width, printDots);
+export async function receiptRaster(receipt: PosReceipt, restaurantName: string, currency: string, ar: boolean, width: 58 | 80) {
+  const canvas = await receiptCanvas(receipt, restaurantName, currency, ar, width);
   const dots = canvas.width;
   const context = canvas.getContext('2d')!;
   const pixels = context.getImageData(0, 0, dots, canvas.height).data;
@@ -151,46 +148,8 @@ export async function receiptRaster(receipt: PosReceipt, restaurantName: string,
     const i = (y * dots + x) * 4;
     if ((pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3 < 160) raster[y * bytesPerRow + (x >> 3)] |= 0x80 >> (x & 7);
   }
-  // Send raster only; the bridge constructs the permitted ESC/POS commands.
+  // Send a monochrome document; Windows GDI and the installed driver render it.
   let binary = '';
   for (const byte of raster) binary += String.fromCharCode(byte);
-  return { width: dots, height: canvas.height, raster: btoa(binary) };
-}
-
-// Use the installed OS driver for printers that do not speak ESC/POS.
-// A print request is not proof of physical output (the user can cancel).
-export async function printBrowserReceipt(receipt: PosReceipt, restaurantName: string, currency: string, ar: boolean, width: 58 | 80, printDots?: number) {
-  const canvas = await receiptCanvas(receipt, restaurantName, currency, ar, width, printDots);
-  // Match the physical 203 dpi print head; never stretch 48/64/72 mm to the
-  // roll width. Drivers can still override CSS sizes, so this is a fallback.
-  const imageWidthMm = canvas.width * 25.4 / 203;
-  const pageHeightMm = Math.ceil(canvas.height * 25.4 / 203 + 4);
-  const frame = document.createElement('iframe');
-  frame.title = `MenuzQR receipt ${receipt.number}`;
-  frame.style.cssText = `position:fixed;left:-10000px;top:0;width:${width}mm;height:${pageHeightMm}mm;border:0`;
-  document.body.appendChild(frame);
-  try {
-    const doc = frame.contentDocument;
-    const target = frame.contentWindow;
-    if (!doc || !target) throw new Error('Print window unavailable');
-    doc.title = frame.title;
-    const style = doc.createElement('style');
-    style.textContent = `@page { size: ${width}mm ${pageHeightMm}mm; page-orientation: upright; margin: 2mm; } html, body { margin:0; padding:0; writing-mode:horizontal-tb; direction:ltr; } body { width:${imageWidthMm}mm; } img { display:block; width:100%; height:auto; break-inside:avoid; page-break-inside:avoid; }`;
-    doc.head.appendChild(style);
-    // One text row per image permits page breaks without clipping a long receipt.
-    const images: HTMLImageElement[] = [];
-    for (let y = 0; y < canvas.height;) {
-      const height = Math.min(y === 0 ? 8 : width === 58 ? 26 : 30, canvas.height - y);
-      const strip = document.createElement('canvas');
-      strip.width = canvas.width; strip.height = height;
-      strip.getContext('2d')!.drawImage(canvas, 0, y, canvas.width, height, 0, 0, canvas.width, height);
-      const img = doc.createElement('img');
-      img.alt = ''; img.src = strip.toDataURL('image/png');
-      doc.body.appendChild(img); images.push(img); y += height;
-    }
-    await Promise.all(images.map(img => img.decode()));
-    // Keep the document alive until the dialog closes; Safari can return early.
-    target.addEventListener('afterprint', () => frame.remove(), { once: true });
-    target.focus(); target.print();
-  } catch (error) { frame.remove(); throw error; }
+  return { protocol: 'windows-gdi-v1', paperMm: width, width: dots, height: canvas.height, raster: btoa(binary) };
 }

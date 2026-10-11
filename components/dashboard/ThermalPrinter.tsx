@@ -8,7 +8,7 @@ import { Modal } from '@/components/ui/Modal';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { useToast } from '@/components/ui/Toast';
 import { recordReceiptPrint } from "@/lib/actions/fiscal";
-import { bridgeHealth, pairPrintBridge, bridgeRequest, DEFAULT_PRINTER, printerDots, receiptRaster, type PosReceipt, type PrinterSettings } from '@/lib/thermal-print';
+import { bridgeHealth, pairPrintBridge, bridgeRequest, DEFAULT_PRINTER, receiptRaster, type PosReceipt, type PrinterSettings } from '@/lib/thermal-print';
 
 function subscribeSettings(callback: () => void) {
   window.addEventListener('storage', callback);
@@ -37,7 +37,7 @@ export function ThermalPrinter({ restaurantId, restaurantName, currency, receipt
       const data = JSON.parse(saved || 'null');
       if (data && typeof data.token === 'string' && typeof data.printer === 'string') {
         const width = data.width === 58 ? 58 as const : 80 as const;
-        return { token: data.token, printer: data.printer, width, dots: printerDots(width, data.dots), encoding: data.encoding === 'raster' ? 'raster' as const : 'column' as const, calibrated: typeof data.calibrated === 'string' ? data.calibrated : '', feedMm: Number.isInteger(data.feedMm) && data.feedMm >= 0 && data.feedMm <= 30 ? data.feedMm : 0, cut: data.cut !== false, mode: 'bridge' as const };
+        return { token: data.token, printer: data.printer, width };
       }
     } catch { /* Settings remain available when browser storage is disabled. */ }
     return DEFAULT_PRINTER;
@@ -68,7 +68,7 @@ export function ThermalPrinter({ restaurantId, restaurantName, currency, receipt
       }
       if (!token) token = await pairPrintBridge();
       result ??= await bridgeRequest({...settings, token}, '/printers');
-      if ((result.version ?? 1) < 4) {
+      if ((result.version ?? 1) < 5) {
         setConnected(false);
         setMessage(label('حمّل المثبّت الجديد وشغّله لتحديث برنامج الطباعة، ثم ارجع للصفحة.', 'Download and run the new installer to update MenuzQR Print, then return to this page.'));
         return null;
@@ -76,7 +76,7 @@ export function ThermalPrinter({ restaurantId, restaurantName, currency, receipt
       const names = result.printers || [];
       const printer = names.includes(settings.printer) ? settings.printer : result.suggestedPrinter ?? '';
       const width = !settings.printer && /(?:pos[- _]?58|58\s?mm)/i.test(printer) ? 58 : settings.width;
-      const value: PrinterSettings = {...settings, token, printer, width, dots: printerDots(width, settings.dots), mode:'bridge'};
+      const value: PrinterSettings = {...settings, token, printer, width};
       patch(value); setPrinters(names); setConnected(true);
       setMessage(printer ? label('الطابعة جاهزة. يمكنك طباعة الإيصال أو تجربة طباعة اختبار.', 'Printer ready. Print your receipt or try a test receipt.') : names.length ? label('تم الاتصال. اختار الطابعة مرة واحدة، وسيتم حفظ اختيارك.', 'Connected. Choose your printer once; your choice will be saved.') : label('برنامج الطباعة جاهز، لكن Windows لا يعرض أي طابعة. وصّل الطابعة وثبّت تعريف الموديل.', 'MenuzQR Print is ready, but Windows has no printers. Connect your printer and install its model driver.'));
       return value;
@@ -133,24 +133,25 @@ export function ThermalPrinter({ restaurantId, restaurantName, currency, receipt
     let submitted = false;
     try {
       const bridge = await bridgeRequest(effective, '/printers');
-      if ((bridge.version ?? 1) < 4) {
+      if ((bridge.version ?? 1) < 5) {
         setOpen(true);
         setMessage(label('حدّث برنامج الربط من الرابط بالأسفل ثم أعد طباعة الإيصال المحفوظ. لم يتم إرسال الإيصال للنسخة القديمة.', 'Update the print bridge below, then retry the saved receipt. Nothing was sent to the old bridge.'));
         return;
       }
-      const bitmap = await receiptRaster({...data,lines:data.lines.map(line=>({...line,variant:alhamdUnitLabel(line.variant,restaurantId)}))}, restaurantName, currency, ar, effective.width, effective.dots);
+      const bitmap = await receiptRaster({...data,lines:data.lines.map(line=>({...line,variant:alhamdUnitLabel(line.variant,restaurantId)}))}, restaurantName, currency, ar, effective.width);
       submitted = true;
-      const result = await bridgeRequest(effective, '/print', { ...bitmap, printer: effective.printer, cut: effective.cut, feedMm: test ? 0 : effective.feedMm ?? 0, encoding: effective.encoding ?? 'column', testPrint: test, jobId: job.current!.id });
+      const result = await bridgeRequest(effective, '/print', { ...bitmap, printer: effective.printer, testPrint: test, jobId: job.current!.id });
       if (!test) pendingReceipt.current = null;
       if (result.duplicate) { setMessage(label('المهمة دي اتبعتت قبل كده؛ لم نرسل نسخة إضافية.', 'This job was already sent; no additional copy was sent.')); return; }
       setOpen(false);
       if (!test) await journal(data, 'thermal');
       toast(label('اترسل الإيصال للطابعة.', 'Receipt sent to the printer.'), 'success');
       setMessage(label('اترسل الإيصال للطابعة.', 'Receipt sent to the printer.'));
-    } catch {
+    } catch (cause) {
       if (!submitted) { setConnected(false); setOpen(true); pendingReceipt.current = test ? null : data; }
       const error = label('تعذر تأكيد الطباعة. راجع برنامج الربط والطابعة والورق. لو الإيصال طلع بالفعل متعيدش طباعته.', 'Printing could not be confirmed. Check the bridge, printer and paper. If the receipt already printed, do not reprint it.');
-      toast(error, 'error'); setMessage(error);
+      const detail = cause instanceof Error ? cause.message : '';
+      toast(error, 'error'); setMessage(detail ? `${error} ${detail}` : error);
     } finally { lock.current = false; setBusy(false); }
   }
 
@@ -166,22 +167,17 @@ export function ThermalPrinter({ restaurantId, restaurantName, currency, receipt
         {!connected && <div className="space-y-3 rounded-xl border border-brand-200 bg-brand-50 p-4">
           <p className="font-semibold">{label('تثبيت مرة واحدة على جهاز الكاشير', 'Install once on this cashier computer')}</p>
           <p>{label('حمّل البرنامج وشغّل المثبّت، ثم ارجع هنا. البرنامج يبدأ تلقائيًا مع Windows، والاتصال يتم تلقائيًا بدون أوامر أو كود ربط.', 'Download and run the installer, then return here. MenuzQR Print starts with Windows and connects automatically, with no commands or pairing codes.')}</p>
-          <a href="https://github.com/tranzillofficial/menuzqr/releases/download/print-v4/MenuzQR-Print-Setup.exe" className="inline-flex rounded-xl bg-brand-600 px-4 py-3 font-semibold text-white">{label('تحميل برنامج الطباعة لـWindows', 'Download MenuzQR Print for Windows')}</a>
-          <a href="https://github.com/tranzillofficial/menuzqr/releases/download/print-win7-v4/MenuzQR-Print-Win7-Setup.exe" className="inline-flex rounded-xl border border-brand-600 px-4 py-3 font-semibold text-brand-700">{label('نسخة Windows 7 SP1 — 32 و64 بت', 'Windows 7 SP1 compatibility — 32/64-bit')}</a>
+          <a href="https://github.com/tranzillofficial/menuzqr/releases/download/print-v5/MenuzQR-Print-Setup.exe" className="inline-flex rounded-xl bg-brand-600 px-4 py-3 font-semibold text-white">{label('تحميل برنامج الطباعة لـWindows', 'Download MenuzQR Print for Windows')}</a>
+          <a href="https://github.com/tranzillofficial/menuzqr/releases/download/print-win7-v5/MenuzQR-Print-Win7-Setup.exe" className="inline-flex rounded-xl border border-brand-600 px-4 py-3 font-semibold text-brand-700">{label('نسخة Windows 7 SP1 — 32 و64 بت', 'Windows 7 SP1 compatibility — 32/64-bit')}</a>
           <p className="text-xs text-ink-600">{label('لو ظهرت رسالة عدم توافق على Windows 7، استخدم نسخة التوافق. تشمل Python ومكتبات التشغيل تلقائيًا؛ لا تحتاج تثبيت برامج إضافية. تتطلب Windows 7 SP1. أنظمة Windows 7 وPython 3.8 خارج الدعم؛ يفضّل جهاز بنظام حديث.', 'For an incompatible Windows 7 message, use the compatibility installer. Python and runtime libraries are included; no separate software installation. Requires Windows 7 SP1. Windows 7 and Python 3.8 are out of support; a modern system is preferable.')}</p>
-          <p className="text-xs text-ink-600">{label('Windows 10/11 · 64-bit. وصّل طابعة حرارية متوافقة مع ESC/POS ومثبتة بتعريفها. قد يطلب المتصفح إذن الوصول للشبكة المحلية.', 'Windows 10/11 · 64-bit. Connect an ESC/POS thermal printer with its Windows driver installed. Your browser may request local network permission.')}</p>
+          <p className="text-xs text-ink-600">{label('Windows 10/11 · 64-bit. وصّل طابعة حرارية مثبتة بتعريف الشركة المصنّعة. قد يطلب المتصفح إذن الوصول للشبكة المحلية.', 'Windows 10/11 · 64-bit. Connect a thermal printer with its manufacturer Windows driver installed. Your browser may request local network permission.')}</p>
           {!connected && <p role="status">{label('في انتظار برنامج الطباعة… سيتم اكتشافه تلقائيًا بعد التثبيت.', 'Waiting for MenuzQR Print… It will be detected automatically after installation.')}</p>}
         </div>}
         <fieldset disabled={busy} className="space-y-3">
           <Button type="button" disabled={busy} loading={busy} onClick={() => connect()}>{label('إعادة الاتصال واكتشاف الطابعات', 'Reconnect and find printers')}</Button>
           {connected && <label className="block">{label('الطابعة', 'Printer')}<select value={settings.printer} onChange={e => patch({ printer: e.target.value })} className="mt-1 h-11 w-full rounded-xl border border-ink-200 px-3"><option value="">{label('اختار طابعة', 'Select printer')}</option>{printers.map(name => <option key={name} value={name}>{name}</option>)}</select></label>}
-          <label className="block">{label('توافق الطابعة', 'Printer compatibility')}<select value={settings.encoding ?? 'column'} onChange={e => patch({encoding: e.target.value === 'raster' ? 'raster' : 'column'})} className="mt-1 h-11 w-full rounded-xl border border-ink-200 px-3"><option value="column">{label('توافق الطابعات القديمة', 'Legacy printer compatibility')}</option><option value="raster">{label('طابعات Raster الحديثة', 'Modern raster printers')}</option></select></label>
-          <p className="text-xs text-ink-600">{label('لو الاختبار طويل أو مش مفهوم: أوقف الطابعة وألغِ المهمة القديمة من قائمة طباعة Windows، ثم جرّب وضع التوافق الآخر. جرّب الاختبار الصغير قبل بدء العمل.', 'If the test is long or unreadable: stop the printer, cancel the old job in the Windows print queue, then try the other compatibility mode. Try the small test before starting work.')}</p>
-          <label className="block">{label('عرض الورق', 'Paper width')}<select value={settings.width} onChange={e => { const width = Number(e.target.value) === 58 ? 58 : 80; patch({ width, dots: printerDots(width) }); }} className="mt-1 h-11 w-full rounded-xl border border-ink-200 px-3"><option value={80}>80 mm</option><option value={58}>58 mm</option></select></label>
-          {settings.width === 80 && <label className="block">{label('عرض الطباعة الفعلي حسب موديل الطابعة', 'Printable width for your printer model')}<select value={settings.dots ?? 576} onChange={e => patch({ dots: Number(e.target.value) === 512 ? 512 : 576 })} className="mt-1 h-11 w-full rounded-xl border border-ink-200 px-3"><option value={576}>72 mm · 576 dots</option><option value={512}>64 mm · 512 dots</option></select></label>}
-          <label className="block">{label('مسافة إضافية بعد الإيصال (مم)', 'Extra feed after receipt (mm)')}<input type="number" min={0} max={30} step={1} value={settings.feedMm ?? 0} onChange={e => patch({ feedMm: Math.min(30, Math.max(0, Math.round(Number(e.target.value) || 0))) })} className="mt-1 h-11 w-full rounded-xl border border-ink-200 px-3" /></label>
-          <p className="text-xs text-ink-500">{label('ابدأ بـ0 مم. مسافة رأس الطباعة حتى القاطع تختلف حسب الطابعة ولا يمكن إلغاؤها بالكامل. إعدادات المسافة والقص تخص الطباعة المباشرة.', 'Start with 0 mm. The print-head-to-cutter distance depends on the printer and cannot be fully removed. Feed and cut settings apply to direct printing.')}</p>
-          <label className="flex items-center gap-2"><input type="checkbox" checked={settings.cut} onChange={e => patch({ cut: e.target.checked })} />{label('قص الورق تلقائي لو الطابعة بتدعمه', 'Auto cut if supported by the printer')}</label>
+          <label className="block">{label('عرض الورق', 'Paper width')}<select value={settings.width} onChange={e => { const width = Number(e.target.value) === 58 ? 58 : 80; patch({ width }); }} className="mt-1 h-11 w-full rounded-xl border border-ink-200 px-3"><option value={80}>80 mm</option><option value={58}>58 mm</option></select></label>
+          <p className="text-xs text-ink-500">{label('الطباعة تستخدم تعريف Windows ومقاس الرول فقط. فعّل القص بعد كل مستند في تفضيلات تعريف الطابعة إذا كان الموديل يدعمه.', 'Printing uses your Windows driver and roll size. Enable cut after each document in the driver preferences if your printer supports it.')}</p>
           {connected && settings.printer && (receipt || pendingReceipt.current) && <Button type="button" disabled={busy} onClick={() => print(false, pendingReceipt.current ?? undefined)}>{label('طباعة الإيصال المحفوظ', 'Print saved receipt')}</Button>}
         </fieldset>
         {message && <p role="status" className="rounded-xl bg-ink-50 p-3">{message}</p>}
