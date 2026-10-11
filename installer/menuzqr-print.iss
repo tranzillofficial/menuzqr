@@ -21,6 +21,7 @@ WizardStyle=modern
 UninstallDisplayIcon={app}\MenuzQRPrint.exe
 
 [Files]
+Source: "..\native-print\THIRD-PARTY-NOTICES.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "stop-previous-print.ps1"; Flags: dontcopy
 Source: "..\dist\native\MenuzQRPrint.exe"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 

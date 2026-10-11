@@ -62,6 +62,7 @@ jobs:
             Start-Sleep -Seconds 1
           }
           if (!$ready) { throw 'Native bridge did not start' }
+          if ((Get-Process MenuzQRPrint).MainWindowHandle -eq 0) { throw 'Visible status window missing' }
           $origin='https://menuzqr.shop'
           $key=[IO.File]::ReadAllText("$env:LOCALAPPDATA\MenuzQR\print-pairing-code.txt").Trim()
           $hmac=[Security.Cryptography.HMACSHA256]::new([Text.Encoding]::UTF8.GetBytes($key))
