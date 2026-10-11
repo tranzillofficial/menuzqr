@@ -83,6 +83,7 @@ export type ProductVariant = {
 };
 
 export type Product = {
+  barcode?: string | null;
   source_catalog_item_id?: string | null;
   name_en?: string | null;
   name_ar?: string | null;

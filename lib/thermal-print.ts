@@ -12,32 +12,39 @@ export function printerDots(width: 58 | 80, dots?: number): 384 | 512 | 576 {
   return width === 58 ? 384 : dots === 512 ? 512 : 576;
 }
 
+// Older Windows browsers do not implement AbortSignal.timeout.
+async function timedFetch(url: string, options: RequestInit, timeout: number) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+  try { return await fetch(url, {...options, signal: controller.signal}); }
+  finally { clearTimeout(timer); }
+}
+
 // Loopback only: the printer is on the cashier's computer, not on Vercel.
 export async function bridgeRequest(settings: PrinterSettings, path: '/printers' | '/print', body?: object) {
-  const response = await fetch(`http://127.0.0.1:18191${path}`, {
+  const response = await timedFetch(`http://127.0.0.1:18191${path}`, {
     method: body ? 'POST' : 'GET',
     headers: { Authorization: `Bearer ${settings.token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
     ...(body ? { body: JSON.stringify(body) } : {}),
-    signal: AbortSignal.timeout(body ? 30000 : 8000),
     cache: 'no-store',
-  });
+  }, body ? 30000 : 8000);
   const result = await response.json();
   if (!response.ok) throw new Error(result.error || 'Printer connection failed');
   return result as { printers?: string[]; ok?: boolean; version?: number; suggestedPrinter?:string|null };
 }
 
 export async function bridgeHealth(){
- const response=await fetch('http://127.0.0.1:18191/health',{cache:'no-store',signal:AbortSignal.timeout(2500)});
+ const response=await timedFetch('http://127.0.0.1:18191/health',{cache:'no-store'},2500);
  const result=await response.json();
  if(!response.ok||result.app!=='MenuzQR Print'||result.version<3)throw new Error('Install MenuzQR Print');
  return result;
 }
 export async function pairPrintBridge(){
  await bridgeHealth();
- const grant=await fetch('/api/print-pair',{method:'POST',signal:AbortSignal.timeout(10000)});
+ const grant=await timedFetch('/api/print-pair',{method:'POST'},10000);
  const {ticket,error}=await grant.json();
  if(!grant.ok)throw new Error(error||'Sign in to connect');
- const response=await fetch('http://127.0.0.1:18191/pair',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ticket}),signal:AbortSignal.timeout(12000)});
+ const response=await timedFetch('http://127.0.0.1:18191/pair',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ticket})},12000);
  const result=await response.json();
  if(!response.ok||typeof result.token!=='string')throw new Error('Pairing failed');
  return result.token as string;
@@ -58,7 +65,7 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
   if (!context) throw new Error('Receipt rendering is unavailable');
   type Row = { text?: string; cells?: string[]; bold?: boolean; band?: boolean };
   const rows: Row[] = [];
-  const split = (text: string, available: number, bold = false, size = fontSize) => {
+  const split = (text: string, available: number, bold = true, size = fontSize) => {
     context.font = `${bold ? 'bold ' : ''}${size}px Arial, sans-serif`;
     const lines: string[] = []; let line = '';
     for (const word of text.replace(/[\r\n]/g, ' ').split(/\s+/)) {
@@ -71,12 +78,12 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
     if (line) lines.push(line);
     return lines.length ? lines : [''];
   };
-  const wrap = (text: string, bold = false, band = false) => {
+  const wrap = (text: string, bold = true, band = false) => {
     for (const line of split(text, usable - 8, bold)) rows.push({text: line, bold, band});
   };
   const proportions = [.12, .16, .34, .18, .20];
   const cellSize = (i: number) => i >= 3 ? (width === 58 ? 14 : 22) : i < 2 ? (width === 58 ? 14 : 18) : (width === 58 ? 20 : 24);
-  const table = (cells: string[], bold = false) => {
+  const table = (cells: string[], bold = true) => {
     const lines = cells.map((text, i) => split(text, usable * proportions[i] - 6, bold, cellSize(i)));
     for (let i = 0; i < Math.max(...lines.map(c => c.length)); i++) rows.push({cells: lines.map(c => c[i] ?? ''), bold});
   };

@@ -69,6 +69,7 @@ export function ProductEditor({
   const [state, formAction] = useActionState(saveProductAction, null);
 
   const [name, setName] = useState(product?.name ?? "");
+  const [barcode, setBarcode] = useState(product?.barcode ?? '');
   const [nameEn, setNameEn] = useState(product?.name_en ?? '');
   const [description, setDescription] = useState(product?.description ?? "");
   const [ingredients, setIngredients] = useState(product?.ingredients ?? "");
@@ -249,6 +250,12 @@ export function ProductEditor({
             )}
           </div>
 
+          {supermarket && <div className="space-y-1.5 sm:col-span-2">
+            <label htmlFor="p-barcode" className="text-sm font-medium text-ink-800">{label('باركود المنتج (اختياري)', 'Product barcode (optional)')}</label>
+            <Input id="p-barcode" name="barcode" type="text" dir="ltr" autoComplete="off" maxLength={128} value={barcode} onChange={e=>setBarcode(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();}}}/>
+            <p className="text-xs text-ink-500">{label('اضغط في الخانة واقرأ الباركود بالاسكانر أو اكتبه. الباركود يخص منتجًا واحدًا داخل حسابك.', 'Focus this field and scan or type the barcode. Each barcode identifies one product in your account.')}</p>
+            {state?.fieldErrors?.barcode && <p role="alert" className="text-xs text-red-600">{state.fieldErrors.barcode}</p>}
+          </div>}
           {!packaging && <>
           <div className="space-y-1.5 sm:col-span-2">
             <div className="flex items-center justify-between gap-2">

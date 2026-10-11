@@ -73,3 +73,19 @@ Browser tests use real POS/printer components with mocked checkout and loopback
 transport. They cover initial download, automatic pairing, installation recovery,
 manual printer choice, legacy versions, lost print responses and browser fallback.
 Physical output still requires a test on the customer's actual printer.
+
+## Windows 7 compatibility installer
+
+The separate Windows 7 SP1 installer supports x86 and x64. It embeds Python 3.8.10
+and app-local Universal C Runtime DLLs beside the executable; users do not install
+Python or a separate runtime. Setup registers automatic startup, and the website
+performs the same automatic pairing and printer selection as the modern build.
+The manufacturer ESC/POS printer driver must be installed.
+
+`.github/workflows/print-installer-win7.yml` tests the embedded runtime and
+installation/startup/uninstallation on Windows Server 2022 and publishes:
+https://github.com/tranzillofficial/menuzqr/releases/download/print-win7-v3/MenuzQR-Print-Win7-Setup.exe
+
+Physical Windows 7 and printer validation remains required. Windows 7 and this
+legacy runtime are out of support; use the modern installer on Windows 10/11.
+All receipt text is rendered bold, with wrapping measured using the bold font.

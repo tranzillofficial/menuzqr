@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { checkoutPos, getPosTables } from '@/lib/actions/pos';
 import { CategoryPicker } from "./CategoryPicker";
+import { PosBarcode } from './PosBarcode';
 import { ThermalPrinter, type ReceiptPrinterHandle } from '@/components/dashboard/ThermalPrinter';
 import type { PosReceipt } from '@/lib/thermal-print';
 import { displayPrice, orderTaxAmounts, taxAmounts, vatRate, type TaxSettings } from '@/lib/tax';
@@ -18,13 +19,14 @@ import type { ProductWithVariants, Category, RestaurantTable } from '@/lib/types
 
 type Line = { variantId: string; name: string; variant: string; price: number; quantity: number; basePrice: number; rate: number };
 
-export function PosScreen({ restaurantId, restaurantName, currency, products, categories, tables, taxSettings, tablesEnabled = true }: {
+export function PosScreen({ restaurantId, restaurantName, currency, products, categories, tables, taxSettings, tablesEnabled = true, barcodeEnabled = false }: {
   restaurantId: string; restaurantName: string; currency: string; products: ProductWithVariants[];
-  tablesEnabled?: boolean; categories: Category[]; tables: RestaurantTable[]; taxSettings: TaxSettings;
+  tablesEnabled?: boolean; barcodeEnabled?: boolean; categories: Category[]; tables: RestaurantTable[]; taxSettings: TaxSettings;
 }) {
   const { locale } = useI18n();
   const label = (ar: string, en: string) => locale === 'ar' ? ar : en;
   const [query, setQuery] = useState('');
+  const [barcodeBusy, setBarcodeBusy] = useState(false);
   const [category, setCategory] = useState('all');
   const [cart, setCart] = useState<Line[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
@@ -71,7 +73,7 @@ export function PosScreen({ restaurantId, restaurantName, currency, products, ca
     setCart(previous => previous.map(line => line.variantId === id ? { ...line, quantity: Math.min(99, line.quantity + delta) } : line).filter(line => line.quantity > 0));
   }
   function pay() {
-    if (!cart.length || pending) return;
+    if (!cart.length || pending || barcodeBusy) return;
     if (orderType === 'dinein' && !availableTables.some(item => item.id === table)) {
       setError(label('اختار طاولة من الطاولات المفعّلة.', 'Select an active restaurant table.')); return;
     }
@@ -126,7 +128,7 @@ export function PosScreen({ restaurantId, restaurantName, currency, products, ca
       <div className="grid grid-cols-2 gap-2">{(['cash', 'card'] as const).map(value => <button key={value} type="button" aria-pressed={payment === value} onClick={() => { setPayment(value); changed(); }} className={cn('rounded-xl border py-2.5 text-sm', payment === value ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-ink-200')}>{value === 'cash' ? label('كاش', 'Cash') : label('بطاقة', 'Card')}</button>)}</div>
       {payment === 'cash' && <label className="block text-sm">{label('المبلغ المستلم', 'Amount received')}<input type="number" inputMode="decimal" min={total} step="0.01" value={received} onChange={event => { setReceived(event.target.value); changed(); }} className="mt-2 h-11 w-full rounded-xl border border-ink-200 px-3" /><span className="mt-2 block text-xs text-ink-500">{label('الباقي', 'Change')}: {money(Math.max(0, Number(received) - total))}</span></label>}
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
-      <Button type="button" className="w-full" size="lg" loading={pending} disabled={!cart.length || (fullInvoice && (customerName.trim().length < 2 || customerAddress.trim().length < 5)) || refreshingTables || (orderType === 'dinein' && !availableTables.some(item => item.id === table)) || (payment === 'cash' && (!received || !Number.isFinite(Number(received)) || Number(received) < total))} onClick={pay}>{label('تأكيد الدفع', 'Confirm payment')}</Button>
+      <Button type="button" className="w-full" size="lg" loading={pending} disabled={barcodeBusy || !cart.length || (fullInvoice && (customerName.trim().length < 2 || customerAddress.trim().length < 5)) || refreshingTables || (orderType === 'dinein' && !availableTables.some(item => item.id === table)) || (payment === 'cash' && (!received || !Number.isFinite(Number(received)) || Number(received) < total))} onClick={pay}>{label('تأكيد الدفع', 'Confirm payment')}</Button>
     </fieldset>
     {receipt && <div className="rounded-xl bg-emerald-50 p-4"><p role="status" className="font-semibold text-emerald-800">{label('تم حفظ الطلب', 'Order saved')} #{receipt.number}</p>{receipt.orderId && <Link href={`/dashboard/orders/${receipt.orderId}`} className="text-sm text-brand-700">{label('الفاتورة والسجل', 'Invoice and journal')}</Link>}<p className="mt-1 text-sm">{receipt.tableLabel ? `${label('الطاولة', 'Table')}: ${receipt.tableLabel}` : label('تيك أواي', 'Takeaway')}</p></div>}
   </div>;
@@ -135,6 +137,7 @@ export function PosScreen({ restaurantId, restaurantName, currency, products, ca
     <header className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-xl font-semibold">{label('الكاشير', 'Point of sale')}</h1><p className="text-xs text-ink-500">{restaurantName}</p></div><Link href="/dashboard/orders" className="rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm">{label('متابعة الطلبات', 'View orders')}</Link><Link href="/dashboard/reports" className="rounded-xl border px-3 py-2 text-sm">{label('التقارير وإغلاق اليوم', 'Reports and end of day')}</Link></header>
     <p role="status" aria-live="polite" className="sr-only">{announcement}</p>
     <ThermalPrinter compact printRef={printer} restaurantId={restaurantId} restaurantName={restaurantName} currency={currency} receipt={receipt} />
+    {barcodeEnabled && <PosBarcode disabled={pending} onAdd={add} onBusyChange={setBarcodeBusy}/>}
     <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_310px]">
       <section className="min-w-0" aria-label={label('المنتجات', 'Products')}>
         <input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder={label('ابحث عن منتج', 'Search products')} aria-label={label('ابحث عن منتج', 'Search products')} className="h-11 w-full rounded-xl border border-ink-200 bg-white px-4 text-sm" />

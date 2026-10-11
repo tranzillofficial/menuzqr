@@ -1,6 +1,7 @@
 "use server";
 
 import {isAlhamd,validPackagingName} from "@/lib/alhamd-units";
+import {normalizeBarcode,validBarcode} from "@/lib/barcode";
 import { createCategoryQuickAction } from "./categories";
 import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -79,6 +80,10 @@ export async function saveProductAction(
   const owned = await getMenuRestaurant();
   if (!owned.ok) return owned.error;
   const { restaurant } = owned;
+  const barcode = normalizeBarcode(str(form, "barcode"));
+  if (restaurant.business_kind === 'supermarket' && barcode && !validBarcode(barcode)) {
+    return fail('راجع الباركود: حتى 128 حرفًا أو رقمًا بدون مسافات. / Invalid barcode.', {barcode:'باركود غير صالح / Invalid barcode.'});
+  }
 
   const id = str(form, "id");
   const name = str(form, "name");
@@ -129,6 +134,7 @@ export async function saveProductAction(
   if (!VAT_CODES.includes(vatCode as VatCode)) return fail("Choose a VAT category available in this market.");
 
   const payload = {
+    ...(restaurant.business_kind === 'supermarket' ? {barcode: barcode || null} : {}),
     vat_code: vatCode,
     restaurant_id: restaurant.id,
     category_id: categoryId,
@@ -157,7 +163,7 @@ export async function saveProductAction(
       .update(payload)
       .eq("id", id)
       .eq("restaurant_id", restaurant.id);
-    if (error) return fail(error.message);
+    if (error) return error.code === '23505' ? fail('الباركود مستخدم لمنتج آخر في حسابك. / Barcode already used.', {barcode:'استخدم باركود مختلفًا / Use a different barcode.'}) : fail(error.message);
 
     if (current.image_url && current.image_url !== imageUrl) {
       await deleteAssetIfOwned(current.image_url, restaurant.id);
@@ -173,6 +179,7 @@ export async function saveProductAction(
       .insert({ ...payload, sort_order: (count ?? 0) * 10 })
       .select("id")
       .single();
+    if (error?.code === '23505') return fail('الباركود مستخدم لمنتج آخر في حسابك. / Barcode already used.', {barcode:'استخدم باركود مختلفًا / Use a different barcode.'});
     if (error || !data) return fail(error?.message ?? "Could not create the product.");
     productId = data.id;
   }

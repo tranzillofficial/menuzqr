@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""MenuzQR Windows ESC/POS bridge. Python 3.10+, no pip packages required.
+"""MenuzQR Windows ESC/POS bridge. Python 3.8+, no pip packages required.
 
 Install the thermal printer's Windows driver, run this file and paste the
 pairing code into POS > Thermal printer setup. Keep this process running.

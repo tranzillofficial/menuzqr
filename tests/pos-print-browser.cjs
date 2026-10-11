@@ -4,12 +4,13 @@
 // Module paths can be supplied via ESBUILD_MODULE, PLAYWRIGHT_MODULE, CHROMIUM_MODULE.
 const {build}=require(process.env.ESBUILD_MODULE || 'esbuild');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE || 'playwright');
-const chrome=require(process.env.CHROMIUM_MODULE || '@sparticuz/chromium').default;
+const chrome=process.env.CHROMIUM_EXECUTABLE ? {args:['--no-sandbox','--disable-gpu']} : require(process.env.CHROMIUM_MODULE || '@sparticuz/chromium').default;
 const http=require('node:http');
 const assert=require('node:assert/strict');
 const root=require('node:path').resolve(__dirname, '..');
 (async()=>{
 const mocks={
+'@/lib/actions/barcode':`export async function lookupPosBarcode(){return {ok:false,message:'Barcode not found'}};`,
 '@/components/i18n/I18nProvider':`export const useI18n=()=>({locale:'en'});`,
 '@/components/ui/Toast':`export const useToast=()=>((message)=>window.toasts.push(message));`,
 '@/components/ui/SmartImage':`export const SmartImage=()=>null;`,
@@ -27,7 +28,7 @@ try{
 for(const scenario of ['setup','autoPair','installThenConnect','choosePrinter','browser','thermal','thermal512','oldBridge','thermalFailure','auditFailure','checkoutFailure']){
  const page=await context.newPage();let sent=[];let errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.addInitScript(({scenario})=>{
- localStorage.clear();window.printRequests=0;
+ localStorage.clear();window.printRequests=0;AbortSignal.timeout=undefined;window.receiptFonts=[];const fill=CanvasRenderingContext2D.prototype.fillText;CanvasRenderingContext2D.prototype.fillText=function(...args){window.receiptFonts.push(this.font);return fill.apply(this,args)};
  window.failAudit=scenario==='auditFailure';window.failCheckout=scenario==='checkoutFailure';
  if(scenario==='browser')localStorage.setItem('menuzqr-printer:test',JSON.stringify({token:'',printer:'',width:80,cut:true,mode:'browser'}));
  if(['thermal','thermal512','oldBridge','thermalFailure','auditFailure'].includes(scenario))localStorage.setItem('menuzqr-printer:test',JSON.stringify({token:'test',printer:'Thermal',width:scenario==='thermal512'?80:58,dots:scenario==='thermal512'?512:384,feedMm:0,cut:true}));
@@ -67,7 +68,7 @@ for(const scenario of ['setup','autoPair','installThenConnect','choosePrinter','
  await page.getByRole('button',{name:'Print receipt #1',exact:true}).click();await page.waitForFunction(()=>document.body.innerText.includes('Printing could not be confirmed'));assert.equal(sent.length,2);assert.equal(sent[0].jobId,sent[1].jobId);
  await page.getByRole('button',{name:'Print using system driver'}).click();await page.getByText(/Print dialog requested/).waitFor();assert.equal(await page.evaluate(()=>window.orders),1);
  }else{await page.getByText('Receipt sent to the printer.',{exact:true}).waitFor();assert.equal(sent.length,1);assert.equal(sent[0].width,scenario==='thermal512'?512:384);assert.equal(sent[0].feedMm,0);assert.equal(await page.evaluate(()=>window.printRequests),0);if(scenario==='auditFailure')assert.match((await page.evaluate(()=>window.toasts)).join(' '),/journal/)}
- assert.deepEqual(errors,[]);console.log('PASS',scenario);await page.close();
+ if(sent.length){const fonts=await page.evaluate(()=>window.receiptFonts);assert.ok(fonts.length>0);assert.ok(fonts.every(f=>f.includes('bold')),'Every receipt text row must be bold');}assert.deepEqual(errors,[]);console.log('PASS',scenario);await page.close();
 }
 }finally{await browser.close();server.close()}
 })().catch(e=>{console.error(e);process.exit(1)});
