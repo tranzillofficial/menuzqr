@@ -85,7 +85,7 @@ export const getPublicMenu = cache(async function getPublicMenu(
     productQuery=offerPage?productQuery.in("id",offeredIds.length?offeredIds:["00000000-0000-0000-0000-000000000000"]).limit(1000):productQuery.range((page-1)*pageSize,page*pageSize-1);
   }
   const [{ data: products,error:productError,count:productCount }, {data: payments}, {data: offers,error:offerError}] = await Promise.all([
-    market ? unstable_cache(async()=>await productQuery,["market-products",restaurant.id,slug,String(page),categoryFilter,searchInput,visibleIds.join(",")],{revalidate:30,tags:[`menu-products:${slug}`]})() : productQuery,
+    market ? unstable_cache(async()=>await productQuery,["market-products-v2",restaurant.id,slug,String(page),categoryFilter,searchInput,visibleIds.join(",")],{revalidate:30,tags:[`menu-products:${slug}`]})() : productQuery,
     supabase.from("restaurant_settings").select("remote_ordering_enabled,cash_wallet,instapay_address,payment_whatsapp,delivery_fee,free_delivery_above,payment_details,location_url,facebook_url,instagram_url,website_url").eq("restaurant_id",restaurant.id).maybeSingle(),
     Promise.resolve(offerResult),
   ]);
@@ -124,7 +124,8 @@ export const getPublicMenu = cache(async function getPublicMenu(
         const variants = Array.isArray(source?.variants) ? source.variants as {name:string;name_en?:string}[] : [];
         const matched = variants.find(variant => variant.name === v.name || variant.name_en === v.name);
         const regular = ['Regular','عادي'].includes(v.name) ? {name:'عادي',name_en:'Regular'} : null;
-        return { ...withCatalogName(v, matched ?? regular), price: displayPrice(Number(v.price), p.vat_code, restaurant), tax: { basePrice: Number(v.price), rate: vatRate(restaurant.tax_mode,restaurant.vat_registered,p.vat_code,restaurant.tax_rates), inclusive: restaurant.prices_include_vat, showGross: restaurant.menu_prices_include_vat !== false } };
+        const publicVariant={id:v.id,restaurant_id:v.restaurant_id,product_id:v.product_id,name:v.name,name_en:v.name_en,price:v.price,image_url:v.image_url,sort_order:v.sort_order,is_active:v.is_active,created_at:v.created_at};
+        return { ...withCatalogName(publicVariant, matched ?? regular), price: displayPrice(Number(v.price), p.vat_code, restaurant), tax: { basePrice: Number(v.price), rate: vatRate(restaurant.tax_mode,restaurant.vat_registered,p.vat_code,restaurant.tax_rates), inclusive: restaurant.prices_include_vat, showGross: restaurant.menu_prices_include_vat !== false } };
       })
       .sort((a, b) => a.sort_order - b.sort_order || a.price - b.price),
   }));
