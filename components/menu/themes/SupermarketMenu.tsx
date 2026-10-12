@@ -1,5 +1,6 @@
 "use client";
 import Link from 'next/link';
+import {categoryDescendants} from '@/lib/category-tree';
 import {useRouter,useSearchParams} from 'next/navigation';
 import {useState,type CSSProperties} from 'react';
 import {useMenu} from '../MenuContext';
@@ -20,7 +21,8 @@ export function SupermarketMenu({offersOnly=false}:{offersOnly?:boolean}){
  const offers=data.offers??[];const offer=offers[slide%Math.max(1,offers.length)];
  const menuPath=data.menu_path??`/${data.restaurant.slug}/menu`,offersPath=menuPath.replace(/\/menu$/,'/offers');
  const needle=data.pagination?'':query.trim().toLocaleLowerCase();
- const groups=data.categories.filter(c=>!selected||c.id===selected).map(c=>({...c,products:c.products.filter(p=>!needle||`${p.name} ${p.description??''} ${c.name}`.toLocaleLowerCase().includes(needle))}));
+ const selectedIds=selected?categoryDescendants(data.categories,selected):null;
+ const groups=data.categories.filter(c=>!selectedIds||selectedIds.has(c.id)).map(c=>({...c,products:c.products.filter(p=>!needle||`${p.name} ${p.description??''} ${c.name}`.toLocaleLowerCase().includes(needle))}));
  const allProducts=data.categories.flatMap(c=>c.products);
  function productCard(p:ProductWithVariants){
   return <button type="button" key={p.id} onClick={()=>openProduct(p)} className="flex flex-col bg-white text-neutral-900 rounded-2xl border border-neutral-100 p-3 text-start shadow-sm transition hover:border-red-300"><MenuImage src={p.image_url} alt={p.name} fit="contain" className="aspect-square w-full" sizes="(max-width:640px) 45vw, 240px"/><h3 className="mt-3 text-sm font-bold">{p.name}</h3>{p.description&&<p className="mt-1 line-clamp-2 text-xs text-neutral-500">{p.description}</p>}{showPrices&&<p className="mt-auto pt-3 text-sm font-bold text-[var(--store-accent)]">{priceRange(p.product_variants.map(v=>Number(v.price)),currency)}</p>}<span className="mt-3 block rounded-lg border border-[var(--store-accent)] py-2 text-center text-xs font-semibold text-[var(--store-accent)]">{ar?'اختيار +':'Choose +'}</span></button>;

@@ -4,7 +4,7 @@ import { activeOffers } from "./offers";
 import {getTenantDomain} from "./tenant-domain";
 import { withCatalogName } from './menu-localization';
 import { moduleEnabled } from "./business-modules";
-import { visibleCategories } from "./category-tree";
+import { visibleCategories,categoryDescendants } from "./category-tree";
 import { displayPrice, vatRate } from "./tax";
 import { getUser } from "./auth";
 import { cache } from "react";
@@ -75,9 +75,10 @@ export const getPublicMenu = cache(async function getPublicMenu(
   if(offerResult.error)throw Error('Could not load offers');
   const currentOffers=activeOffers(offerResult.data??[]);
   const offeredIds=[...new Set(currentOffers.flatMap(o=>o.product_ids))];
-  let productQuery=supabase.from('products').select('*, product_variants(*)',{count:market?'exact':undefined}).eq('restaurant_id',restaurant.id).eq('is_active',true).order('sort_order').order('created_at').order('id');
+  let productQuery=supabase.from('products').select('*, product_variants(id,restaurant_id,product_id,name,name_en,price,image_url,sort_order,is_active,created_at)',{count:market?'exact':undefined}).eq('restaurant_id',restaurant.id).eq('is_active',true).order('sort_order').order('created_at').order('id');
   if(market){
-    if(categoryFilter && visibleIds.includes(categoryFilter))productQuery=productQuery.eq('category_id',categoryFilter);
+    if(categoryFilter && visibleIds.includes(categoryFilter))productQuery=productQuery.in('category_id',[...categoryDescendants(categories??[],categoryFilter)].filter(id=>visibleIds.includes(id)));
+    else if(categoryFilter==='uncategorised')productQuery=productQuery.is('category_id',null);
     else productQuery=productQuery.or(`category_id.is.null${visibleIds.length?',category_id.in.('+visibleIds.join(',')+')':''}`);
     const needle=searchInput.slice(0,80).replace(/[%,_().\\]/g,' ').trim();
     if(needle)productQuery=productQuery.or(`name.ilike.%${needle}%,barcode.ilike.%${needle}%`);
@@ -91,6 +92,11 @@ export const getPublicMenu = cache(async function getPublicMenu(
   if(productError)throw Error("Could not load products");
   if(offerError) throw new Error("Could not load business offers");
 
+  if(payments){
+    if(!featureEnabled(restaurant,'delivery_settings')){payments.delivery_fee=0;payments.free_delivery_above=null;}
+    if(!featureEnabled(restaurant,'payment_settings')){payments.payment_details='';payments.cash_wallet='';payments.instapay_address='';}
+    if(!featureEnabled(restaurant,'contact_settings')){payments.location_url='';payments.facebook_url='';payments.instagram_url='';payments.website_url='';payments.payment_whatsapp='';}
+  }
   let table: Pick<RestaurantTable, "id" | "label"> | null = null;
   if (tableToken && !preview && moduleEnabled(restaurant,"tables")) {
     const { data } = await supabase
@@ -150,7 +156,7 @@ export const getPublicMenu = cache(async function getPublicMenu(
     state: "ok",
     table,
     data: {
-      ...(market&&!offerPage?{pagination:{page,pageSize,total:productCount??0,query:searchInput.slice(0,80),category:categoryFilter}}:{}),
+      ...(market&&!offerPage?{pagination:{page,pageSize,total:productCount??0,query:searchInput.slice(0,80),category:visibleIds.includes(categoryFilter)||categoryFilter==="uncategorised"?categoryFilter:""}}:{}),
       menu_path:domain?"/menu":`/${slug}/menu`,
       payments: payments ?? undefined,
       offers: preview ? [] : activeOffers(offers ?? []),

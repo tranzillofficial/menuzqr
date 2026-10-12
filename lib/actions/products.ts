@@ -96,7 +96,7 @@ export async function saveProductAction(
     return fail(parsedVariants.message, { variants: parsedVariants.message });
   }
   const variants = parsedVariants.variants;
-  if ((isAlhamd(restaurant) || featureEnabled(restaurant,"product_packaging")) && (variants.some(v => !validPackagingName(v.name)) || new Set(variants.map(v=>v.name.startsWith('كرتونة')?'كرتونة':v.name)).size !== variants.length || variants.length > 2)) {
+  if ((featureEnabled(restaurant,"product_packaging") || (!restaurant.enabled_modules?.includes("features_v3") && isAlhamd(restaurant))) && (variants.some(v => !validPackagingName(v.name)) || new Set(variants.map(v=>v.name.startsWith('كرتونة')?'كرتونة':v.name)).size !== variants.length || variants.length > 2)) {
     return fail('اختار علبة أو كرتونة، واكتب عدد العلب الصحيح في الكرتونة. لكل وحدة سعر واحد.', {variants:'راجع وحدة البيع وعدد العلب.'});
   }
   if (variants.length === 0) {

@@ -65,7 +65,7 @@ export function ProductEditor({
   const t = useT();
   const { locale } = useI18n();
   const label = (ar: string, en: string) => locale === "ar" ? ar : en;
-  const packaging = isAlhamd(restaurant) || featureEnabled(restaurant,"product_packaging");
+  const packaging = featureEnabled(restaurant,"product_packaging") || (!restaurant.enabled_modules?.includes("features_v3") && isAlhamd(restaurant));
   const supermarket = restaurant.business_kind === "supermarket";
   const [state, formAction] = useActionState(saveProductAction, null);
 
