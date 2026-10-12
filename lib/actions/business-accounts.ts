@@ -2,11 +2,12 @@
 import { revalidatePath } from 'next/cache';
 import { createServerSupabase } from '@/lib/supabase/server';
 import { createAdminSupabase } from '@/lib/supabase/admin';
+import { BUSINESS_FEATURES, FEATURE_REGISTRY } from '@/lib/business-features';
 import { BUSINESS_MODULES } from '@/lib/business-modules';
 import { validateSlug } from '@/lib/slug';
 import { assertAdmin, done, fail, str } from './helpers';
 import type { ActionState } from '@/lib/types';
-function modules(form:FormData){const values=form.getAll('modules');return [...BUSINESS_MODULES.filter(m=>values.includes(m)),"features_v2"];}
+function modules(form:FormData){const values=form.getAll('modules');const selected=BUSINESS_MODULES.filter(m=>values.includes(m));const features=form.getAll("features");return [...selected,...BUSINESS_FEATURES.filter(f=>features.includes(f)&&selected.includes(FEATURE_REGISTRY[f].module)),"features_v2","features_v3"];}
 export async function saveBusinessAccount(_previous:ActionState,form:FormData):Promise<ActionState>{
  const admin=await assertAdmin();if(!admin.ok)return admin.error;
  const id=str(form,'restaurant_id');const enabled=modules(form);const db=await createServerSupabase();

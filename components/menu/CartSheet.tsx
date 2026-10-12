@@ -50,8 +50,9 @@ function sessionId() {
 
 export function CartBar({ slug, tableToken }: { slug: string; tableToken: string }) {
   const t = useT();
-  const { itemCount, total, currency, orderingEnabled, setCartOpen, data } = useMenu();
+  const { itemCount, total, currency, orderingEnabled, setCartOpen, data, table } = useMenu();
 
+  const supermarket=data.restaurant.business_kind === "supermarket";
   if (!orderingEnabled) return null;
 
   return (
@@ -67,7 +68,7 @@ export function CartBar({ slug, tableToken }: { slug: string; tableToken: string
               {itemCount}
             </span>
             <span className="text-sm font-semibold">{t("menu.viewOrder")}</span>
-            <span className="ms-auto text-sm font-semibold">{formatMoney(total, currency)}</span>
+            <span className="ms-auto text-sm font-semibold">{formatMoney(total + (!table && supermarket && total>0 && !(data.payments?.free_delivery_above != null && total>=data.payments.free_delivery_above) ? Number(data.payments?.delivery_fee??0) : 0), currency)}</span>
           </button>
         </div>
       )}
@@ -142,7 +143,7 @@ function CartSheet({ slug, tableToken }: { slug: string; tableToken: string }) {
             <p className="mt-1.5 text-sm text-ink-600">
               {table ? t("menu.orderSentBody", { number: placed.number, table: table.label }) : (ar ? supermarket ? `طلبك رقم ${placed.number} وصل للمحل. الدفع عند الاستلام.` : `طلبك رقم ${placed.number} وصل للمكان. الدفع في انتظار التأكيد اليدوي.` : supermarket ? `Order #${placed.number} received. Pay on delivery.` : `Order #${placed.number} was received. Payment awaits manual confirmation.`)}
             </p>
-            {!table && !supermarket && data.payments && <div className="mt-4 space-y-3 rounded-xl bg-ink-50 p-4 text-sm"><p>{ar?'حوّل باستخدام البيانات التالية، ثم أرسل صورة الإثبات على واتساب لصاحب المكان.':'Transfer using the details below, then send proof to the business on WhatsApp.'}</p>{data.payments.cash_wallet&&<TransferDetail label={ar?"رقم المحفظة / كاش":"Cash wallet"} value={data.payments.cash_wallet} ar={ar}/>}{data.payments.instapay_address&&<TransferDetail label="InstaPay" value={data.payments.instapay_address} ar={ar}/>}<a target="_blank" rel="noreferrer" className="block rounded-xl bg-emerald-600 p-3 text-white" href={`https://wa.me/${data.payments.payment_whatsapp}?text=${encodeURIComponent(ar?`طلب رقم ${placed.number} — ${name}. سأرفق صورة التحويل.`:`Order #${placed.number} — ${name}. I will attach transfer proof.`)}`}>{ar?'التواصل وإرسال صورة التحويل':'Contact and send transfer proof'}</a></div>}
+            {!table && data.payments && <div className="mt-4 space-y-3 rounded-xl bg-ink-50 p-4 text-sm"><p>{ar?'حوّل باستخدام البيانات التالية، ثم أرسل صورة الإثبات على واتساب لصاحب المكان.':'Transfer using the details below, then send proof to the business on WhatsApp.'}</p>{data.payments.payment_details&&<p className="whitespace-pre-line break-words font-semibold">{data.payments.payment_details}</p>}{data.payments.cash_wallet&&<TransferDetail label={ar?"رقم المحفظة / كاش":"Cash wallet"} value={data.payments.cash_wallet} ar={ar}/>}{data.payments.instapay_address&&<TransferDetail label="InstaPay" value={data.payments.instapay_address} ar={ar}/>}{data.payments.payment_whatsapp&&<a target="_blank" rel="noreferrer" className="block rounded-xl bg-emerald-600 p-3 text-white" href={`https://wa.me/${data.payments.payment_whatsapp}?text=${encodeURIComponent(ar?`طلب رقم ${placed.number} — ${name}. سأرفق صورة التحويل.`:`Order #${placed.number} — ${name}. I will attach transfer proof.`)}`}>{ar?'التواصل وإرسال صورة التحويل':'Contact and send transfer proof'}</a>}</div>}
             <button
               type="button"
               onClick={() => {
@@ -250,9 +251,10 @@ function CartSheet({ slug, tableToken }: { slug: string; tableToken: string }) {
 
             <div className="border-t border-ink-100 p-4">
               {items.some(i => i.tax && i.tax.rate > 0) && <div className="mb-2 space-y-1 text-sm"><p className="flex justify-between"><span>Subtotal / قبل الضريبة</span><span>{formatMoney(total - vat,currency)}</span></p><p className="flex justify-between"><span>VAT / الضريبة</span><span>{formatMoney(vat,currency)}</span></p></div>}
+              {!table && supermarket && <p className="mb-2 flex justify-between text-sm"><span>{ar?"رسوم التوصيل":"Delivery fee"}</span><span>{formatMoney(data.payments?.free_delivery_above != null && total>=data.payments.free_delivery_above ? 0 : Number(data.payments?.delivery_fee??0),currency)}</span></p>}
               <div className="mb-3 flex items-center justify-between text-sm">
                 <span className="text-ink-500">{t("menu.total")}</span>
-                <span className="text-lg font-semibold">{formatMoney(total, currency)}</span>
+                <span className="text-lg font-semibold">{formatMoney(total + (!table && supermarket && total>0 && !(data.payments?.free_delivery_above != null && total>=data.payments.free_delivery_above) ? Number(data.payments?.delivery_fee??0) : 0), currency)}</span>
               </div>
               <button
                 type="button"

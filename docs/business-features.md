@@ -13,3 +13,11 @@ On the custom domain, `/` serves the chosen business landing page or redirects t
 Vercel setup: set server-only `VERCEL_TOKEN`, `VERCEL_PROJECT_ID` and optional `VERCEL_TEAM_ID`, or enter a one-time token in the admin domain form. Tokens are not stored or returned in responses. Adding a hostname does not purchase it or modify the registrar's DNS. Copy the recommended records, configure DNS, and run the check again. No domain was registered by this change because no customer hostname was supplied.
 
 Email/password login uses local session cookies. Adding email magic links, recovery or OAuth later requires explicit Supabase redirect allowlist entries for each customer domain.
+
+`features_v3` adds per-section capabilities from `lib/business-features.ts`, saved in the existing admin-controlled `enabled_modules` array. A feature requires its parent module. Legacy configurations retain inferred defaults until saved. Supermarkets always hide tables and service calls; descriptions, ingredients, English names and tax controls are off by default. Presets now include offers, customers, menu designs and invoices. Inventory is opt-in.
+
+Inventory tracks each selling variant separately. A trusted financial-event trigger deducts paid sales and reverses the recorded sale movements on refunds; unpaid/cancelled orders do not consume inventory. Box-to-carton conversion is not automatic. Balances may be negative, and stock changes are audited.
+
+Storefront delivery/payment/contact fields are additive. Supermarket delivery charges and free-delivery thresholds are calculated on the server and frozen in fiscal snapshots. Existing receipts remain unchanged. Public supermarket catalogs fetch 24 products per page and dashboard product management fetches 40. Search runs against the account in Postgres, not just the current page. Product pages are cached for 30 seconds with per-business invalidation on product/category changes; immutable image caching remains enabled. R2 migration is deferred.
+
+The existing web-push service worker handles notifications with closed tabs. Production requires stable VAPID public/private keys and each phone's notification permission and subscription. Device power management and browser policies still affect delivery.

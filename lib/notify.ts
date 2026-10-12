@@ -59,12 +59,13 @@ async function pushToAudience(event: LiveEvent) {
       .in("role", roles),
     supabase
       .from("restaurants")
-      .select("language")
+      .select("language,owner_id")
       .eq("id", event.restaurantId)
       .maybeSingle(),
   ]);
 
   const recipients = (members ?? []).filter(member => shouldAlert(event.kind, member.role as MemberRole, member.service_permissions));
+  if(restaurant?.owner_id && !recipients.some(m=>m.user_id===restaurant.owner_id))recipients.push({user_id:restaurant.owner_id,role:"owner",service_permissions:null});
   if (recipients.length === 0) return;
 
   const language = restaurant?.language;

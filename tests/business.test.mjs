@@ -6,7 +6,7 @@ test('legacy accounts preserve tools and retail accounts hide irrelevant routes'
  for(const m of ['pos','reports','tables','catalog','design','orders','staff'])assert.equal(moduleEnabled({},m),true);
  assert.equal(moduleEnabled({},'subcategories'),false);
  const retail={enabled_modules:RETAIL_MODULES};
- for(const p of ['/dashboard/tables','/dashboard/design','/dashboard/catalog'])assert.equal(dashboardPathEnabled(retail,p),false);
+ for(const p of ['/dashboard/tables','/dashboard/catalog'])assert.equal(dashboardPathEnabled(retail,p),false);
  for(const p of ['/dashboard','/dashboard/restaurant','/dashboard/products','/dashboard/orders/receipt','/dashboard/pos'])assert.equal(dashboardPathEnabled(retail,p),true);
  assert.equal(moduleEnabled({enabled_modules:[]},'pos'),false);
 });
@@ -26,4 +26,11 @@ test('versioned features disable core routes while retaining old custom accounts
  const limited={enabled_modules:['features_v2','pos']};
  assert.equal(dashboardPathEnabled(limited,'/dashboard/pos'),true);
  for(const p of ['/dashboard/restaurant','/dashboard/products','/dashboard/categories','/dashboard/qr-codes','/dashboard/settings'])assert.equal(dashboardPathEnabled(limited,p),false);
+});
+
+test('supermarkets never expose tables or service calls even in custom configurations',()=>{
+ for(const enabled_modules of [null,['tables','service_calls','features_v3']]){
+  assert.equal(moduleEnabled({business_kind:'supermarket',enabled_modules},'tables'),false);
+  assert.equal(moduleEnabled({business_kind:'supermarket',enabled_modules},'service_calls'),false);
+ }
 });

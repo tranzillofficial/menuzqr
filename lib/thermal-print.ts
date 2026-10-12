@@ -9,59 +9,6 @@ export type PrinterSettings = { token: string; printer: string; width: 58 | 80 }
 export const DEFAULT_PRINTER: PrinterSettings = { token: '', printer: '', width: 80 };
 export function printerDots(width: 58 | 80): 384 | 576 { return width === 58 ? 384 : 576; }
 
-// Older Windows browsers do not implement AbortSignal.timeout.
-async function timedFetch(url: string, options: RequestInit, timeout: number) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeout);
-  try { return await fetch(url, {...options, signal: controller.signal}); }
-  finally { clearTimeout(timer); }
-}
-
-// Loopback only: the printer is on the cashier's computer, not on Vercel.
-export async function bridgeRequest(settings: PrinterSettings, path: '/printers' | '/print', body?: object) {
-  const response = await timedFetch(`http://127.0.0.1:18191${path}`, {
-    method: body ? 'POST' : 'GET',
-    headers: { Authorization: `Bearer ${settings.token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
-    ...(body ? { body: JSON.stringify(body) } : {}),
-    cache: 'no-store',
-  }, body ? 30000 : 8000);
-  const result = await response.json();
-  if (!response.ok) throw new Error(result.error || 'Printer connection failed');
-  return result as { printers?: string[]; ok?: boolean; version?: number; suggestedPrinter?:string|null; duplicate?:boolean };
-}
-
-export class PrintConnectionError extends Error {
-  constructor(public code: 'unreachable' | 'outdated' | 'session' | 'pairing' | 'discovery') {
-    super(code); this.name = 'PrintConnectionError';
-  }
-}
-export async function bridgeHealth() {
-  let response, result;
-  try {
-    response = await timedFetch('http://127.0.0.1:18191/health', {cache:'no-store'}, 2500);
-    result = await response.json();
-  } catch { throw new PrintConnectionError('unreachable'); }
-  if (!response.ok || result.app !== 'MenuzQR Print') throw new PrintConnectionError('unreachable');
-  if (!(result.version >= 5)) throw new PrintConnectionError('outdated');
-  return result;
-}
-export async function pairPrintBridge() {
-  await bridgeHealth();
-  let ticket;
-  try {
-    const grant = await timedFetch('/api/print-pair', {method:'POST'}, 10000);
-    const result = await grant.json();
-    if (!grant.ok || typeof result.ticket !== 'string') throw new Error();
-    ticket = result.ticket;
-  } catch { throw new PrintConnectionError('session'); }
-  try {
-    const response = await timedFetch('http://127.0.0.1:18191/pair', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ticket})}, 12000);
-    const result = await response.json();
-    if (!response.ok || typeof result.token !== 'string') throw new Error();
-    return result.token as string;
-  } catch { throw new PrintConnectionError('pairing'); }
-}
-
 // Render Arabic with the browser's shaping engine, then send monochrome raster
 // commands. This avoids dependence on the printer's Arabic code page support.
 async function receiptCanvas(receipt: PosReceipt, restaurantName: string, currency: string, ar: boolean, width: 58 | 80) {
@@ -128,6 +75,7 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
     if (fiscal?.registered && fiscal.mode !== 'egypt') wrap(`${line.code ?? ''} ${line.rate ?? 0}% | VAT ${money(sign * (line.vat ?? 0))}`);
   }
 
+  if (fiscal?.delivery_fee) wrap(`${label('التوصيل','Delivery')}: ${money(sign * fiscal.delivery_fee)}`);
   if (fiscal?.registered) wrap(`${label('الإجمالي قبل الضريبة','Subtotal')}: ${money(sign * fiscal.net)}`);
   if (fiscal?.registered) wrap(`${label('الضريبة','VAT')}: ${money(sign * fiscal.vat)}`);
   wrap(`${label('الصافي','Total')}: ${money(sign * receipt.total)}`,true,true);
@@ -177,4 +125,9 @@ export async function receiptRaster(receipt: PosReceipt, restaurantName: string,
   let binary = '';
   for (const byte of raster.subarray(first * bytesPerRow, (last + 1) * bytesPerRow)) binary += String.fromCharCode(byte);
   return { protocol: 'windows-gdi-v1', paperMm: width, width: dots, height: last - first + 1, raster: btoa(binary) };
+}
+
+export async function receiptImage(receipt:PosReceipt,name:string,currency:string,ar:boolean,width:58|80){
+ const canvas=await receiptCanvas(receipt,name,currency,ar,width);
+ return {png:canvas.toDataURL('image/png'),height:canvas.height,width:canvas.width};
 }

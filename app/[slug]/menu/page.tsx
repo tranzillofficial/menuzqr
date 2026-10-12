@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 type Params = { slug: string };
 /** `t` is the table code. `table` is the older parameter, still accepted. */
-type Search = { t?: string; table?: string };
+type Search = { t?: string; table?: string; category?:string; page?:string; q?:string };
 
 export async function generateMetadata({
   params,
@@ -23,7 +23,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const [{ slug }, search] = await Promise.all([params, searchParams]);
   // Same arguments as the page below, so React's cache() serves both from one query.
-  const result = await getPublicMenu(slug, search.t ?? search.table);
+  const result = await getPublicMenu(slug, search.t ?? search.table,search.category,search.page,search.q);
 
   if (result.state === "not_found") return { title: "Menu not found" };
   if (result.state === "inactive") {
@@ -53,7 +53,7 @@ export default async function PublicMenuPage({
   const [{ slug }, search] = await Promise.all([params, searchParams]);
   const tableToken = search.t ?? search.table;
 
-  const result = await getPublicMenu(slug, tableToken);
+  const result = await getPublicMenu(slug, tableToken,search.category,search.page,search.q);
 
   if (result.state === "not_found") notFound();
 
@@ -78,7 +78,7 @@ export default async function PublicMenuPage({
   // themselves, even when guest ordering is switched off in settings.
   const staffMode = await isStaffOf(result.data.restaurant.id);
 
-  if (result.data.categories.length === 0) {
+  if (result.data.categories.length === 0 && result.data.restaurant.business_kind!=="supermarket") {
     return (
       <MenuUnavailable
         restaurantName={result.data.restaurant.name}

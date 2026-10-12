@@ -287,11 +287,13 @@ export type AdminAction = {
 };
 
 /** Everything a public menu theme needs to render. */
-export type PaymentInstructions = { remote_ordering_enabled: boolean; cash_wallet: string; instapay_address: string; payment_whatsapp: string };
+export type StorefrontDetails = {delivery_fee:number;free_delivery_above:number|null;payment_details:string;location_url:string;facebook_url:string;instagram_url:string;website_url:string};
+export type PaymentInstructions = Partial<StorefrontDetails> & { remote_ordering_enabled: boolean; cash_wallet: string; instapay_address: string; payment_whatsapp: string };
 
 export type BusinessOffer = {id:string;restaurant_id:string;title:string;description:string;image_url:string|null;product_ids:string[];starts_at:string|null;ends_at:string|null;is_active:boolean;sort_order:number;created_at:string};
 
 export type MenuData = {
+  pagination?:{page:number;pageSize:number;total:number;query:string;category:string};
   offers?: BusinessOffer[];
   menu_path?: string;
   payments?: PaymentInstructions;

@@ -1,3 +1,4 @@
+import {featureEnabled} from "@/lib/business-features";
 import { activeOrders } from '@/lib/order-data';
 import { IncomingOrders } from '@/components/dashboard/IncomingOrders';
 import { moduleEnabled } from '@/lib/business-modules';
@@ -18,5 +19,5 @@ export default async function PosPage(){
  const [products,categories,tables]=await Promise.all([db.from('products').select('*,product_variants(*)').eq('restaurant_id',member.restaurant.id).eq('is_active',true).order('sort_order'),db.from('categories').select('*').eq('restaurant_id',member.restaurant.id).eq('is_active',true).order('sort_order'),db.from('restaurant_tables').select('*').eq('restaurant_id',member.restaurant.id).eq('is_active',true).order('sort_order')]);
  if(products.error||categories.error||tables.error) throw new Error('Could not load POS');
  const incoming=moduleEnabled(member.restaurant,"orders")?await activeOrders(member.restaurant.id,true):[];
- return <>{moduleEnabled(member.restaurant,"orders")&&<IncomingOrders orders={incoming} retail={member.restaurant.enabled_modules != null && !moduleEnabled(member.restaurant,"tables")}/>}<PosScreen barcodeEnabled={member.restaurant.business_kind === "supermarket"} tablesEnabled={moduleEnabled(member.restaurant,"tables")} restaurantId={member.restaurant.id} restaurantName={member.restaurant.name} currency={member.restaurant.currency} products={(products.data??[]) as ProductWithVariants[]} categories={(categories.data??[]) as Category[]} tables={(tables.data??[]) as RestaurantTable[]} taxSettings={member.restaurant} /></>;
+ return <>{moduleEnabled(member.restaurant,"orders")&&<IncomingOrders orders={incoming} retail={member.restaurant.enabled_modules != null && !moduleEnabled(member.restaurant,"tables")}/>}<PosScreen printingEnabled={featureEnabled(member.restaurant,"receipt_printing")} barcodeEnabled={featureEnabled(member.restaurant,"product_barcode")} tablesEnabled={moduleEnabled(member.restaurant,"tables")} restaurantId={member.restaurant.id} restaurantName={member.restaurant.name} currency={member.restaurant.currency} products={(products.data??[]) as ProductWithVariants[]} categories={(categories.data??[]) as Category[]} tables={(tables.data??[]) as RestaurantTable[]} taxSettings={member.restaurant} /></>;
 }

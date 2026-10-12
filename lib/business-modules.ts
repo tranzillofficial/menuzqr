@@ -1,5 +1,7 @@
 // Register a implemented feature here once: navigation and account controls share it.
 export const MODULE_REGISTRY = {
+ inventory:{nav:{label:"nav.inventory",icon:"grid"},ar:"المخزون",en:"Inventory",paths:["inventory"]},
+ invoices:{nav:{label:"nav.invoices",icon:"receipt"},ar:"الفواتير",en:"Invoices",paths:["invoices"]},
  offers:{nav:{label:"nav.offers",icon:"sparkles"},ar:"العروض",en:"Offers",paths:["offers"]},
  customers:{nav:{label:"nav.customers",icon:"users"},ar:"العملاء",en:"Customers",paths:["customers"]},
  pos:{nav:{label:"nav.pos",icon:"receipt"},ar:'الكاشير',en:'Point of sale',paths:['pos']},
@@ -23,11 +25,13 @@ export type BusinessConfig = { business_kind?: string | null; enabled_modules?: 
 // Old custom arrays predate core toggles; retain their previously available tools.
 const CORE: BusinessModule[]=['branch','products','qr','settings'];
 export function moduleEnabled(config: BusinessConfig, module: BusinessModule): boolean {
- if(config.enabled_modules==null)return module!=='subcategories';
- if(CORE.includes(module)&&!config.enabled_modules.includes('features_v2'))return true;
+ if(config.business_kind==='supermarket' && ['tables','service_calls'].includes(module))return false;
+ if(module==='invoices' && !config.enabled_modules?.includes('features_v3'))return config.enabled_modules==null || config.enabled_modules.includes('reports') || config.enabled_modules.includes('orders');
+ if(config.enabled_modules==null)return !['subcategories','inventory'].includes(module);
+ if(CORE.includes(module)&&!config.enabled_modules.includes('features_v2')&&!config.enabled_modules.includes('features_v3'))return true;
  return config.enabled_modules.includes(module);
 }
-export const RETAIL_MODULES: BusinessModule[] = ['pos','reports','orders','staff','subcategories',...CORE];
+export const RETAIL_MODULES: BusinessModule[] = ['pos','reports','orders','staff','invoices','customers','offers','design','subcategories',...CORE];
 export const BUSINESS_PRESETS = {
  restaurant:{ar:'مطعم أو كافيه',en:'Restaurant or cafe',modules:BUSINESS_MODULES.filter(m=>m!=='subcategories')},
  sweets:{ar:'حلويات وتجارة جملة',en:'Sweets and wholesale',modules:RETAIL_MODULES},

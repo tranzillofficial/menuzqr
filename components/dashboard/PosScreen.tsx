@@ -19,9 +19,9 @@ import type { ProductWithVariants, Category, RestaurantTable } from '@/lib/types
 
 type Line = { variantId: string; name: string; variant: string; price: number; quantity: number; basePrice: number; rate: number };
 
-export function PosScreen({ restaurantId, restaurantName, currency, products, categories, tables, taxSettings, tablesEnabled = true, barcodeEnabled = false }: {
+export function PosScreen({ restaurantId, restaurantName, currency, products, categories, tables, taxSettings, tablesEnabled = true, barcodeEnabled = false, printingEnabled = true }: {
   restaurantId: string; restaurantName: string; currency: string; products: ProductWithVariants[];
-  tablesEnabled?: boolean; barcodeEnabled?: boolean; categories: Category[]; tables: RestaurantTable[]; taxSettings: TaxSettings;
+  printingEnabled?:boolean; tablesEnabled?: boolean; barcodeEnabled?: boolean; categories: Category[]; tables: RestaurantTable[]; taxSettings: TaxSettings;
 }) {
   const { locale } = useI18n();
   const label = (ar: string, en: string) => locale === 'ar' ? ar : en;
@@ -86,7 +86,7 @@ export function PosScreen({ restaurantId, restaurantName, currency, products, ca
         setReceipt(result.receipt);
         setCart([]); setFullInvoice(false); setCustomerName(''); setCustomerAddress(''); setCustomerVat(''); setReceived(''); setNote(''); setTable(''); setCartOpen(false); request.current = null;
         setAnnouncement(label('تم حفظ الطلب', 'Order saved'));
-        await printer.current?.printReceipt(result.receipt);
+        if(printingEnabled)await printer.current?.printReceipt(result.receipt);
       } catch { setError(label('تعذر الاتصال. حاول تاني بنفس الطلب.', 'Connection interrupted. Retry this order.')); }
     });
   }
@@ -136,7 +136,7 @@ export function PosScreen({ restaurantId, restaurantName, currency, products, ca
   return <div className="space-y-4 pb-24 lg:pb-0">
     <header className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-xl font-semibold">{label('الكاشير', 'Point of sale')}</h1><p className="text-xs text-ink-500">{restaurantName}</p></div><Link href="/dashboard/orders" className="rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm">{label('متابعة الطلبات', 'View orders')}</Link><Link href="/dashboard/reports" className="rounded-xl border px-3 py-2 text-sm">{label('التقارير وإغلاق اليوم', 'Reports and end of day')}</Link></header>
     <p role="status" aria-live="polite" className="sr-only">{announcement}</p>
-    <ThermalPrinter compact printRef={printer} restaurantId={restaurantId} restaurantName={restaurantName} currency={currency} receipt={receipt} />
+    {printingEnabled&&<ThermalPrinter compact printRef={printer} restaurantId={restaurantId} restaurantName={restaurantName} currency={currency} receipt={receipt} />}
     {barcodeEnabled && <PosBarcode disabled={pending} onAdd={add} onBusyChange={setBarcodeBusy}/>}
     <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_310px]">
       <section className="min-w-0" aria-label={label('المنتجات', 'Products')}>

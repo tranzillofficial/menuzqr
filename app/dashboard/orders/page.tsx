@@ -42,7 +42,7 @@ export default async function OrdersPage() {
         title={t("orders.title")}
         description={t("orders.sub")}
       />
-      <InvoiceExport />
+      {moduleEnabled(restaurant,"invoices") && <InvoiceExport />}
       <OrdersBoard
         orders={[...active,...(orders??[]) as OrderWithDetails[]]}
         waiterRequests={(waiters ?? []) as WaiterRequest[]}

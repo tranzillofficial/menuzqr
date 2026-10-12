@@ -1,4 +1,5 @@
 "use server";
+import {featureEnabled} from "@/lib/business-features";
 import {moduleEnabled} from '@/lib/business-modules';
 import {normalizeBarcode, validBarcode} from '@/lib/barcode';
 import {getMembership} from '@/lib/membership';
@@ -11,7 +12,7 @@ import type {ProductWithVariants} from '@/lib/types';
 export async function lookupPosBarcode(raw: string) {
   const [member,platform,locale] = await Promise.all([getMembership(),getPlatformSettings(),getLocale()]);
   const l=(ar:string,en:string)=>locale==='ar'?ar:en;
-  if (!member?.isManager || member.restaurant.business_kind !== 'supermarket' || !hasPosAccess(member.restaurant,platform.posEnabled)) return {ok:false as const,message:l('قراءة الباركود متاحة لكاشير السوبر ماركت المفعّل فقط.','Barcode lookup requires active supermarket POS access.')};
+  if (!member?.isManager || !featureEnabled(member.restaurant,'product_barcode') || !hasPosAccess(member.restaurant,platform.posEnabled)) return {ok:false as const,message:l('قراءة الباركود متاحة لكاشير السوبر ماركت المفعّل فقط.','Barcode lookup requires active supermarket POS access.')};
   const barcode=typeof raw==='string'?normalizeBarcode(raw):'';
   if(!validBarcode(barcode))return {ok:false as const,message:l('اكتب باركود صحيحًا.','Enter a valid barcode.')};
   const db=await createServerSupabase();
@@ -25,7 +26,7 @@ export async function lookupPosBarcode(raw: string) {
 
 export async function lookupProductBarcode(raw: string) {
   const member = await getMembership();
-  if (!member?.isManager || !moduleEnabled(member.restaurant, 'products')) return {ok:false as const,message:'غير مسموح بالبحث عن المنتجات. Product manager access required.'};
+  if (!member?.isManager || !featureEnabled(member.restaurant,'product_barcode')) return {ok:false as const,message:'غير مسموح بالبحث عن المنتجات. Product manager access required.'};
   const code = typeof raw === 'string' ? normalizeBarcode(raw) : '';
   if (!validBarcode(code)) return {ok:false as const,message:'الباركود غير صحيح. Invalid barcode.'};
   const db = await createServerSupabase();

@@ -1,3 +1,5 @@
+import {featureEnabled} from "./business-features";
+import {unstable_cache} from "next/cache";
 import { activeOffers } from "./offers";
 import {getTenantDomain} from "./tenant-domain";
 import { withCatalogName } from './menu-localization';
@@ -28,7 +30,7 @@ export type PublicMenuResult =
  */
 export const getPublicMenu = cache(async function getPublicMenu(
   slug: string,
-  tableToken?: string
+  tableToken?: string, categoryFilter = "", pageInput = "1", searchInput = ""
 ): Promise<PublicMenuResult> {
   const domain=await getTenantDomain();
   if(domain&&domain.restaurants.slug!==slug)return {state:"not_found"} as const;
@@ -56,29 +58,37 @@ export const getPublicMenu = cache(async function getPublicMenu(
     };
   }
 
-  restaurant.ordering_enabled = restaurant.ordering_enabled && moduleEnabled(restaurant,"orders");
+  restaurant.ordering_enabled = restaurant.ordering_enabled && featureEnabled(restaurant,"online_ordering");
   restaurant.waiter_calls_enabled = restaurant.waiter_calls_enabled && moduleEnabled(restaurant,"service_calls");
   if (preview) {
     restaurant.ordering_enabled = false;
     restaurant.waiter_calls_enabled = false;
   }
-  const [{ data: categories }, { data: products }, {data: payments}, {data: offers,error:offerError}] = await Promise.all([
-    supabase
-      .from("categories")
-      .select("*")
-      .eq("restaurant_id", restaurant.id)
-      .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: true }),
-    supabase
-      .from("products")
-      .select("*, product_variants(*)")
-      .eq("restaurant_id", restaurant.id)
-      .eq("is_active", true)
-      .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: true }),
-    supabase.from("restaurant_settings").select("remote_ordering_enabled,cash_wallet,instapay_address,payment_whatsapp").eq("restaurant_id",restaurant.id).maybeSingle(),
-    moduleEnabled(restaurant,"offers") ? supabase.from("business_offers").select("*").eq("restaurant_id",restaurant.id).eq("is_active",true).order("sort_order").order("created_at",{ascending:false}) : Promise.resolve({data:[],error:null}),
+  const market=restaurant.business_kind==='supermarket';
+  const page=market?Math.min(10000,Math.max(1,Math.trunc(Number(pageInput))||1)):1;
+  const pageSize=24;
+  const {data:categories,error:categoryError}=await supabase.from('categories').select('*').eq('restaurant_id',restaurant.id).order('sort_order').order('created_at');
+  if(categoryError)throw Error('Could not load categories');
+  const visibleIds=visibleCategories(categories??[]).map(c=>c.id);
+  const offerPage=categoryFilter==='__offers';
+  const offerResult=moduleEnabled(restaurant,'offers')?await supabase.from('business_offers').select('*').eq('restaurant_id',restaurant.id).eq('is_active',true).order('sort_order').order('created_at',{ascending:false}):{data:[],error:null};
+  if(offerResult.error)throw Error('Could not load offers');
+  const currentOffers=activeOffers(offerResult.data??[]);
+  const offeredIds=[...new Set(currentOffers.flatMap(o=>o.product_ids))];
+  let productQuery=supabase.from('products').select('*, product_variants(*)',{count:market?'exact':undefined}).eq('restaurant_id',restaurant.id).eq('is_active',true).order('sort_order').order('created_at').order('id');
+  if(market){
+    if(categoryFilter && visibleIds.includes(categoryFilter))productQuery=productQuery.eq('category_id',categoryFilter);
+    else productQuery=productQuery.or(`category_id.is.null${visibleIds.length?',category_id.in.('+visibleIds.join(',')+')':''}`);
+    const needle=searchInput.slice(0,80).replace(/[%,_().\\]/g,' ').trim();
+    if(needle)productQuery=productQuery.or(`name.ilike.%${needle}%,barcode.ilike.%${needle}%`);
+    productQuery=offerPage?productQuery.in("id",offeredIds.length?offeredIds:["00000000-0000-0000-0000-000000000000"]).limit(1000):productQuery.range((page-1)*pageSize,page*pageSize-1);
+  }
+  const [{ data: products,error:productError,count:productCount }, {data: payments}, {data: offers,error:offerError}] = await Promise.all([
+    market ? unstable_cache(async()=>await productQuery,["market-products",restaurant.id,slug,String(page),categoryFilter,searchInput,visibleIds.join(",")],{revalidate:30,tags:[`menu-products:${slug}`]})() : productQuery,
+    supabase.from("restaurant_settings").select("remote_ordering_enabled,cash_wallet,instapay_address,payment_whatsapp,delivery_fee,free_delivery_above,payment_details,location_url,facebook_url,instagram_url,website_url").eq("restaurant_id",restaurant.id).maybeSingle(),
+    Promise.resolve(offerResult),
   ]);
+  if(productError)throw Error("Could not load products");
   if(offerError) throw new Error("Could not load business offers");
 
   let table: Pick<RestaurantTable, "id" | "label"> | null = null;
@@ -140,11 +150,12 @@ export const getPublicMenu = cache(async function getPublicMenu(
     state: "ok",
     table,
     data: {
+      ...(market&&!offerPage?{pagination:{page,pageSize,total:productCount??0,query:searchInput.slice(0,80),category:categoryFilter}}:{}),
       menu_path:domain?"/menu":`/${slug}/menu`,
       payments: payments ?? undefined,
       offers: preview ? [] : activeOffers(offers ?? []),
       restaurant: { enabled_modules: restaurant.enabled_modules, business_kind: restaurant.business_kind, business_timezone:restaurant.business_timezone, id: restaurant.id, name: restaurant.name, slug: restaurant.slug, description: restaurant.description, logo_url: restaurant.logo_url, cover_url: restaurant.cover_url, phone: restaurant.phone, address: restaurant.address, currency: restaurant.currency, language: restaurant.language, menu_theme: restaurant.menu_theme, ordering_enabled: restaurant.ordering_enabled, waiter_calls_enabled: restaurant.waiter_calls_enabled, prices_include_vat: restaurant.prices_include_vat, menu_prices_include_vat: restaurant.menu_prices_include_vat, vat_registered: restaurant.vat_registered, tax_mode: restaurant.tax_mode, tax_rates: restaurant.tax_rates },
-      categories: moduleEnabled(restaurant,"subcategories") ? grouped : grouped.filter((c) => c.products.length > 0),
+      categories: market || moduleEnabled(restaurant,"subcategories") ? grouped : grouped.filter((c) => c.products.length > 0),
     },
   };
 });

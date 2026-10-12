@@ -1,7 +1,7 @@
 "use server";
 
 import { moduleEnabled } from "@/lib/business-modules";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { createServerSupabase } from "@/lib/supabase/server";
 import type { ActionState } from "@/lib/types";
 import {
@@ -19,6 +19,7 @@ function revalidate(slug: string) {
   revalidatePath("/dashboard/categories");
   revalidatePath("/dashboard/products");
   revalidatePath("/dashboard");
+  revalidateTag(`menu-products:${slug}`,{expire:0});
   revalidatePath(`/${slug}/menu`);
 }
 

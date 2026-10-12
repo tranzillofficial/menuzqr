@@ -1,5 +1,7 @@
 "use server";
 
+import {normalizeWhatsapp} from "@/lib/phone";
+import {featureEnabled} from "@/lib/business-features";
 import { moduleEnabled } from "@/lib/business-modules";
 import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -168,12 +170,12 @@ export async function updateFeatureSettingsAction(
   const instapay = str(form,"instapay_address");
   const existingSettings = !form.has("payment_whatsapp") ? await (await createServerSupabase()).from("restaurant_settings").select("payment_whatsapp").eq("restaurant_id",owned.restaurant.id).maybeSingle() : null;
   if(existingSettings?.error)return fail(existingSettings.error.message);
-  const whatsapp = form.has("payment_whatsapp") ? str(form,"payment_whatsapp").replace(/[\s()+-]/g,"") : existingSettings?.data?.payment_whatsapp ?? "";
-  const remote = moduleEnabled(owned.restaurant,"orders") && bool(form,"remote_ordering_enabled");
+  const whatsapp = form.has("payment_whatsapp") ? normalizeWhatsapp(str(form,"payment_whatsapp")) : existingSettings?.data?.payment_whatsapp ?? "";
+  const remote = featureEnabled(owned.restaurant,"online_ordering") && bool(form,"remote_ordering_enabled");
   if(wallet && !/^\+?\d{8,15}$/.test(wallet) || whatsapp && !/^\d{8,15}$/.test(whatsapp) || wallet.length>30 || instapay.length>120) return fail("راجع أرقام التحويل والواتساب، واكتب كود الدولة لرقم الواتساب.");
   if(remote && owned.restaurant.business_kind!=="supermarket" && (!(wallet||instapay)||!whatsapp)) return fail("أضف رقم محفظة كاش أو بيانات InstaPay ورقم واتساب قبل تفعيل طلبات الرابط.");
   const supabase = await createServerSupabase();
-  const {error}=await supabase.rpc("save_storefront_settings",{p_restaurant:owned.restaurant.id,p_ordering:moduleEnabled(owned.restaurant,"orders")&&bool(form,"ordering_enabled"),p_waiter:moduleEnabled(owned.restaurant,"service_calls")&&bool(form,"waiter_calls_enabled"),p_sound:bool(form,"sound_enabled"),p_prices:bool(form,"show_prices"),p_ingredients:bool(form,"show_ingredients"),p_remote:owned.restaurant.business_kind==="supermarket"?false:remote,p_wallet:wallet,p_instapay:instapay,p_whatsapp:whatsapp});
+  const {error}=await supabase.rpc("save_storefront_settings",{p_restaurant:owned.restaurant.id,p_ordering:featureEnabled(owned.restaurant,"online_ordering")&&bool(form,"ordering_enabled"),p_waiter:moduleEnabled(owned.restaurant,"service_calls")&&bool(form,"waiter_calls_enabled"),p_sound:bool(form,"sound_enabled"),p_prices:bool(form,"show_prices"),p_ingredients:bool(form,"show_ingredients"),p_remote:owned.restaurant.business_kind==="supermarket"?false:remote,p_wallet:wallet,p_instapay:instapay,p_whatsapp:whatsapp});
   if(error)return fail(error.message);
 
   revalidatePath("/dashboard/settings");
@@ -193,7 +195,7 @@ export async function saveWhatsappQrAction(_prev: ActionState, form: FormData): 
     if (!owned.ok) return owned.error;
     restaurantId = owned.restaurant.id;
   }
-  const phone = str(form, "whatsapp_number").replace(/[\s()+-]/g, "");
+  const phone = normalizeWhatsapp(str(form, "whatsapp_number"));
   if (phone && !/^[1-9]\d{7,14}$/.test(phone)) return fail("اكتب رقم واتساب بكود الدولة، مثل 201012345678. Enter a number with country code.");
   const db = await createServerSupabase();
   const { error } = await db.from("restaurant_settings").upsert({ restaurant_id: restaurantId, payment_whatsapp: phone }, { onConflict: "restaurant_id" });

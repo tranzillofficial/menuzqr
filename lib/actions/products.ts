@@ -1,9 +1,10 @@
 "use server";
 
+import {featureEnabled} from "@/lib/business-features";
 import {isAlhamd,validPackagingName} from "@/lib/alhamd-units";
 import {normalizeBarcode,validBarcode} from "@/lib/barcode";
 import { createCategoryQuickAction } from "./categories";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { VAT_CODES, type VatCode } from "@/lib/tax";
 import type { ActionState } from "@/lib/types";
@@ -19,6 +20,7 @@ import {
 } from "./helpers";
 
 function revalidate(slug: string) {
+  revalidateTag(`menu-products:${slug}`,{expire:0});
   revalidatePath("/dashboard/products");
   revalidatePath("/dashboard/categories");
   revalidatePath("/dashboard/pos");
@@ -81,7 +83,7 @@ export async function saveProductAction(
   if (!owned.ok) return owned.error;
   const { restaurant } = owned;
   const barcode = normalizeBarcode(str(form, "barcode"));
-  if (restaurant.business_kind === 'supermarket' && barcode && !validBarcode(barcode)) {
+  if (featureEnabled(restaurant,"product_barcode") && barcode && !validBarcode(barcode)) {
     return fail('راجع الباركود: حتى 128 حرفًا أو رقمًا بدون مسافات. / Invalid barcode.', {barcode:'باركود غير صالح / Invalid barcode.'});
   }
 
@@ -94,7 +96,7 @@ export async function saveProductAction(
     return fail(parsedVariants.message, { variants: parsedVariants.message });
   }
   const variants = parsedVariants.variants;
-  if (isAlhamd(restaurant) && (variants.some(v => !validPackagingName(v.name)) || new Set(variants.map(v=>v.name.startsWith('كرتونة')?'كرتونة':v.name)).size !== variants.length || variants.length > 2)) {
+  if ((isAlhamd(restaurant) || featureEnabled(restaurant,"product_packaging")) && (variants.some(v => !validPackagingName(v.name)) || new Set(variants.map(v=>v.name.startsWith('كرتونة')?'كرتونة':v.name)).size !== variants.length || variants.length > 2)) {
     return fail('اختار علبة أو كرتونة، واكتب عدد العلب الصحيح في الكرتونة. لكل وحدة سعر واحد.', {variants:'راجع وحدة البيع وعدد العلب.'});
   }
   if (variants.length === 0) {
@@ -130,18 +132,18 @@ export async function saveProductAction(
     if (!cat) return fail("That category does not belong to your restaurant.");
   }
 
-  const vatCode = str(form, "vat_code") || "standard";
+  const vatCode = featureEnabled(restaurant,"tax_settings") ? str(form, "vat_code") || "standard" : "zero";
   if (!VAT_CODES.includes(vatCode as VatCode)) return fail("Choose a VAT category available in this market.");
 
   const payload = {
-    ...(restaurant.business_kind === 'supermarket' ? {barcode: barcode || null} : {}),
+    ...(featureEnabled(restaurant,"product_barcode") ? {barcode: barcode || null} : {}),
     vat_code: vatCode,
     restaurant_id: restaurant.id,
     category_id: categoryId,
     name,
-    name_en: optionalStr(form, "name_en")?.slice(0,90) || null,
-    description: optionalStr(form, "description"),
-    ingredients: optionalStr(form, "ingredients"),
+    ...(form.has("name_en") ? {name_en: optionalStr(form, "name_en")?.slice(0,90) || null} : {}),
+    ...(form.has("description") ? {description: optionalStr(form,"description")} : {}),
+    ...(form.has("ingredients") ? {ingredients: optionalStr(form,"ingredients")} : {}),
     image_url: imageUrl,
     image_source: imageSource,
     is_active: bool(form, "is_active"),

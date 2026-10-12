@@ -1,5 +1,6 @@
 "use client";
 
+import {MenuContact} from "./MenuContact";
 import { useMemo, useRef, useState } from 'react';
 import { MENU_THEMES, type MenuThemeId } from '@/lib/constants';
 import { localizeMenu } from '@/lib/menu-localization';
@@ -100,6 +101,7 @@ export function MenuExperience({
 
       {data.restaurant.business_kind === "supermarket" ? <SupermarketMenu offersOnly={offersOnly}/> : <Theme />}
 
+      <MenuContact/>
       <ProductSheet />
 
       <CartBar slug={data.restaurant.slug} tableToken={tableToken} />

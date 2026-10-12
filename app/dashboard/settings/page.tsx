@@ -1,3 +1,5 @@
+import {StorefrontSettings} from "@/components/dashboard/StorefrontSettings";
+import {featureEnabled} from "@/lib/business-features";
 import { WhatsappQrSettings } from "@/components/dashboard/WhatsappQrSettings";
 import {SettingsSections} from "@/components/dashboard/SettingsSections";
 import { moduleEnabled } from "@/lib/business-modules";
@@ -33,7 +35,7 @@ export default async function SettingsPage() {
 
   const { data: settings } = await supabase
     .from("restaurant_settings")
-    .select("sound_enabled, show_prices, show_ingredients,remote_ordering_enabled,cash_wallet,instapay_address,payment_whatsapp")
+    .select("sound_enabled, show_prices, show_ingredients,remote_ordering_enabled,cash_wallet,instapay_address,payment_whatsapp,delivery_fee,free_delivery_above,payment_details,location_url,facebook_url,instagram_url,website_url")
     .eq("restaurant_id", restaurant.id)
     .maybeSingle();
 
@@ -70,10 +72,11 @@ export default async function SettingsPage() {
       />
 
 </>)},
+        {id:"storefront",ar:"التوصيل والدفع والتواصل",en:"Delivery, payments and contact",content:<StorefrontSettings restaurant={restaurant} details={{delivery_fee:settings?.delivery_fee??0,free_delivery_above:settings?.free_delivery_above??null,payment_details:settings?.payment_details??"",location_url:settings?.location_url??"",facebook_url:settings?.facebook_url??"",instagram_url:settings?.instagram_url??"",website_url:settings?.website_url??""}}/>},
         {id:"whatsapp",ar:"واتساب وQR",en:"WhatsApp and QR",content:<WhatsappQrSettings number={settings?.payment_whatsapp??""}/>},
-        {id:"tax",ar:"الضرائب",en:"Taxes",content:<TaxSettingsForm restaurant={restaurant}/>},
-        ...(moduleEnabled(restaurant,"pos")?[{id:"print",ar:"الطباعة",en:"Printing",content:<ThermalPrinter restaurantId={restaurant.id} restaurantName={restaurant.name} currency={restaurant.currency} receipt={null}/>}]:[]),
-        ...(moduleEnabled(restaurant,"reports")?[{id:"invoices",ar:"الفواتير والتصدير",en:"Invoices and export",content:<InvoiceExport/>}]:[]),
+        ...(featureEnabled(restaurant,"tax_settings")?[{id:"tax",ar:"الضرائب",en:"Taxes",content:<TaxSettingsForm restaurant={restaurant}/>}]:[]),
+        ...(featureEnabled(restaurant,"receipt_printing")?[{id:"print",ar:"الطباعة",en:"Printing",content:<ThermalPrinter restaurantId={restaurant.id} restaurantName={restaurant.name} currency={restaurant.currency} receipt={null}/>}]:[]),
+        ...(moduleEnabled(restaurant,"invoices")?[{id:"invoices",ar:"الفواتير والتصدير",en:"Invoices and export",content:<InvoiceExport/>}]:[]),
         {id:"alerts",ar:"التنبيهات",en:"Notifications",content:<AlertsCard/>},
         {id:"account",ar:"الحساب والاشتراك",en:"Account and subscription",content:(<><ActivationPanel restaurant={restaurant}/>
       <Card>

@@ -1,5 +1,6 @@
 "use client";
 
+import {featureEnabled} from "@/lib/business-features";
 import { ProductBarcodeScanner } from "./ProductBarcodeScanner";
 import { lookupProductBarcode } from "@/lib/actions/barcode";
 import { moduleEnabled } from "@/lib/business-modules";
@@ -26,10 +27,11 @@ import type { Category, ProductWithVariants, Restaurant } from "@/lib/types";
 export function ProductsManager({
   restaurant,
   categories,
-  products,
+  products, pagination,
 }: {
   restaurant: Restaurant;
   categories: Category[];
+  pagination?:{page:number;pageSize:number;total:number;query:string;category:string};
   products: ProductWithVariants[];
 }) {
   const router = useRouter();
@@ -38,8 +40,8 @@ export function ProductsManager({
   const {locale}=useI18n();
   const ar=locale==="ar";
   const [editing, setEditing] = useState<ProductWithVariants | null | "new">(null);
-  const [filter, setFilter] = useState("all");
-  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState(pagination?.category??"all");
+  const [query, setQuery] = useState(pagination?.query??"");
   const [pending, startTransition] = useTransition();
 
   const categoryName = useMemo(
@@ -47,6 +49,7 @@ export function ProductsManager({
     [categories]
   );
 
+  function navigate(nextPage=1,nextCategory=filter){const params=new URLSearchParams();params.set('page',String(nextPage));if(query.trim())params.set('q',query.trim());if(nextCategory!=='all')params.set('category',nextCategory);router.push(`/dashboard/products?${params}`,{scroll:false});}
   const visible = products.filter((product) => {
     if (filter === "uncategorised" && product.category_id) return false;
     if (filter !== "all" && filter !== "uncategorised" && !categoryDescendants(categories,filter).has(product.category_id ?? ""))
@@ -86,21 +89,23 @@ export function ProductsManager({
           {t("products.add")}
         </Button>
 
-        {restaurant.business_kind==="supermarket" && <ProductBarcodeScanner onScan={scanProduct}/>}
+        {featureEnabled(restaurant,"product_barcode") && <ProductBarcodeScanner onScan={scanProduct}/>}
         <div className="relative min-w-0 basis-full sm:basis-auto flex-1 sm:max-w-xs">
           <Icon.search className="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={e=>{if(e.key==="Enter" && query.trim()){e.preventDefault();if(featureEnabled(restaurant,"product_barcode")&&/^\d{8,}$/.test(query.trim()))scanProduct(query.trim());else if(pagination)navigate();}}}
             placeholder={ar ? "بحث بالاسم أو الباركود" : "Search name or barcode"}
             aria-label={t("products.searchPlaceholder")}
             className="h-10 w-full rounded-xl border border-ink-200 bg-white ps-9 pe-3 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
           />
         </div>
 
+        {pagination&&<Button variant="secondary" onClick={()=>navigate()}>{ar?"بحث":"Search"}</Button>}
         <Select
           value={filter}
-          onChange={(e) => setFilter(e.target.value)}
+          onChange={(e) => {setFilter(e.target.value);if(pagination)navigate(1,e.target.value);}}
           aria-label={t("products.category")}
           className="h-11 w-full sm:w-auto py-0"
         >
@@ -114,6 +119,7 @@ export function ProductsManager({
         </Select>
       </div>
 
+      {pagination&&pagination.total>pagination.pageSize&&<nav aria-label={ar?'صفحات المنتجات':'Product pages'} className="flex items-center justify-center gap-3"><Button variant="secondary" disabled={pagination.page<=1} onClick={()=>navigate(pagination.page-1)}>{ar?'السابق':'Previous'}</Button><span className="text-sm">{pagination.page} / {Math.ceil(pagination.total/pagination.pageSize)}</span><Button variant="secondary" disabled={pagination.page*pagination.pageSize>=pagination.total} onClick={()=>navigate(pagination.page+1)}>{ar?'التالي':'Next'}</Button></nav>}
       {products.length === 0 ? (
         <EmptyState
           icon="🍽️"

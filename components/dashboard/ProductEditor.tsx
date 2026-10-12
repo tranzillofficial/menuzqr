@@ -1,5 +1,6 @@
 "use client";
 
+import {featureEnabled} from "@/lib/business-features";
 import {isAlhamd,packagingDraft,packagingName} from "@/lib/alhamd-units";
 import { moduleEnabled } from "@/lib/business-modules";
 import { CategoryPicker } from "./CategoryPicker";
@@ -64,7 +65,7 @@ export function ProductEditor({
   const t = useT();
   const { locale } = useI18n();
   const label = (ar: string, en: string) => locale === "ar" ? ar : en;
-  const packaging = isAlhamd(restaurant);
+  const packaging = isAlhamd(restaurant) || featureEnabled(restaurant,"product_packaging");
   const supermarket = restaurant.business_kind === "supermarket";
   const [state, formAction] = useActionState(saveProductAction, null);
 
@@ -235,7 +236,7 @@ export function ProductEditor({
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Crispy Chicken Burger"
+              placeholder={supermarket ? label("اسم المنتج","Product name") : "Crispy Chicken Burger"}
             />
             {state?.fieldErrors?.name && (
               <p className="text-xs font-medium text-red-600">{state.fieldErrors.name}</p>
@@ -250,13 +251,13 @@ export function ProductEditor({
             )}
           </div>
 
-          {supermarket && <div className="space-y-1.5 sm:col-span-2">
+          {featureEnabled(restaurant,"product_barcode") && <div className="space-y-1.5 sm:col-span-2">
             <label htmlFor="p-barcode" className="text-sm font-medium text-ink-800">{label('باركود المنتج (اختياري)', 'Product barcode (optional)')}</label>
             <Input id="p-barcode" name="barcode" type="text" dir="ltr" autoComplete="off" maxLength={128} value={barcode} onChange={e=>setBarcode(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();}}}/>
             <p className="text-xs text-ink-500">{label('اضغط في الخانة واقرأ الباركود بالاسكانر أو اكتبه. الباركود يخص منتجًا واحدًا داخل حسابك.', 'Focus this field and scan or type the barcode. Each barcode identifies one product in your account.')}</p>
             {state?.fieldErrors?.barcode && <p role="alert" className="text-xs text-red-600">{state.fieldErrors.barcode}</p>}
           </div>}
-          {!packaging && <>
+          {!packaging && featureEnabled(restaurant,"product_english") && <>
           <div className="space-y-1.5 sm:col-span-2">
             <div className="flex items-center justify-between gap-2">
               <label htmlFor="p-name-en" className="text-sm font-medium text-ink-800">{label('الاسم بالإنجليزية (اختياري)', 'English name (optional)')}</label>
@@ -325,7 +326,7 @@ export function ProductEditor({
             </p>
           </div>
 
-          <div className="space-y-1.5 sm:col-span-2">
+          {featureEnabled(restaurant,"product_description") && <div className="space-y-1.5 sm:col-span-2">
             <div className="flex items-center justify-between gap-2">
               <label htmlFor="p-description" className="text-sm font-medium text-ink-800">
                 {t("products.description")}
@@ -339,9 +340,9 @@ export function ProductEditor({
               maxLength={400}
               placeholder="Crispy chicken fillet, lettuce, pickles and our signature sauce."
             />
-          </div>
+          </div>}
 
-          {!packaging && <>
+          {!packaging && featureEnabled(restaurant,"product_ingredients") && <>
           <div className="space-y-1.5 sm:col-span-2">
             <div className="flex items-center justify-between gap-2">
               <label htmlFor="p-ingredients" className="text-sm font-medium text-ink-800">
@@ -361,13 +362,13 @@ export function ProductEditor({
           </>}
         </div>
 
-        <label className="block space-y-2 text-sm font-medium">{label('تصنيف ضريبة المنتج', 'Product VAT category')}
+        {featureEnabled(restaurant,"tax_settings") && <label className="block space-y-2 text-sm font-medium">{label('تصنيف ضريبة المنتج', 'Product VAT category')}
           <Select name="vat_code" defaultValue={product?.vat_code ?? 'standard'}>
             {VAT_CODES.map(code => <option key={code} value={code}>{code === 'exempt' ? label('معفى', 'Exempt') : code === 'zero' ? label('بدون ضريبة', 'Zero rated') : code === 'standard' ? label('الضريبة الأساسية', 'Standard VAT') : label('ضريبة مخفضة', 'Reduced VAT')} {code !== 'exempt' ? `${vatRate(restaurant.tax_mode === "none" && restaurant.currency === "EGP" ? "egypt" : restaurant.tax_mode, true, code,restaurant.tax_rates)}%` : ''}</option>)}
           </Select>
               <p className="mt-2 text-xs text-ink-500">{label("النسب حسب بلد النشاط وإعداداته. الضريبة لا تُحصّل إلا بعد اختيار البلد وتفعيل التسجيل الضريبي.","Rates follow the business country and settings. VAT is only charged when registration is enabled.")} {(!restaurant.vat_registered || restaurant.tax_mode==="none") && <strong>{label(" التحصيل الحالي: بدون ضريبة. "," Currently no VAT is charged. ")}</strong>} <a href="/dashboard/settings" className="text-brand-700 underline">{label("إعدادات الضريبة", "Tax settings")}</a></p>
           <span className="block text-xs font-normal text-ink-500">{label('اختار التصنيف حسب طبيعة المنتج وطريقة تقديمه. الأسعار', 'Choose the category for the product and how it is supplied. Prices are')} {restaurant.prices_include_vat ? label('شاملة الضريبة.', 'VAT inclusive.') : label('قبل الضريبة؛ الضريبة تضاف للإجمالي.', 'VAT exclusive; VAT is added to the total.')}</span>
-        </label>
+        </label>}
         {/* --- variants --- */}
         <div className="rounded-2xl border border-ink-200 p-4">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -394,7 +395,7 @@ export function ProductEditor({
             </Button>
           </div>
 
-          {supermarket && <button type="button" className="mb-3 rounded-xl border border-red-200 px-4 py-2 text-sm text-red-700" onClick={()=>setVariants(['ربع كيلو (250 جرام)','نصف كيلو (500 جرام)','750 جرام','1 كيلو'].map((name,index)=>({key:newKey(),name,price:'',is_active:true,name_en:['250 g','500 g','750 g','1 kg'][index]})))}>{label('بيع بالوزن: ربع / نصف / 750 جرام / كيلو','Sell by weight: 250 / 500 / 750 g / 1 kg')}</button>}
+          {featureEnabled(restaurant,"product_weights") && <button type="button" className="mb-3 rounded-xl border border-red-200 px-4 py-2 text-sm text-red-700" onClick={()=>setVariants(['ربع كيلو (250 جرام)','نصف كيلو (500 جرام)','750 جرام','1 كيلو'].map((name,index)=>({key:newKey(),name,price:'',is_active:true,name_en:['250 g','500 g','750 g','1 kg'][index]})))}>{label('بيع بالوزن: ربع / نصف / 750 جرام / كيلو','Sell by weight: 250 / 500 / 750 g / 1 kg')}</button>}
           <ul className="space-y-2">
             {variants.map((variant, index) => (
               <li key={variant.key} className="grid min-w-0 grid-cols-2 gap-2 rounded-xl bg-ink-50 p-2">
@@ -411,7 +412,7 @@ export function ProductEditor({
                     <input required type="number" min="1" max="9999" step="1" inputMode="numeric" value={variant.boxes ?? ''} onChange={e=>updateVariant(variant.key,{boxes:e.target.value})} placeholder={label('مثال: 12','Example: 12')} className="h-12 w-full rounded-xl border border-ink-200 bg-white px-3 text-base"/>
                     <span className="block text-xs font-normal text-ink-600">{label('العدد للتوضيح، والسعر هو سعر الكرتونة بالكامل.','The price is for the whole carton.')}</span>
                   </label>}
-                </> : <div className="grid min-w-0 col-span-2 grid-cols-1 gap-2 sm:grid-cols-3">
+                </> : <div className="grid min-w-0 col-span-2 grid-cols-1 gap-2 sm:grid-cols-2">
                 <input
                   aria-label={`Size ${index + 1} name`}
                   value={variant.name}
@@ -419,7 +420,7 @@ export function ProductEditor({
                   placeholder="Medium"
                   className="min-w-0 flex-1 rounded-xl border border-ink-200 px-3 py-2 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
                 />
-                <input aria-label={label(`اسم الحجم ${index + 1} بالإنجليزية`, `Size ${index + 1} English name`)} dir="ltr" maxLength={40} value={variant.name_en ?? ''} onChange={e => updateVariant(variant.key, {name_en:e.target.value})} placeholder={label('الاسم بالإنجليزية', 'English name')} className="min-w-0 flex-1 rounded-xl border border-ink-200 px-3 py-2 text-sm"/>
+                {featureEnabled(restaurant,"product_english") && <input aria-label={label(`اسم الحجم ${index + 1} بالإنجليزية`, `Size ${index + 1} English name`)} dir="ltr" maxLength={40} value={variant.name_en ?? ''} onChange={e => updateVariant(variant.key, {name_en:e.target.value})} placeholder={label('الاسم بالإنجليزية', 'English name')} className="min-w-0 flex-1 rounded-xl border border-ink-200 px-3 py-2 text-sm"/>}
                 <div className="flex items-center rounded-xl border border-ink-200 focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-100">
                   <span className="ps-3 text-sm text-ink-500">{symbol}</span>
                   <input

@@ -1,5 +1,6 @@
 "use server";
 
+import {getMembership} from "@/lib/membership";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
 
@@ -39,20 +40,15 @@ export async function savePushSubscriptionAction(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, message: "You need to sign in first." };
 
-  const { data: member } = await supabase
-    .from("restaurant_members")
-    .select("restaurant_id")
-    .eq("user_id", user.id)
-    .eq("is_active", true)
-    .limit(1)
-    .maybeSingle();
+  const member=await getMembership();
+  if(!member)return {ok:false,message:"No active business membership."};
 
   const admin = createAdminSupabase();
   await admin.from("push_subscriptions").delete().eq("endpoint", endpoint);
 
   const { error } = await admin.from("push_subscriptions").insert({
     user_id: user.id,
-    restaurant_id: member?.restaurant_id ?? null,
+    restaurant_id: member.restaurant.id,
     endpoint,
     p256dh,
     auth,

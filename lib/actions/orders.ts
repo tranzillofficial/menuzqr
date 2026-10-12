@@ -1,5 +1,6 @@
 "use server";
 
+import {featureEnabled} from "@/lib/business-features";
 import { moduleEnabled } from "@/lib/business-modules";
 import { getMembership } from "@/lib/membership";
 import { staffPermissions, statusPermission } from "@/lib/staff-permissions";
@@ -164,7 +165,7 @@ export async function placeOnlineOrderAction(slug:string, lines:CartLine[], note
  const {data:r}=await db.from('restaurants').select('id,currency,enabled_modules,business_kind').eq('slug',slug).maybeSingle();
  const address=typeof customer.address==='string'?customer.address.trim().slice(0,400):'';
  if(r?.business_kind==='supermarket'&&address.length<5)return {ok:false,message:'اكتب عنوان التوصيل بالتفصيل.'};
- if(!r||!moduleEnabled(r,'orders')) return {ok:false,message:'استقبال الطلبات غير متاح.'};
+ if(!r||!featureEnabled(r,'online_ordering')) return {ok:false,message:'استقبال الطلبات غير متاح.'};
  const {data:o,error}=await db.rpc('create_fiscal_order',{p_actor:null,p_restaurant:r.id,p_request:request,p_lines:lines,p_table:null,p_note:note.trim().slice(0,400),p_payment:null,p_received:null,p_customer:{name,phone,address},p_guest:true,p_session:session});
  if(error||!o)return {ok:false,message:'تعذر إرسال الطلب. راجع البيانات أو تواصل مع المكان.'};
  await publishEvent({id:`order.new:${o.id}`,kind:'order.new',restaurantId:r.id,orderId:o.id,orderNumber:o.order_number,tableLabel:null,total:Number(o.total),currency:o.currency});

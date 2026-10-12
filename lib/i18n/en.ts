@@ -605,6 +605,8 @@ export const en = {
 
   // ---------------------------------------------------------------- plans & POS
   "nav.reports": "Sales reports",
+  "nav.inventory": "Inventory",
+  "nav.invoices": "Invoices",
   "nav.pos": "POS",
   "nav.billing": "Plans",
   "admin.coupons": "Coupons",

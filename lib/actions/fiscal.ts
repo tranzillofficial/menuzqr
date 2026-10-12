@@ -1,4 +1,5 @@
 "use server";
+import {featureEnabled} from "@/lib/business-features";
 import { moduleEnabled } from '@/lib/business-modules';
 import { getMembership } from '@/lib/membership';
 import { createAdminSupabase } from '@/lib/supabase/admin';
@@ -10,7 +11,7 @@ import { str, bool } from './helpers';
 import type { ActionState } from '@/lib/types';
 export async function saveTaxSettings(_previous: ActionState, form: FormData): Promise<ActionState> {
   const [member, locale] = await Promise.all([getMembership(),getLocale()]); const ar = locale === 'ar';
-  if (!member?.isManager || !moduleEnabled(member.restaurant,'settings')) return { ok:false,message:ar?'معندكش صلاحية تعديل الضريبة.':'Manager access required.' };
+  if (!member?.isManager || !featureEnabled(member.restaurant,'tax_settings')) return { ok:false,message:ar?'معندكش صلاحية تعديل الضريبة.':'Manager access required.' };
   const mode = str(form,'tax_mode') as TaxMode;
   if (!TAX_MODES.includes(mode)) return {ok:false,message:'Choose a tax mode.'};
   const registered=bool(form,'vat_registered'),number=str(form,'vat_number').replace(/\s/g,'').toUpperCase();
@@ -50,7 +51,7 @@ export async function closeDay() {
 }
 
 export async function recordReceiptPrint(orderId:string,document:'invoice'|'credit',method:'thermal'|'browser') {
- const member=await getMembership();if(!member?.isManager)return {ok:false};
+ const member=await getMembership();if(!member?.isManager||!featureEnabled(member.restaurant,"receipt_printing"))return {ok:false};
  const {error}=await createAdminSupabase().rpc('record_fiscal_print',{p_actor:member.userId,p_restaurant:member.restaurant.id,p_order:orderId,p_document:document,p_method:method});
  return {ok:!error};
 }

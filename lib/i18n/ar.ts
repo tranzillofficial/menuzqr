@@ -593,6 +593,8 @@ export const ar: Record<keyof typeof en, string> = {
 
   // ---------------------------------------------------------------- plans & POS
   "nav.reports": "تقارير المبيعات",
+  "nav.inventory": "المخزون",
+  "nav.invoices": "الفواتير",
   "nav.pos": "الكاشير",
   "nav.billing": "الاشتراك",
   "admin.coupons": "الكوبونات",
