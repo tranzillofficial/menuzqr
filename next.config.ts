@@ -61,6 +61,10 @@ const nextConfig: NextConfig = {
         source: "/notification-sound.:ext(mp3|ogg)",
         headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
       },
+      {
+        source: "/images/supermarket-categories/:image",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
     ];
   },
 };

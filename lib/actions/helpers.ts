@@ -149,6 +149,8 @@ export async function deleteAssetIfOwned(url: string | null | undefined, restaur
  */
 export function sanitiseImageUrl(url: string | null): string | null {
   if (!url) return null;
+  // Bundled category photographs are also safe and must survive category edits.
+  if (/^\/images\/supermarket-categories\/(pantry|dairy|drinks|snacks|household|bakery)-v1\.webp$/.test(url)) return url;
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
   if (!base) return null;
   for (const bucket of [ASSET_BUCKET, LIBRARY_BUCKET]) {

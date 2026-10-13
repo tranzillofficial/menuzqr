@@ -49,7 +49,7 @@ export function MenuExperience({
   const isDemo = data.restaurant.slug === "demo";
   const [previewTheme, setPreviewTheme] = useState<MenuThemeId>(data.restaurant.menu_theme);
   const pickerRef = useRef<HTMLDetailsElement>(null);
-  const menuTheme = isDemo ? previewTheme : data.restaurant.menu_theme;
+  const menuTheme = data.restaurant.business_kind === "supermarket" ? "market" : isDemo ? previewTheme : data.restaurant.menu_theme;
   const Theme = data.restaurant.business_kind === "supermarket" ? SupermarketMenu : moduleEnabled(data.restaurant,"subcategories") ? RetailMenu : THEMES[menuTheme] ?? ElegantMenu;
   const lightFab = menuTheme === "elegant" || menuTheme === "market";
 
