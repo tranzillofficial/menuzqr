@@ -70,4 +70,8 @@ The browser environment could not reach the production site directly during the 
 
 ## Rollout status
 
-The user requested publishing to main while retaining Supabase Storage and postponing R2. The migration connector still returns `Invalid or expired requestState`. This release therefore supports the existing schema: individual account configuration and account creation remain available; business-template management explains the pending setup instead of failing the page. Once the additive migration is installed, template management activates automatically. Database module restrictions and template inheritance remain pending that migration. No existing account is assigned a template or rewritten by this rollout.
+Published to main with backwards-compatible admin pages; Supabase Storage remains the image provider and R2 is postponed.
+
+After reconnecting Supabase, migration `business_types_and_configuration_policies` was applied successfully on 2026-10-13. All five business types, the three configuration RPCs, four RLS-protected configuration tables and twelve restrictive module policies are installed. The deployed application automatically uses template management when this schema is available.
+
+Post-migration verification confirmed that all four account configuration fingerprints and their product, variant and order counts exactly match the pre-migration snapshot above. No existing tenant was automatically assigned a template (assigned-account count: zero). Configuration functions are security invoker, authenticated-only, and retain their database-backed admin checks. Supabase security advisors reported no findings on the newly added objects; pre-existing advisory notices remain outside this change. Configuration/PostgreSQL regressions passed again after installation.
