@@ -1,4 +1,5 @@
 "use server";
+import {businessSchemaMissing} from '@/lib/business-schema';
 import { revalidatePath } from 'next/cache';
 import { createServerSupabase } from '@/lib/supabase/server';
 import { createAdminSupabase } from '@/lib/supabase/admin';
@@ -14,10 +15,14 @@ export async function saveBusinessAccount(_previous:ActionState,form:FormData):P
  const admin=await assertAdmin();if(!admin.ok)return admin.error;
  const id=str(form,'restaurant_id');const enabled=modules(form);const db=await createServerSupabase();
  if(enabled.includes('service_calls')&&!enabled.includes('tables'))return fail('Service calls require tables.');
- const {data:tenant,error:lookup}=await db.from('restaurants').select('slug').eq('id',id).maybeSingle();
+ const {data:tenant,error:lookup}=await db.from('restaurants').select('*').eq('id',id).maybeSingle();
  if(lookup||!tenant)return fail('Account not found.');
  const {error}=await db.rpc('configure_business',{p_restaurant:id,p_type:null,p_overrides:{},p_manual:enabled,p_kind:str(form,'business_kind').slice(0,80)||'custom'});
- if(error)return fail(error.message);
+ if(error){
+  if(!businessSchemaMissing(error)||tenant.business_type_id)return fail(error.message);
+  const legacy=await db.from('restaurants').update({business_kind:str(form,'business_kind').slice(0,80)||'custom',enabled_modules:enabled}).eq('id',id).select('id').maybeSingle();
+  if(legacy.error||!legacy.data)return fail(legacy.error?.message??'Could not save account configuration.');
+ }
  await db.from('admin_actions').insert({restaurant_id:id,admin_id:admin.userId,action:'business:modules',notes:enabled.join(',')});
  revalidatePath('/dashboard','layout');revalidatePath(`/admin/restaurants/${id}`);revalidatePath(`/${tenant.slug}/menu`);
  return done('تم حفظ تخصيص الحساب. Account configuration saved.');

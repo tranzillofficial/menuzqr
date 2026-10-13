@@ -1,3 +1,5 @@
+import {businessSchemaMissing} from "@/lib/business-schema";
+import {BusinessAccountForm} from "@/components/admin/BusinessAccountForm";
 import { WhatsappQrSettings } from "@/components/dashboard/WhatsappQrSettings";
 import {BusinessDomainForm} from "@/components/admin/BusinessDomainForm";
 import type {TenantDomain} from "@/lib/tenant-domain";
@@ -31,7 +33,8 @@ export default async function AdminRestaurantPage({
   if (!data) notFound();
   const restaurant = data as Restaurant;
   const [businessTypes,configurationOverrides]=await Promise.all([supabase.from("business_types").select("*").order("name_ar"),supabase.from("business_configuration_overrides").select("feature_key,enabled").eq("restaurant_id",id)]);
-  if(businessTypes.error||configurationOverrides.error)throw Error("Could not load business configuration");
+  const schemaPending=businessSchemaMissing(businessTypes.error)||businessSchemaMissing(configurationOverrides.error);
+  if((businessTypes.error&&!businessSchemaMissing(businessTypes.error))||(configurationOverrides.error&&!businessSchemaMissing(configurationOverrides.error)))throw Error("Could not load business configuration");
 
   const [owner, categories, products, tables, orders, actions, team] = await Promise.all([
     supabase.from("profiles").select("id, email, full_name").eq("id", restaurant.owner_id).maybeSingle(),
@@ -93,7 +96,7 @@ export default async function AdminRestaurantPage({
         </div>
       </div>
 
-      <TenantConfigurationForm key={restaurant.updated_at} types={(businessTypes.data??[]) as BusinessType[]} overrides={(configurationOverrides.data??[]) as ConfigurationOverride[]} restaurant={restaurant} />
+      {schemaPending?<BusinessAccountForm key={restaurant.updated_at} restaurant={restaurant}/>:<TenantConfigurationForm key={restaurant.updated_at} types={(businessTypes.data??[]) as BusinessType[]} overrides={(configurationOverrides.data??[]) as ConfigurationOverride[]} restaurant={restaurant} />}
       <WhatsappQrSettings restaurantId={id} number={whatsappSettings?.payment_whatsapp??""}/>
       <BusinessDomainForm restaurantId={id} domains={(domains??[]) as TenantDomain[]}/>
 

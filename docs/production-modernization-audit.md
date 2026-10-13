@@ -70,4 +70,4 @@ The browser environment could not reach the production site directly during the 
 
 ## Rollout status
 
-Not released. The Supabase apply_migration connector failed twice with `Invalid or expired requestState`; a subsequent read confirmed `business_types` and `configure_business` were not installed. Production remains on the previous working version. The tested implementation and additive migration are prepared in an isolated branch for review. Install the migration, compare the four-account snapshot, and verify the new deployment before merging/releasing.
+The user requested publishing to main while retaining Supabase Storage and postponing R2. The migration connector still returns `Invalid or expired requestState`. This release therefore supports the existing schema: individual account configuration and account creation remain available; business-template management explains the pending setup instead of failing the page. Once the additive migration is installed, template management activates automatically. Database module restrictions and template inheritance remain pending that migration. No existing account is assigned a template or rewritten by this rollout.
