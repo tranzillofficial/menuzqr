@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +25,10 @@ export function unlockScroll() {
   if (lockCount === 0) document.body.style.overflow = lockedFrom;
 }
 
+const subscribeMount = () => () => {};
+const clientMounted = () => true;
+const serverMounted = () => false;
+
 export function Modal({
   open,
   onClose,
@@ -33,6 +37,7 @@ export function Modal({
   children,
   footer,
   size = "md",
+  workspace = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -40,19 +45,56 @@ export function Modal({
   description?: string;
   children: ReactNode;
   footer?: ReactNode;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
+  workspace?: boolean;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef(onClose);
-  closeRef.current = onClose;
+  useEffect(() => {
+    closeRef.current = onClose;
+  }, [onClose]);
 
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useSyncExternalStore(
+    subscribeMount,
+    clientMounted,
+    serverMounted,
+  );
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !mounted) return;
+    const previousFocus = document.activeElement;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeRef.current();
+      const panel = panelRef.current;
+      if (!panel?.contains(document.activeElement)) return;
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeRef.current();
+      }
+      if (e.key === "Tab") {
+        const items = Array.from(
+          panel.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), a[href], input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]',
+          ),
+        ).filter((node) => node.getClientRects().length > 0);
+        const first = items[0],
+          last = items.at(-1);
+        if (!first) {
+          e.preventDefault();
+          panel.focus();
+        } else if (
+          e.shiftKey &&
+          (document.activeElement === first || document.activeElement === panel)
+        ) {
+          e.preventDefault();
+          last?.focus();
+        } else if (
+          !e.shiftKey &&
+          (document.activeElement === last || document.activeElement === panel)
+        ) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
     };
     document.addEventListener("keydown", onKey);
     lockScroll();
@@ -60,12 +102,22 @@ export function Modal({
     return () => {
       document.removeEventListener("keydown", onKey);
       unlockScroll();
+      if (
+        previousFocus instanceof HTMLElement &&
+        document.contains(previousFocus)
+      )
+        previousFocus.focus();
     };
-  }, [open]);
+  }, [open, mounted]);
 
   if (!open || !mounted) return null;
 
-  const widths = { sm: "max-w-md", md: "max-w-xl", lg: "max-w-3xl" } as const;
+  const widths = {
+    sm: "max-w-md",
+    md: "max-w-xl",
+    lg: "max-w-3xl",
+    xl: "max-w-6xl",
+  } as const;
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
@@ -82,13 +134,18 @@ export function Modal({
         aria-label={title}
         className={cn(
           "animate-slide-up relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl outline-none sm:rounded-2xl",
-          widths[size]
+          workspace
+            ? "h-dvh max-h-dvh rounded-none sm:h-[90dvh] sm:max-h-[92dvh] sm:rounded-2xl"
+            : "",
+          widths[size],
         )}
       >
         <div className="flex items-start justify-between gap-4 border-b border-ink-100 px-5 py-4">
           <div>
             <h2 className="text-base font-semibold text-ink-900">{title}</h2>
-            {description && <p className="mt-0.5 text-sm text-ink-500">{description}</p>}
+            {description && (
+              <p className="mt-0.5 text-sm text-ink-500">{description}</p>
+            )}
           </div>
           <button
             type="button"
@@ -96,19 +153,39 @@ export function Modal({
             aria-label="Close"
             className="-m-1 rounded-lg p-1 text-ink-400 transition-colors hover:bg-ink-100 hover:text-ink-700"
           >
-            <svg viewBox="0 0 20 20" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <svg
+              viewBox="0 0 20 20"
+              className="size-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+            >
               <path d="M5 5l10 10M15 5L5 15" strokeLinecap="round" />
             </svg>
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-5 py-5">{children}</div>
+        <div
+          className={
+            workspace
+              ? "min-h-0 flex-1 overflow-y-auto bg-ink-50 p-3 sm:p-5"
+              : "flex-1 overflow-y-auto px-5 py-5"
+          }
+        >
+          {children}
+        </div>
         {footer && (
-          <div className="flex items-center justify-end gap-2 border-t border-ink-100 bg-ink-50 px-5 py-3.5">
+          <div
+            className={
+              workspace
+                ? "flex items-center gap-2 border-t border-ink-100 bg-white p-3 pb-[max(.75rem,env(safe-area-inset-bottom))] sm:px-5"
+                : "flex items-center justify-end gap-2 border-t border-ink-100 bg-ink-50 px-5 py-3.5"
+            }
+          >
             {footer}
           </div>
         )}
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }

@@ -69,6 +69,8 @@ export type Category = {
 };
 
 export type ProductVariant = {
+  stock_quantity?: number;
+  stock_tracked?: boolean;
   name_en?: string | null;
   name_ar?: string | null;
   tax?: { basePrice: number; rate: number; inclusive: boolean; showGross?: boolean };

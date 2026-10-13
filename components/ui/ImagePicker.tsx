@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { ACCEPTED_IMAGE_TYPES, MAX_UPLOAD_BYTES, type ImageRole } from "@/lib/constants";
+import {
+  ACCEPTED_IMAGE_TYPES,
+  MAX_UPLOAD_BYTES,
+  type ImageRole,
+} from "@/lib/constants";
 import { compressImage, formatBytes } from "@/lib/image";
 import { Button } from "./Button";
 import { Modal } from "./Modal";
@@ -46,7 +50,10 @@ export function clearLibraryCache() {
   libraryPromise = null;
 }
 
-type Status = { phase: "idle" } | { phase: "compressing" } | { phase: "uploading"; note: string };
+type Status =
+  | { phase: "idle" }
+  | { phase: "compressing" }
+  | { phase: "uploading"; note: string };
 
 export function ImagePicker({
   restaurantId,
@@ -57,24 +64,29 @@ export function ImagePicker({
   aspect = "square",
   allowLibrary = true,
   chooseSource = false,
+  compact = false,
 }: {
   restaurantId: string;
   kind: ImageRole;
   value: string | null;
-  onChange: (url: string | null, source: "uploaded" | "library" | "none") => void;
+  onChange: (
+    url: string | null,
+    source: "uploaded" | "library" | "none",
+  ) => void;
   /** Seeds the library search when the picker opens. */
   searchSeed?: string;
   aspect?: "square" | "wide";
   allowLibrary?: boolean;
   chooseSource?: boolean;
+  compact?: boolean;
 }) {
   const toast = useToast();
   const t = useT();
-  const {locale} = useI18n();
-  const label = (ar: string, en: string) => locale === "ar" ? ar : en;
+  const { locale } = useI18n();
+  const label = (ar: string, en: string) => (locale === "ar" ? ar : en);
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
-  const [sourceOpen,setSourceOpen] = useState(false);
+  const [sourceOpen, setSourceOpen] = useState(false);
   const [status, setStatus] = useState<Status>({ phase: "idle" });
   const [libraryOpen, setLibraryOpen] = useState(false);
 
@@ -87,7 +99,10 @@ export function ImagePicker({
         return;
       }
       if (file.size > MAX_UPLOAD_BYTES) {
-        toast(`That image is over ${formatBytes(MAX_UPLOAD_BYTES)}. Please pick a smaller one.`, "error");
+        toast(
+          `That image is over ${formatBytes(MAX_UPLOAD_BYTES)}. Please pick a smaller one.`,
+          "error",
+        );
         return;
       }
 
@@ -115,26 +130,43 @@ export function ImagePicker({
 
         if (error) throw error;
 
-        const { data } = supabase.storage.from("restaurant-assets").getPublicUrl(path);
+        const { data } = supabase.storage
+          .from("restaurant-assets")
+          .getPublicUrl(path);
         onChange(data.publicUrl, "uploaded");
         toast(`Image uploaded (${saved}).`);
       } catch (error) {
-        toast(error instanceof Error ? error.message : "Upload failed. Please try again.", "error");
+        toast(
+          error instanceof Error
+            ? error.message
+            : "Upload failed. Please try again.",
+          "error",
+        );
       } finally {
         setStatus({ phase: "idle" });
         if (fileRef.current) fileRef.current.value = "";
         if (cameraRef.current) cameraRef.current.value = "";
       }
     },
-    [kind, onChange, restaurantId, toast]
+    [kind, onChange, restaurantId, toast],
   );
 
   return (
-    <div className="space-y-2.5">
+    <div
+      className={
+        compact
+          ? "grid grid-cols-[88px_minmax(0,1fr)] items-start gap-3 lg:block lg:space-y-3"
+          : "space-y-2.5"
+      }
+    >
       <div
         className={cn(
           "relative overflow-hidden rounded-xl border border-dashed border-ink-300 bg-ink-50",
-          aspect === "wide" ? "aspect-[16/7]" : "aspect-square max-w-44"
+          aspect === "wide"
+            ? "aspect-[16/7]"
+            : compact
+              ? "aspect-square w-full lg:max-w-full"
+              : "aspect-square max-w-44",
         )}
       >
         {value ? (
@@ -153,9 +185,26 @@ export function ImagePicker({
             aria-live="polite"
           >
             <div className="flex flex-col items-center gap-1.5 text-center">
-              <svg className="size-6 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="3" opacity=".25" />
-                <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+              <svg
+                className="size-6 animate-spin text-brand-600"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="9"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  opacity=".25"
+                />
+                <path
+                  d="M21 12a9 9 0 0 0-9-9"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                />
               </svg>
               <span className="text-xs font-medium text-ink-700">
                 {status.phase === "compressing" ? "Optimising…" : "Uploading…"}
@@ -168,7 +217,13 @@ export function ImagePicker({
         )}
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div
+        className={
+          compact
+            ? "flex flex-wrap content-start gap-2"
+            : "flex flex-wrap gap-2"
+        }
+      >
         <input
           ref={fileRef}
           type="file"
@@ -183,10 +238,18 @@ export function ImagePicker({
           type="button"
           variant="secondary"
           size="sm"
-          onClick={() => chooseSource ? setSourceOpen(true) : fileRef.current?.click()}
+          onClick={() =>
+            chooseSource ? setSourceOpen(true) : fileRef.current?.click()
+          }
           disabled={busy}
         >
-          {chooseSource ? (value ? label("تغيير الصورة","Change photo") : label("إضافة صورة","Add photo")) : value ? t("common.edit") : t("common.add")}
+          {chooseSource
+            ? value
+              ? label("تغيير الصورة", "Change photo")
+              : label("إضافة صورة", "Add photo")
+            : value
+              ? t("common.edit")
+              : t("common.add")}
         </Button>
         {allowLibrary && (
           <Button
@@ -212,16 +275,59 @@ export function ImagePicker({
         )}
       </div>
 
-      <p className="text-xs text-ink-500">{label('الصورة بتتصغّر وتتنضغط تلقائيًا قبل الرفع.','Photos are resized and compressed before upload.')}</p>
-      {chooseSource && <>
-        <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" aria-label={label('تصوير المنتج','Take product photo')} onChange={e=>{const file=e.target.files?.[0];if(file)void upload(file);}}/>
-        <Modal open={sourceOpen} onClose={()=>setSourceOpen(false)} title={label('إضافة صورة المنتج','Add product photo')} size="sm">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Button type="button" variant="secondary" className="min-h-14 w-full text-base" onClick={()=>{setSourceOpen(false);cameraRef.current?.click();}}>{label('الكاميرا','Camera')}</Button>
-            <Button type="button" variant="secondary" className="min-h-14 w-full text-base" onClick={()=>{setSourceOpen(false);fileRef.current?.click();}}>{label('المعرض','Gallery')}</Button>
-          </div>
-        </Modal>
-      </>}
+      <p className="col-span-2 text-[11px] text-ink-500">
+        {label(
+          "الصورة بتتصغّر وتتنضغط تلقائيًا قبل الرفع.",
+          "Photos are resized and compressed before upload.",
+        )}
+      </p>
+      {chooseSource && (
+        <>
+          <input
+            ref={cameraRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            aria-label={label("تصوير المنتج", "Take product photo")}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void upload(file);
+            }}
+          />
+          <Modal
+            open={sourceOpen}
+            onClose={() => setSourceOpen(false)}
+            title={label("إضافة صورة المنتج", "Add product photo")}
+            size="sm"
+          >
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Button
+                type="button"
+                variant="secondary"
+                className="min-h-14 w-full text-base"
+                onClick={() => {
+                  setSourceOpen(false);
+                  cameraRef.current?.click();
+                }}
+              >
+                {label("الكاميرا", "Camera")}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                className="min-h-14 w-full text-base"
+                onClick={() => {
+                  setSourceOpen(false);
+                  fileRef.current?.click();
+                }}
+              >
+                {label("المعرض", "Gallery")}
+              </Button>
+            </div>
+          </Modal>
+        </>
+      )}
 
       {allowLibrary && (
         <LibraryModal
@@ -283,16 +389,27 @@ function LibraryModal({
   const score = (img: LibraryItem) => {
     if (seedWords.length === 0) return 0;
     const hay = haystackOf(img);
-    return seedWords.reduce((total, word) => total + (hay.includes(word) ? 1 : 0), 0);
+    return seedWords.reduce(
+      (total, word) => total + (hay.includes(word) ? 1 : 0),
+      0,
+    );
   };
 
   const filtered = (images ?? [])
-    .filter((img) => (q ? words(q).some((word) => haystackOf(img).includes(word)) || haystackOf(img).includes(q) : true))
+    .filter((img) =>
+      q
+        ? words(q).some((word) => haystackOf(img).includes(word)) ||
+          haystackOf(img).includes(q)
+        : true,
+    )
     .map((img, index) => ({ img, index, rank: score(img) }))
     .sort((a, b) => b.rank - a.rank || a.index - b.index)
     .map((entry) => entry.img);
 
-  const suggestedCount = seedWords.length > 0 ? (images ?? []).filter((i) => score(i) > 0).length : 0;
+  const suggestedCount =
+    seedWords.length > 0
+      ? (images ?? []).filter((i) => score(i) > 0).length
+      : 0;
 
   async function reload() {
     setReloading(true);
@@ -338,24 +455,29 @@ function LibraryModal({
 
       {suggestedCount > 0 && !q && (
         <p className="mb-3 text-xs text-brand-700">
-          {suggestedCount} image{suggestedCount === 1 ? "" : "s"} matching “{seed}” shown first.
+          {suggestedCount} image{suggestedCount === 1 ? "" : "s"} matching “
+          {seed}” shown first.
         </p>
       )}
 
       {images === null ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="aspect-[4/3] animate-pulse rounded-xl bg-ink-100" />
+            <div
+              key={i}
+              className="aspect-[4/3] animate-pulse rounded-xl bg-ink-100"
+            />
           ))}
         </div>
       ) : images.length === 0 ? (
         <p className="py-10 text-center text-sm text-ink-500">
-          The shared library is empty for now. Upload your own photo instead. it will be
-          optimised automatically.
+          The shared library is empty for now. Upload your own photo instead. it
+          will be optimised automatically.
         </p>
       ) : filtered.length === 0 ? (
         <p className="py-10 text-center text-sm text-ink-500">
-          Nothing matched “{query}”. Try a simpler word, or upload your own photo.
+          Nothing matched “{query}”. Try a simpler word, or upload your own
+          photo.
         </p>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -367,11 +489,19 @@ function LibraryModal({
               className="group overflow-hidden rounded-xl border border-ink-200 bg-white text-start transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-brand-400"
             >
               <div className="relative aspect-[4/3] bg-ink-50">
-                <SmartImage src={img.url} alt={img.title} sizes="(max-width: 640px) 45vw, 200px" />
+                <SmartImage
+                  src={img.url}
+                  alt={img.title}
+                  sizes="(max-width: 640px) 45vw, 200px"
+                />
               </div>
               <div className="px-2.5 py-2">
-                <p className="truncate text-xs font-medium text-ink-800">{img.title}</p>
-                <p className="truncate text-[11px] text-ink-400">{img.category}</p>
+                <p className="truncate text-xs font-medium text-ink-800">
+                  {img.title}
+                </p>
+                <p className="truncate text-[11px] text-ink-400">
+                  {img.category}
+                </p>
               </div>
             </button>
           ))}
@@ -412,11 +542,21 @@ export function LibraryPickerField({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="secondary" size="sm" onClick={() => setOpen(true)}>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={() => setOpen(true)}
+        >
           {value ? t("common.edit") : (label ?? t("admin.imageLibrary"))}
         </Button>
         {value && (
-          <Button type="button" variant="ghost" size="sm" onClick={() => onChange(null)}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => onChange(null)}
+          >
             {t("common.remove")}
           </Button>
         )}

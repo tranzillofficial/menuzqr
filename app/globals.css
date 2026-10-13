@@ -216,3 +216,16 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
   #pos-receipt:not([data-report]) p, #pos-receipt:not([data-report]) li { font-size: 16px !important; color: #000 !important; }
   #pos-receipt:not([data-report]) h1 { font-size: 24px; }
 }
+
+/* Product workspace shares one compact layout across business types. */
+@media (min-width: 1024px) {
+ .product-list-grid { grid-template-columns: minmax(0, 1fr) 140px 150px 48px; }
+ .product-list-grid.with-stock { grid-template-columns: minmax(0, 1fr) 120px 130px 110px 48px; }
+}
+.product-editor-fields input:not([type="hidden"]), .product-editor-fields select, .product-editor-fields textarea {
+ font-size: 14px; border-color: var(--color-ink-100); border-radius: 10px; min-height: 40px;
+}
+.product-editor-fields input:not([type="hidden"]), .product-editor-fields select { padding-top: 8px; padding-bottom: 8px; }
+.product-editor-fields textarea { padding-top: 10px; padding-bottom: 10px; }
+.product-editor-fields label { font-size: 12px; }
+.product-editor-fields input[type="file"] { min-height: 0; }
