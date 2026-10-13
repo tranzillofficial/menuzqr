@@ -1,0 +1,18 @@
+MenuzQR compatibility package for Windows 7 SP1, 32-bit
+
+Includes unmodified QZ Tray 2.1.6+3 and BellSoft Liberica Java 8u502+9 Full x86.
+Java is private to QZ Tray. No separate Java or Python installation is needed.
+The official QZ installer configures its local HTTPS certificate and startup.
+QZ may ask you to approve your website and print requests. This package does not
+suppress those approvals. Install the manufacturer's printer driver separately.
+
+QZ 2.1 and Windows 7 are legacy, end-of-support software. This is a compatibility
+option, not a current QZ-supported 32-bit configuration. Use a current operating
+system and QZ version when possible. Actual Windows 7/printer validation is needed.
+This installer is not Authenticode signed.
+
+QZ Tray is LGPL-2.1. Its original license files are included by its own installer.
+Corresponding release/source: https://github.com/qzind/tray/releases/tag/v2.1.6
+Source archive: https://github.com/qzind/tray/archive/refs/tags/v2.1.6.zip
+Liberica includes its original license and third-party notices in the jre folder.
+Java release and sources: https://github.com/bell-sw/Liberica/releases/tag/8u502%2B9
