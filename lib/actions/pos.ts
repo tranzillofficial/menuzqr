@@ -1,4 +1,6 @@
 "use server";
+import { categoryDescendants } from "@/lib/category-tree";
+import type { ProductWithVariants } from "@/lib/types";
 import { moduleEnabled } from "@/lib/business-modules";
 import { getMembership } from '@/lib/membership';
 import { createAdminSupabase } from '@/lib/supabase/admin';
@@ -44,4 +46,23 @@ export async function checkoutPos(input:{requestId:string;lines:{variantId:strin
     lines: (items.data ?? []).map(item => ({ variantId: item.variant_id ?? item.id, name: item.product_name, variant: item.variant_name ?? '', price: Number(item.unit_price), quantity: item.quantity, gross: Number(item.line_total), net: Number(item.net_total), vat: Number(item.vat_total), rate: Number(item.vat_rate), code: item.vat_code })),
   };
   return {ok:true as const,receipt};
+}
+
+export async function searchPosProducts(input:{query:string;category:string;page:number}) {
+ const [member,platform]=await Promise.all([getMembership(),getPlatformSettings()]);
+ if(!member?.isManager||!hasPosAccess(member.restaurant,platform.posEnabled))return {ok:false as const,message:'POS access is not active.'};
+ const db=await createServerSupabase();
+ const page=Number.isFinite(input.page)?Math.min(10000,Math.max(0,Math.floor(input.page))):0;
+ let request=db.from('products').select('*,product_variants(*)').eq('restaurant_id',member.restaurant.id).eq('is_active',true);
+ const query=String(input.query??'').slice(0,100).replace(/[,%()_*\\]/g,' ').trim();
+ if(query)request=request.or(`name.ilike.%${query}%,barcode.ilike.%${query}%`);
+ if(input.category&&input.category!=='all'){
+  const categories=await db.from('categories').select('id,name,parent_id').eq('restaurant_id',member.restaurant.id);
+  if(categories.error)return {ok:false as const,message:'Could not load categories.'};
+  if(!categories.data.some(c=>c.id===input.category))return {ok:true as const,products:[] as ProductWithVariants[],hasMore:false};
+  request=request.in('category_id',[...categoryDescendants(categories.data,input.category)]);
+ }
+ const {data,error}=await request.order('sort_order').order('id').range(page*40,page*40+40);
+ if(error)return {ok:false as const,message:'Could not load products.'};
+ return {ok:true as const,products:(data??[]).slice(0,40) as ProductWithVariants[],hasMore:(data??[]).length>40};
 }

@@ -1,9 +1,10 @@
 import 'server-only';
+import {businessPolicy} from './business-policy';
 import { redirect } from 'next/navigation';
 import { requireManager } from './membership';
-import { moduleEnabled, type BusinessModule } from './business-modules';
+import { type BusinessModule } from './business-modules';
 export async function requireBusinessModule(module: BusinessModule) {
  const member = await requireManager(`/dashboard/${module}`);
- if (!moduleEnabled(member.restaurant,module)) redirect('/dashboard');
+ if (!businessPolicy(member.restaurant,module,{role:member.role}).allowed) redirect('/dashboard');
  return member;
 }

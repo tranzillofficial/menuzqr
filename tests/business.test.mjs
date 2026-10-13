@@ -28,9 +28,9 @@ test('versioned features disable core routes while retaining old custom accounts
  for(const p of ['/dashboard/restaurant','/dashboard/products','/dashboard/categories','/dashboard/qr-codes','/dashboard/settings'])assert.equal(dashboardPathEnabled(limited,p),false);
 });
 
-test('supermarkets never expose tables or service calls even in custom configurations',()=>{
+test('supermarkets hide service modules by default and explicit admin settings take precedence',()=>{
  for(const enabled_modules of [null,['tables','service_calls','features_v3']]){
-  assert.equal(moduleEnabled({business_kind:'supermarket',enabled_modules},'tables'),false);
-  assert.equal(moduleEnabled({business_kind:'supermarket',enabled_modules},'service_calls'),false);
+  assert.equal(moduleEnabled({business_kind:'supermarket',enabled_modules},'tables'),enabled_modules!==null);
+  assert.equal(moduleEnabled({business_kind:'supermarket',enabled_modules},'service_calls'),enabled_modules!==null);
  }
 });

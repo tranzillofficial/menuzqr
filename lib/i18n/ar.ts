@@ -430,6 +430,7 @@ export const ar: Record<keyof typeof en, string> = {
 
   // ----------------------------------------------------------------- admin
   "admin.restaurants": "المطاعم",
+  "admin.businessTypes": "أنواع الأنشطة",
   "admin.users": "المستخدمون",
   "admin.imageLibrary": "مكتبة الصور",
   "admin.catalog": "الكتالوج",

@@ -1,7 +1,8 @@
 import { WhatsappQrSettings } from "@/components/dashboard/WhatsappQrSettings";
 import {BusinessDomainForm} from "@/components/admin/BusinessDomainForm";
 import type {TenantDomain} from "@/lib/tenant-domain";
-import { BusinessAccountForm } from "@/components/admin/BusinessAccountForm";
+import {TenantConfigurationForm} from "@/components/admin/TenantConfigurationForm";
+import type {BusinessType,ConfigurationOverride} from "@/lib/business-configuration";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -29,6 +30,8 @@ export default async function AdminRestaurantPage({
   const { data } = await supabase.from("restaurants").select("*").eq("id", id).maybeSingle();
   if (!data) notFound();
   const restaurant = data as Restaurant;
+  const [businessTypes,configurationOverrides]=await Promise.all([supabase.from("business_types").select("*").order("name_ar"),supabase.from("business_configuration_overrides").select("feature_key,enabled").eq("restaurant_id",id)]);
+  if(businessTypes.error||configurationOverrides.error)throw Error("Could not load business configuration");
 
   const [owner, categories, products, tables, orders, actions, team] = await Promise.all([
     supabase.from("profiles").select("id, email, full_name").eq("id", restaurant.owner_id).maybeSingle(),
@@ -90,7 +93,7 @@ export default async function AdminRestaurantPage({
         </div>
       </div>
 
-      <BusinessAccountForm key={restaurant.updated_at} restaurant={restaurant} />
+      <TenantConfigurationForm key={restaurant.updated_at} types={(businessTypes.data??[]) as BusinessType[]} overrides={(configurationOverrides.data??[]) as ConfigurationOverride[]} restaurant={restaurant} />
       <WhatsappQrSettings restaurantId={id} number={whatsappSettings?.payment_whatsapp??""}/>
       <BusinessDomainForm restaurantId={id} domains={(domains??[]) as TenantDomain[]}/>
 

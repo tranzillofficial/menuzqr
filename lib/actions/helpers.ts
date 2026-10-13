@@ -1,4 +1,5 @@
-import {moduleEnabled,type BusinessModule} from "@/lib/business-modules";
+import {businessPolicy} from "@/lib/business-policy";
+import {type BusinessModule} from "@/lib/business-modules";
 import {getTenantDomain} from "@/lib/tenant-domain";
 import "server-only";
 import { type StaffPermission } from "@/lib/staff-permissions";
@@ -66,7 +67,7 @@ export async function getOwnedRestaurant(feature:BusinessModule|null="branch"): 
     return { ok: false, error: fail("Create your restaurant profile first.") };
   }
 
-  if(feature&&!moduleEnabled(data as Restaurant,feature))return {ok:false,error:fail("This module is disabled for your account.")};
+  if(feature&&!businessPolicy(data as Restaurant,feature,{role:"owner"}).allowed)return {ok:false,error:fail("This module is disabled for your account.")};
   return { ok: true, restaurant: data as Restaurant, userId: user.id };
 }
 
@@ -77,7 +78,7 @@ export async function getMenuRestaurant(feature:BusinessModule="products"): Prom
 > {
   const membership = await getMembership();
   if (!membership?.isManager) return {ok:false,error:fail("Manager access required.")};
-  if(!moduleEnabled(membership.restaurant,feature))return {ok:false,error:fail("This module is disabled for your account.")};
+  if(!businessPolicy(membership.restaurant,feature,{role:membership.role}).allowed)return {ok:false,error:fail("This module is disabled for your account.")};
   return {ok:true,restaurant:membership.restaurant,userId:membership.userId};
 }
 

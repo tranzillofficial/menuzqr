@@ -441,6 +441,7 @@ export const en = {
 
   // ----------------------------------------------------------------- admin
   "admin.restaurants": "Restaurants",
+  "admin.businessTypes": "Business types",
   "admin.users": "Users",
   "admin.imageLibrary": "Image library",
   "admin.catalog": "Catalog",

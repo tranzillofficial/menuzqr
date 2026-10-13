@@ -20,6 +20,7 @@ export type Restaurant = TaxSettings & {
   id: string;
   owner_id: string;
   business_kind?: string | null;
+  business_type_id?:string|null;
   enabled_modules?: string[] | null;
   name: string;
   slug: string;

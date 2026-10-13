@@ -1,14 +1,13 @@
 "use client";
 import {ALHAMD_ID,alhamdUnitLabel} from "@/lib/alhamd-units";
 
-import { categoryDescendants } from "@/lib/category-tree";
-import { useRef, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { SmartImage } from '@/components/ui/SmartImage';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
-import { checkoutPos, getPosTables } from '@/lib/actions/pos';
+import { checkoutPos, getPosTables, searchPosProducts } from '@/lib/actions/pos';
 import { CategoryPicker } from "./CategoryPicker";
 import { PosBarcode } from './PosBarcode';
 import { ThermalPrinter, type ReceiptPrinterHandle } from '@/components/dashboard/ThermalPrinter';
@@ -19,9 +18,9 @@ import type { ProductWithVariants, Category, RestaurantTable } from '@/lib/types
 
 type Line = { variantId: string; name: string; variant: string; price: number; quantity: number; basePrice: number; rate: number };
 
-export function PosScreen({ restaurantId, restaurantName, currency, products, categories, tables, taxSettings, tablesEnabled = true, barcodeEnabled = false, printingEnabled = true }: {
+export function PosScreen({ restaurantId, restaurantName, currency, products, categories, tables, taxSettings, tablesEnabled = true, barcodeEnabled = false, printingEnabled = true, initialHasMore = false }: {
   restaurantId: string; restaurantName: string; currency: string; products: ProductWithVariants[];
-  printingEnabled?:boolean; tablesEnabled?: boolean; barcodeEnabled?: boolean; categories: Category[]; tables: RestaurantTable[]; taxSettings: TaxSettings;
+  initialHasMore?:boolean; printingEnabled?:boolean; tablesEnabled?: boolean; barcodeEnabled?: boolean; categories: Category[]; tables: RestaurantTable[]; taxSettings: TaxSettings;
 }) {
   const { locale } = useI18n();
   const label = (ar: string, en: string) => locale === 'ar' ? ar : en;
@@ -53,10 +52,26 @@ export function PosScreen({ restaurantId, restaurantName, currency, products, ca
   const vat = totals.vat;
   const grossPrice = (price: number, product: ProductWithVariants) => displayPrice(Number(price), product.vat_code, taxSettings);
   const count = cart.reduce((sum, line) => sum + line.quantity, 0);
-  const shown = products.filter(product =>
-    (category === 'all' || categoryDescendants(categories,category).has(product.category_id ?? "")) &&
-    `${product.name} ${product.description ?? ''}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())
-  );
+  const [shown,setShown]=useState(products);
+  const [page,setPage]=useState(0);
+  const [hasMore,setHasMore]=useState(initialHasMore);
+  const [searchBusy,setSearchBusy]=useState(false);
+  const [searchError,setSearchError]=useState('');
+  const initialSearch=useRef(true);
+  useEffect(()=>{
+    if(initialSearch.current){initialSearch.current=false;return;}
+    let cancelled=false;
+    const timer=setTimeout(async()=>{
+      setSearchBusy(true);setSearchError('');
+      try{
+        const result=await searchPosProducts({query,category,page});
+        if(cancelled)return;
+        if(result.ok){setShown(result.products);setHasMore(result.hasMore);}else{setShown([]);setHasMore(false);setSearchError(result.message);}
+      }catch{if(!cancelled){setShown([]);setHasMore(false);setSearchError('تعذر تحميل المنتجات. Could not load products.');}}
+      finally{if(!cancelled)setSearchBusy(false);}
+    },300);
+    return()=>{cancelled=true;clearTimeout(timer);};
+  },[query,category,page]);
   function changed() { request.current = null; setError(''); }
   function add(product: ProductWithVariants, variant: ProductWithVariants['product_variants'][number]) {
     if (pending || !variant.is_active || !Number.isFinite(Number(variant.price))) return;
@@ -140,22 +155,25 @@ export function PosScreen({ restaurantId, restaurantName, currency, products, ca
     {barcodeEnabled && <PosBarcode disabled={pending} onAdd={add} onBusyChange={setBarcodeBusy}/>}
     <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_310px]">
       <section className="min-w-0" aria-label={label('المنتجات', 'Products')}>
-        <input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder={label('ابحث عن منتج', 'Search products')} aria-label={label('ابحث عن منتج', 'Search products')} className="h-11 w-full rounded-xl border border-ink-200 bg-white px-4 text-sm" />
-        <div className="my-3"><CategoryPicker categories={categories} value={category==='all'?'':category} onChange={id=>setCategory(id||'all')} emptyLabel={label('كل الأقسام','All categories')} /></div>
+        <input type="search" value={query} onChange={event => {setQuery(event.target.value); setPage(0);}} placeholder={label('ابحث عن منتج', 'Search products')} aria-label={label('ابحث عن منتج', 'Search products')} className="h-11 w-full rounded-xl border border-ink-200 bg-white px-4 text-sm" />
+        <div className="my-3"><CategoryPicker categories={categories} value={category==='all'?'':category} onChange={id=>{setCategory(id||'all');setPage(0);}} emptyLabel={label('كل الأقسام','All categories')} /></div>
         {shown.length === 0 && <div className="rounded-2xl border border-dashed border-ink-300 p-8 text-center text-sm"><p>{label('مفيش منتجات مطابقة', 'No matching products')}</p>{products.length ? <button type="button" onClick={() => { setQuery(''); setCategory('all'); }} className="mt-3 text-brand-700">{label('عرض كل المنتجات', 'Show all products')}</button> : <Link href="/dashboard/products" className="mt-3 inline-block text-brand-700">{label('ضيف منتجاتك', 'Add your products')}</Link>}</div>}
-        <div data-testid="product-grid" className="grid grid-cols-2 gap-2 min-[380px]:grid-cols-3 sm:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">
+        <div data-testid="product-grid" className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
           {shown.map(product => {
             const variants = product.product_variants.filter(variant => variant.is_active && Number.isFinite(Number(variant.price)));
             const added = cart.filter(line => variants.some(variant => variant.id === line.variantId)).reduce((sum, line) => sum + line.quantity, 0);
             return <article key={product.id} className={cn('min-w-0 overflow-hidden rounded-xl border bg-white', added ? 'border-brand-400 ring-1 ring-brand-100' : 'border-ink-200')}>
-              <div className="relative aspect-[4/3] bg-white"><SmartImage src={product.image_url} alt={product.name} sizes="(max-width: 640px) 33vw, 180px" className="p-2" />{added > 0 && <span className="absolute end-1 top-1 rounded-full bg-brand-600 px-2 py-0.5 text-[10px] font-semibold text-white">{added} {label('في الطلب', 'added')}</span>}</div>
-              <div className="space-y-2 p-2"><h2 className="min-h-8 text-xs font-semibold leading-4">{product.name}</h2>
+              <div className="relative aspect-[4/3] bg-white"><SmartImage src={product.image_url} alt={product.name} sizes="(max-width: 640px) 50vw, 180px" className="p-2" />{added > 0 && <span className="absolute end-1 top-1 rounded-full bg-brand-600 px-2 py-0.5 text-[10px] font-semibold text-white">{added} {label('في الطلب', 'added')}</span>}</div>
+              <div className="space-y-2 p-2"><h2 className="min-h-10 text-sm font-semibold leading-5">{product.name}</h2>
                 {variants.length === 0 && <p className="py-2 text-xs text-ink-400">{label('غير متاح حاليًا', 'Unavailable')}</p>}
                 {variants.map(variant => <button key={variant.id} type="button" disabled={pending || (cart.find(line => line.variantId === variant.id)?.quantity ?? 0) >= 99} onClick={() => add(product, variant)} aria-label={`${label('إضافة', 'Add')} ${product.name} ${alhamdUnitLabel(variant.name,restaurantId)}`} className="flex min-h-11 w-full flex-wrap items-center justify-between gap-1 rounded-lg bg-brand-50 px-2 py-2 text-xs text-brand-800 hover:bg-brand-100 active:bg-brand-200 disabled:opacity-40"><span>{(variants.length > 1 || restaurantId === ALHAMD_ID) && alhamdUnitLabel(variant.name,restaurantId) ? `+ ${alhamdUnitLabel(variant.name,restaurantId)}` : label('+ إضافة', '+ Add')}</span><strong className="whitespace-nowrap">{money(grossPrice(Number(variant.price), product))}</strong></button>)}
               </div>
             </article>;
           })}
         </div>
+        {searchBusy&&<p role="status" className="py-3 text-sm">{label('جاري البحث…','Searching…')}</p>}
+        {searchError&&<p role="alert" className="py-3 text-sm text-red-600">{searchError}</p>}
+        <nav aria-label={label('صفحات المنتجات','Product pages')} className="mt-4 flex items-center justify-between gap-3"><Button disabled={searchBusy||page===0} onClick={()=>setPage(p=>p-1)}>{label('السابق','Previous')}</Button><span className="text-sm">{page+1}</span><Button disabled={searchBusy||!hasMore} onClick={()=>setPage(p=>p+1)}>{label('التالي','Next')}</Button></nav>
       </section>
       <aside data-testid="desktop-cart" className="sticky top-4 hidden min-w-0 rounded-2xl border border-ink-200 bg-white p-4 lg:block"><h2 className="mb-4 flex items-center justify-between font-semibold">{label('الطلب الحالي', 'Current order')}<span className="rounded-full bg-brand-50 px-2 py-1 text-xs text-brand-700">{count}</span></h2>{order}</aside>
     </div>

@@ -21,15 +21,17 @@ export const MODULE_REGISTRY = {
 export type BusinessModule = keyof typeof MODULE_REGISTRY;
 export const BUSINESS_MODULES = Object.keys(MODULE_REGISTRY) as BusinessModule[];
 export const MODULE_LABELS = MODULE_REGISTRY;
-export type BusinessConfig = { business_kind?: string | null; enabled_modules?: string[] | null };
+export type BusinessConfig = { business_kind?: string | null; business_type?:string|null; business_type_id?:string|null; enabled_modules?: string[] | null };
 // Old custom arrays predate core toggles; retain their previously available tools.
 const CORE: BusinessModule[]=['branch','products','qr','settings'];
 export function moduleEnabled(config: BusinessConfig, module: BusinessModule): boolean {
- if(config.business_kind==='supermarket' && ['tables','service_calls'].includes(module))return false;
+ const kind=config.business_kind??config.business_type;
+ const explicit=config.enabled_modules?.includes('features_v2')||config.enabled_modules?.includes('features_v3');
+ if(['market','supermarket'].includes(kind??'')&&!explicit&&['tables','service_calls'].includes(module))return false;
  if(module==='invoices' && !config.enabled_modules?.includes('features_v3'))return config.enabled_modules==null || config.enabled_modules.includes('reports') || config.enabled_modules.includes('orders');
  if(config.enabled_modules==null)return !['subcategories','inventory'].includes(module);
  if(CORE.includes(module)&&!config.enabled_modules.includes('features_v2')&&!config.enabled_modules.includes('features_v3'))return true;
- return config.enabled_modules.includes(module);
+ return config.enabled_modules.includes(module)||(module==='staff'&&config.enabled_modules.includes('team'));
 }
 export const RETAIL_MODULES: BusinessModule[] = ['pos','reports','orders','staff','invoices','customers','offers','design','subcategories',...CORE];
 export const BUSINESS_PRESETS = {

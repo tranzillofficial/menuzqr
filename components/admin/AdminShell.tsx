@@ -17,6 +17,7 @@ const NAV: Array<{
   exact?: boolean;
 }> = [
   { href: "/admin", label: "admin.restaurants", icon: Icon.store, exact: true },
+  { href: "/admin/business-types", label: "admin.businessTypes", icon: Icon.grid },
   { href: "/admin/users", label: "admin.users", icon: Icon.users },
   { href: "/admin/catalog", label: "admin.catalog", icon: Icon.burger },
   { href: "/admin/library", label: "admin.imageLibrary", icon: Icon.image },

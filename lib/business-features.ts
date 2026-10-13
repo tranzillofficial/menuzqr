@@ -17,8 +17,9 @@ export type BusinessFeature = keyof typeof FEATURE_REGISTRY;
 export const BUSINESS_FEATURES = Object.keys(FEATURE_REGISTRY) as BusinessFeature[];
 export function featureEnabled(config:BusinessConfig,feature:BusinessFeature):boolean {
  if(!moduleEnabled(config,FEATURE_REGISTRY[feature].module as BusinessModule))return false;
- if(config.enabled_modules?.includes('features_v3'))return config.enabled_modules.includes(feature);
- const market=config.business_kind==='supermarket';
+ if(config.enabled_modules?.includes('features_v3'))return config.enabled_modules.includes(feature)||(feature==='product_barcode'&&config.enabled_modules.includes('barcode'));
+ const market=['market','supermarket'].includes(config.business_kind??config.business_type??'');
+ if(feature==='product_barcode'&&config.enabled_modules?.includes('barcode'))return true;
  if(['product_description','product_ingredients','product_english','tax_settings'].includes(feature))return !market;
  if(['product_barcode','product_weights'].includes(feature))return market;
  if(feature==='product_packaging')return config.business_kind==='sweets';
