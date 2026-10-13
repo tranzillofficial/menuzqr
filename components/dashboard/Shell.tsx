@@ -45,10 +45,15 @@ export function DashboardShell({
   const isActive = (href: string, exact?: boolean) =>
     exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
 
+  const financeModules=['invoices','orders','reports'] as const;
+  const financeTarget=financeModules.find(m=>moduleEnabled(businessConfig,m));
+  const visibleNav=NAV.filter(item=>!financeModules.some(m=>item.href===`/dashboard/${m}`)&&dashboardPathEnabled(businessConfig,item.href));
+  if(financeTarget)visibleNav.splice(1,0,{href:`/dashboard/${financeTarget}`,label:'nav.invoices',icon:Icon.receipt});
   const nav = (
     <nav className="flex flex-col gap-0.5">
-      {NAV.filter(item => dashboardPathEnabled(businessConfig,item.href)).map((item) => {
-        const active = isActive(item.href, item.exact);
+      {visibleNav.map((item) => {
+        const financeItem=financeTarget&&item.href===`/dashboard/${financeTarget}`;
+        const active = financeItem?financeModules.some(m=>isActive(`/dashboard/${m}`)):isActive(item.href, item.exact);
         return (
           <Link
             key={item.href}

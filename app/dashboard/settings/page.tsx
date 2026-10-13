@@ -1,7 +1,4 @@
-import {StorefrontSettings} from "@/components/dashboard/StorefrontSettings";
 import {featureEnabled} from "@/lib/business-features";
-import { WhatsappQrSettings } from "@/components/dashboard/WhatsappQrSettings";
-import {SettingsSections} from "@/components/dashboard/SettingsSections";
 import { moduleEnabled } from "@/lib/business-modules";
 import { ThermalPrinter } from "@/components/dashboard/ThermalPrinter";
 import { InvoiceExport } from "@/components/dashboard/InvoiceExport";
@@ -9,13 +6,13 @@ import { TaxSettingsForm } from "@/components/dashboard/TaxSettingsForm";
 import type { Metadata } from "next";
 import { requireRestaurant } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { PageHeader } from "@/components/dashboard/Shell";
 import { SettingsForm } from "@/components/dashboard/SettingsForm";
 import { ActivationPanel } from "@/components/dashboard/ActivationPanel";
 import { AlertsCard } from "@/components/pwa/AlertsCard";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icons";
 import { getPlatformSettings } from "@/lib/platform";
+import {getLocale} from "@/lib/i18n/server";
 import { getBusinessT as getT } from "@/lib/i18n/server";
 import { formatDate } from "@/lib/utils";
 
@@ -31,6 +28,7 @@ export default async function SettingsPage() {
 
   const {count: tableCount,error:tableError}=moduleEnabled(restaurant,"tables") ? await supabase.from("restaurant_tables").select("id",{count:"exact",head:true}).eq("restaurant_id",restaurant.id).eq("is_active",true) : {count:0,error:null};
   if(tableError)throw new Error("Could not load table settings");
+  const ar=(await getLocale())==="ar";
   const hasTables=(tableCount??0)>0;
 
   const { data: settings } = await supabase
@@ -56,24 +54,11 @@ export default async function SettingsPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <PageHeader title={t("settings.title")} description={t("settings.sub")} />
+    <div className="mx-auto max-w-6xl space-y-4">
+      <header className="flex items-start gap-3"><span className="grid size-10 place-items-center rounded-xl bg-brand-50 text-brand-600"><Icon.settings className="size-5"/></span><div><h1 className="text-xl font-semibold sm:text-2xl">{t("settings.title")}</h1><p className="mt-1 text-xs text-ink-500 sm:text-sm">{t("settings.sub")}</p></div></header>
 
-      <SettingsSections sections={[
-        {id:"features",ar:"العرض والطلبات",en:"Display and orders",content:(<>      <SettingsForm
-        hasTables={hasTables}
-        restaurant={restaurant}
-        settings={{
-          remote_ordering_enabled:settings?.remote_ordering_enabled??false, cash_wallet:settings?.cash_wallet??"",instapay_address:settings?.instapay_address??"",payment_whatsapp:settings?.payment_whatsapp??"",
-          sound_enabled: settings?.sound_enabled ?? true,
-          show_prices: settings?.show_prices ?? true,
-          show_ingredients: settings?.show_ingredients ?? true,
-        }}
-      />
-
-</>)},
-        {id:"storefront",ar:"التوصيل والدفع والتواصل",en:"Delivery, payments and contact",content:<StorefrontSettings restaurant={restaurant} details={{delivery_fee:settings?.delivery_fee??0,free_delivery_above:settings?.free_delivery_above??null,payment_details:settings?.payment_details??"",location_url:settings?.location_url??"",facebook_url:settings?.facebook_url??"",instagram_url:settings?.instagram_url??"",website_url:settings?.website_url??""}}/>},
-        {id:"whatsapp",ar:"واتساب وQR",en:"WhatsApp and QR",content:<WhatsappQrSettings number={settings?.payment_whatsapp??""}/>},
+      <SettingsForm restaurant={restaurant} hasTables={hasTables} settings={{...settings,sound_enabled:settings?.sound_enabled??true,show_prices:settings?.show_prices??true,show_ingredients:settings?.show_ingredients??true}} sections={[
+        ...(moduleEnabled(restaurant,"qr")&&featureEnabled(restaurant,"qr_whatsapp")?[{id:"whatsapp",ar:"واتساب وQR",en:"WhatsApp & QR",content:<section className="rounded-2xl bg-white p-4 ring-1 ring-black/5 sm:p-5"><h2 className="text-sm font-semibold">{ar?"واتساب وQR":"WhatsApp & QR"}</h2><p className="mt-2 text-xs text-ink-500">{settings?.payment_whatsapp?`+${settings.payment_whatsapp}`:(ar?"احفظ رقم واتساب في معلومات الدفع أولًا.":"Add WhatsApp in payment information first.")}</p><a href="/dashboard/qr-codes" className="mt-4 inline-flex rounded-xl bg-brand-600 px-4 py-3 text-xs font-semibold text-white">{ar?"تصميم وتحميل أكواد QR":"Design and export QR"}</a></section>}]:[]),
         ...(featureEnabled(restaurant,"tax_settings")?[{id:"tax",ar:"الضرائب",en:"Taxes",content:<TaxSettingsForm restaurant={restaurant}/>}]:[]),
         ...(featureEnabled(restaurant,"receipt_printing")?[{id:"print",ar:"الطباعة",en:"Printing",content:<ThermalPrinter restaurantId={restaurant.id} restaurantName={restaurant.name} currency={restaurant.currency} receipt={null}/>}]:[]),
         ...(moduleEnabled(restaurant,"invoices")?[{id:"invoices",ar:"الفواتير والتصدير",en:"Invoices and export",content:<InvoiceExport/>}]:[]),

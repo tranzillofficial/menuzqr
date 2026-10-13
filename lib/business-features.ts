@@ -4,6 +4,8 @@ import {
   type BusinessModule,
 } from "./business-modules";
 export const FEATURE_REGISTRY = {
+  customer_create: { module: "customers", ar: "إضافة العملاء يدويًا", en: "Manually add customers" },
+  customer_edit: { module: "customers", ar: "تعديل بيانات العملاء", en: "Edit customer details" },
   product_images: {
     module: "products",
     ar: "صور المنتجات",

@@ -195,6 +195,7 @@ export async function saveWhatsappQrAction(_prev: ActionState, form: FormData): 
   } else {
     const owned = await getOwnedRestaurant("settings");
     if (!owned.ok) return owned.error;
+    if(!featureEnabled(owned.restaurant,"payment_settings"))return fail("WhatsApp number editing is disabled for this account.");
     restaurantId = owned.restaurant.id;
   }
   const phone = normalizeWhatsapp(str(form, "whatsapp_number"));

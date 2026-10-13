@@ -12,7 +12,8 @@
     "test:tax": "node --experimental-strip-types --test tests/tax.test.mjs && node tests/fiscal-postgres.mjs",
     "test:business": "node --experimental-strip-types --test tests/business.test.mjs && node tests/business-postgres.mjs",
     "test:configuration": "node --experimental-strip-types --loader ./tests/ts-resolve.mjs --test tests/business-configuration.test.mjs && node tests/configuration-postgres.mjs",
-    "test:offers": "node --experimental-strip-types --loader ./tests/ts-resolve.mjs --test tests/qr-offers.test.mjs tests/pos-offers.test.mjs && node tests/qr-offers-postgres.mjs"
+    "test:offers": "node --experimental-strip-types --loader ./tests/ts-resolve.mjs --test tests/qr-offers.test.mjs tests/pos-offers.test.mjs && node tests/qr-offers-postgres.mjs",
+    "test:dashboard": "node --experimental-strip-types --test tests/dashboard-design.test.mjs && node tests/dashboard-settings-customers-postgres.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",

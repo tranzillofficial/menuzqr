@@ -40,7 +40,7 @@ export async function changeFinancialOrder(orderId:string,action:'refund'|'void'
   if(!['refund','void','pay'].includes(action)||reason.length>400||(received!==null&&(!Number.isFinite(received)||received<0))) return {ok:false,message:'Invalid input.'};
   const {error}=await createAdminSupabase().rpc('change_fiscal_order',{p_actor:member.userId,p_restaurant:member.restaurant.id,p_order:orderId,p_action:action,p_reason:reason,p_payment:payment,p_received:received});
   if(error) return {ok:false,message:error.message};
-  revalidatePath('/dashboard/pos'); revalidatePath('/dashboard/orders');revalidatePath('/dashboard/reports');revalidatePath(`/dashboard/orders/${orderId}`);revalidatePath('/dashboard');
+  revalidatePath('/dashboard/invoices');revalidatePath(`/dashboard/invoices/${orderId}`);revalidatePath('/dashboard/pos'); revalidatePath('/dashboard/orders');revalidatePath('/dashboard/reports');revalidatePath(`/dashboard/orders/${orderId}`);revalidatePath('/dashboard');
   return {ok:true,message:action==='refund'?'Refund recorded.':action==='void'?'Void recorded.':'Payment recorded.'};
 }
 export async function closeDay() {

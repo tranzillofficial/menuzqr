@@ -35,3 +35,15 @@ Checkout recalculates offers inside the fiscal transaction using locked product 
 Invoices use 30-row tenant-scoped pagination with number/customer, date, state and payment filters. Dates use the business timezone. List, detail, export and thermal receipt show saved offer discounts.
 
 Verification: `npm run test:offers`, `npm run test:tax`, `npm run test:configuration`, production build; responsive real-component browser fixtures at 320/390/1440 pixels for QR, offers, POS and invoices. Browser fixtures mock server writes and printer hardware.
+
+## Settings, customer directory and finance workspace (2026-10-13)
+
+The dashboard groups invoices, orders and sales reports under one navigation entry named Invoices. Each tab keeps its own module authorization; disabled tabs and routes remain unavailable. Invoices and orders use 30-row server pagination. Invoice previews and details use recorded item totals, payment state, VAT and offer discounts. Refunds, payments and day closing keep the existing immutable fiscal journal and stock accounting.
+
+Settings use orange horizontal tabs, compact mobile fields and one atomic save for display, ordering, payment, delivery and contact preferences. Disabled capabilities retain their previous stored values. Restaurant/cafe table ordering and waiter calls remain gated by the account's enabled modules and active tables. Flat delivery fees apply only to supermarket orders. WhatsApp uses a selected country prefix (Egypt +20 by default) without duplicating prefixes. QR design remains in the capability-controlled QR studio.
+
+Customer management has tenant-scoped search/filter/sort, real activity statistics, 30-row pagination, a desktop editor and mobile modal. Manual creation and editing have separate admin capabilities (`customer_create`, `customer_edit`). A canonical phone index prevents local/international Egyptian duplicates. Editing a phone preserves the stable customer ID and existing invoice snapshots. Online orders link customers only when their customer module is enabled. Statistics are aggregated in the database; customer lists are not downloaded in full.
+
+Sales charts show seven actual daily reports, ending on the selected day, in the business currency. Financial totals keep currencies separate. Day-close reports are real stored Z reports; event and audit lists show at most 50 records with full-day CSV export.
+
+Validation: `npm run test:dashboard`, fiscal and configuration regressions, production build, responsive browser tests at 320/390/1024/1440 pixels. Browser tests mock server writes while PostgreSQL fixtures verify authorization, atomic saves, disabled controls and snapshot preservation.

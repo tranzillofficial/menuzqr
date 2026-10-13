@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {phoneWithCountry} from '../lib/phone.ts';
+test('Phone country codes handle Egypt local, full international and Arabic digits without duplication',()=>{for(const p of ['01012345678','1012345678','201012345678','+20 1012345678','٠١٠١٢٣٤٥٦٧٨'])assert.equal(phoneWithCountry(p,'20'),'201012345678');assert.equal(phoneWithCountry('+44 7700900123','20'),'447700900123');assert.equal(phoneWithCountry('07700900123','44'),'447700900123');assert.equal(phoneWithCountry('','20'),'');});

@@ -39,17 +39,19 @@ export function OrdersBoard({
   waiterRequests,
   currency,
   retail = false,
+  initialTab = "open",
 }: {
   orders: OrderWithDetails[];
   waiterRequests: WaiterRequest[];
   currency: string;
   retail?: boolean;
+  initialTab?: "open"|"done";
 }) {
   const router = useRouter();
   const toast = useToast();
   const t = useT();
   const {locale}=useI18n();const ar=locale==="ar";
-  const [tab, setTab] = useState<"open" | "done">("open");
+  const [tab, setTab] = useState<"open" | "done">(initialTab);
   const [pending, startTransition] = useTransition();
 
   function run(fn: () => Promise<{ ok: boolean; message?: string } | null>) {
@@ -67,7 +69,7 @@ export function OrdersBoard({
   const shown = tab === "open" ? openOrders : doneOrders;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {waiterRequests.length > 0 && (
         <section className="rounded-2xl border border-brand-300 bg-brand-50 p-4 sm:p-5">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-brand-900">
@@ -113,9 +115,9 @@ export function OrdersBoard({
           <button
             key={value}
             type="button"
-            onClick={() => setTab(value)}
-            className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              tab === value ? "bg-white text-ink-900 shadow-sm" : "text-ink-600 hover:text-ink-900"
+            onClick={() => {setTab(value);router.push(`/dashboard/orders?tab=${value}`);}}
+            className={`flex-1 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
+              tab === value ? "bg-brand-600 text-white" : "text-ink-600 hover:text-ink-900"
             }`}
           >
             {label}
@@ -132,13 +134,13 @@ export function OrdersBoard({
           }
         />
       ) : (
-        <ul className="grid gap-3 lg:grid-cols-2">
+        <ul className="space-y-2">
           {shown.map((order) => {
             const next = retail && !["completed", "cancelled"].includes(order.status) ? { label: "orders.complete" as const, value: "completed" as const } : retail ? undefined : NEXT_STATUS[order.status as OrderStatus];
             return (
-              <li key={order.id} className="rounded-2xl border border-ink-200 bg-white p-4">
+              <li key={order.id} className="rounded-2xl bg-white p-3 ring-1 ring-black/5 sm:p-4">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="ltr-nums text-base font-semibold text-ink-900">
+                  <span className="ltr-nums text-sm font-semibold text-ink-900">
                     #{order.order_number}
                   </span>
                   <span className="rounded-lg bg-ink-100 px-2 py-0.5 text-xs font-medium text-ink-700">
@@ -155,9 +157,9 @@ export function OrdersBoard({
                 {order.customer_details?.address&&<p className="mt-1 text-xs text-ink-500">{order.customer_details.address}</p>}{order.customer_details?.code&&<p className="text-xs">#{order.customer_details.code}</p>}
                 {order.customer_details?.name&&<p className="mt-2 text-sm">{order.customer_details.name} · <span dir="ltr">{order.customer_details.phone}</span></p>}
                 {order.fiscal_state==="unpaid"&&<p className="mt-2 text-xs text-amber-800">{ar?"غير مدفوع — تأكيد الدفع يدويًا بعد المراجعة":"Unpaid — confirm payment manually after checking"}</p>}
-                <ul className="mt-3 space-y-1.5">
+                <details className="mt-3"><summary className="cursor-pointer text-[11px] text-ink-500">{ar?"عرض الأصناف":"View items"} ({order.order_items.length})</summary><ul className="mt-3 space-y-1.5">
                   {order.order_items.map((item) => (
-                    <li key={item.id} className="flex gap-2 text-sm">
+                    <li key={item.id} className="flex gap-2 text-xs">
                       <span className="font-medium text-ink-900">{item.quantity}×</span>
                       <span className="min-w-0 flex-1">
                         <span className="text-ink-900">{item.product_name}</span>
@@ -175,7 +177,7 @@ export function OrdersBoard({
                       </span>
                     </li>
                   ))}
-                </ul>
+                </ul></details>
 
                 {order.note && (
                   <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
@@ -197,8 +199,8 @@ export function OrdersBoard({
                         {t(next.label)}
                       </Button>
                     )}
-                    <Link className="rounded-lg border px-3 py-2 text-xs text-brand-700" href={`/dashboard/orders/${order.id}`}>Invoice / Journal</Link>
-                    <FinancialControls orderId={order.id} state={order.fiscal_state} legacyVoid={order.fiscal_state === "legacy" && !["completed","cancelled"].includes(order.status)} total={Number(order.total)} />
+                    <Link className="rounded-lg border px-3 py-2 text-xs text-brand-700" href={`/dashboard/orders/${order.id}`}>{ar?"الفاتورة / طباعة":"Invoice / print"}</Link>
+                    <details><summary className="cursor-pointer rounded-lg bg-ink-50 px-3 py-2 text-xs">{ar?"الدفع والاسترداد":"Payment & refund"}</summary><div className="mt-2"><FinancialControls orderId={order.id} state={order.fiscal_state} legacyVoid={order.fiscal_state === "legacy" && !["completed","cancelled"].includes(order.status)} total={Number(order.total)} /></div></details>
                   </div>
                 </div>
               </li>
