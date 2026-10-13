@@ -99,6 +99,7 @@ export function MenuExperience({
         </div>
       )}
 
+      {data.restaurant.business_kind!=="supermarket"&&Boolean(data.offers?.length)&&<a href={(data.menu_path??`/${data.restaurant.slug}/menu`).replace(/\/menu$/,'/offers')} className="block bg-brand-600 px-4 py-3 text-center text-sm font-semibold text-white">{locale==='ar'?'شاهد العروض الحالية ←':'View current offers →'}</a>}
       {data.restaurant.business_kind === "supermarket" ? <SupermarketMenu offersOnly={offersOnly}/> : <Theme />}
 
       <MenuContact/>

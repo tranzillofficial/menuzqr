@@ -122,6 +122,10 @@ export async function saveProductAction(
 
   const supabase = await createServerSupabase();
 
+  if(!featureEnabled(restaurant,'product_options')){
+    if(!id&&variants.length!==1)return fail('وحدات بيع إضافية غير متاحة لهذا الحساب.');
+    if(id){const stored=await supabase.from('product_variants').select('id,name,is_active').eq('product_id',id).eq('restaurant_id',restaurant.id);if(stored.error||stored.data?.length!==variants.length||variants.some(v=>!stored.data?.some(old=>old.id===v.id&&old.name===v.name&&old.is_active===v.is_active)))return fail('تعديل وحدات البيع غير متاح لهذا الحساب.');}
+  }
   if (categoryId) {
     const { data: cat } = await supabase
       .from("categories")
@@ -144,8 +148,7 @@ export async function saveProductAction(
     ...(form.has("name_en") ? {name_en: optionalStr(form, "name_en")?.slice(0,90) || null} : {}),
     ...(form.has("description") ? {description: optionalStr(form,"description")} : {}),
     ...(form.has("ingredients") ? {ingredients: optionalStr(form,"ingredients")} : {}),
-    image_url: imageUrl,
-    image_source: imageSource,
+    ...(featureEnabled(restaurant,"product_images")?{image_url: imageUrl,image_source: imageSource}:{}),
     is_active: bool(form, "is_active"),
   };
 
@@ -167,7 +170,7 @@ export async function saveProductAction(
       .eq("restaurant_id", restaurant.id);
     if (error) return error.code === '23505' ? fail('الباركود مستخدم لمنتج آخر في حسابك. / Barcode already used.', {barcode:'استخدم باركود مختلفًا / Use a different barcode.'}) : fail(error.message);
 
-    if (current.image_url && current.image_url !== imageUrl) {
+    if (featureEnabled(restaurant,"product_images") && current.image_url && current.image_url !== imageUrl) {
       await deleteAssetIfOwned(current.image_url, restaurant.id);
     }
   } else {

@@ -96,6 +96,8 @@ export function ProductEditor({
     featureEnabled(restaurant, "product_packaging") ||
     (!restaurant.enabled_modules?.includes("features_v3") &&
       isAlhamd(restaurant));
+  const options = featureEnabled(restaurant, "product_options");
+  const photos = featureEnabled(restaurant, "product_images");
   const supermarket = restaurant.business_kind === "supermarket";
   const formId = useId();
   const [deleting, startDelete] = useTransition();
@@ -369,24 +371,26 @@ export function ProductEditor({
         <div className="grid min-w-0 gap-3 lg:grid-cols-[250px_minmax(0,1fr)] lg:items-start">
           <aside className="min-w-0 space-y-3">
             {/* --- image --- */}
-            <section className="rounded-2xl bg-white p-3 ring-1 ring-black/[.04] sm:p-4">
-              <p className="mb-2 text-sm font-medium text-ink-800">
-                {t("products.photo")}
-              </p>
-              <ImagePicker
-                compact
-                restaurantId={restaurant.id}
-                allowLibrary={!packaging}
-                chooseSource={packaging || supermarket}
-                kind="product"
-                value={imageUrl}
-                searchSeed={name}
-                onChange={(url, source) => {
-                  setImageUrl(url);
-                  setImageSource(source);
-                }}
-              />
-            </section>
+            {photos && (
+              <section className="rounded-2xl bg-white p-3 ring-1 ring-black/[.04] sm:p-4">
+                <p className="mb-2 text-sm font-medium text-ink-800">
+                  {t("products.photo")}
+                </p>
+                <ImagePicker
+                  compact
+                  restaurantId={restaurant.id}
+                  allowLibrary={!packaging}
+                  chooseSource={packaging || supermarket}
+                  kind="product"
+                  value={imageUrl}
+                  searchSeed={name}
+                  onChange={(url, source) => {
+                    setImageUrl(url);
+                    setImageSource(source);
+                  }}
+                />
+              </section>
+            )}
 
             <section className="rounded-2xl bg-white p-3 ring-1 ring-black/[.04] sm:p-4">
               <h3 className="mb-3 text-sm font-semibold">
@@ -667,7 +671,7 @@ export function ProductEditor({
                   type="button"
                   size="sm"
                   variant="secondary"
-                  disabled={packaging && variants.length >= 2}
+                  disabled={!options || (packaging && variants.length >= 2)}
                   onClick={() =>
                     setVariants((list) => [
                       ...list,
@@ -682,7 +686,7 @@ export function ProductEditor({
                 </Button>
               </div>
 
-              {featureEnabled(restaurant, "product_weights") && (
+              {options && featureEnabled(restaurant, "product_weights") && (
                 <button
                   type="button"
                   className="mb-3 rounded-xl border border-brand-100 bg-brand-50 px-3 py-2 text-xs text-brand-700"
@@ -722,6 +726,7 @@ export function ProductEditor({
                           <select
                             required
                             value={variant.name}
+                            disabled={!options}
                             onChange={(e) =>
                               updateVariant(variant.key, {
                                 name: e.target.value,
@@ -770,6 +775,7 @@ export function ProductEditor({
                               max="9999"
                               step="1"
                               inputMode="numeric"
+                              readOnly={!options}
                               value={variant.boxes ?? ""}
                               onChange={(e) =>
                                 updateVariant(variant.key, {
@@ -793,6 +799,7 @@ export function ProductEditor({
                         <input
                           aria-label={`Size ${index + 1} name`}
                           value={variant.name}
+                          readOnly={!options}
                           onChange={(e) =>
                             updateVariant(variant.key, { name: e.target.value })
                           }
@@ -847,6 +854,7 @@ export function ProductEditor({
                     )}
 
                     <Switch
+                      disabled={!options}
                       checked={variant.is_active}
                       label={
                         packaging
@@ -863,7 +871,7 @@ export function ProductEditor({
                     <button
                       type="button"
                       aria-label={`Remove size ${index + 1}`}
-                      disabled={variants.length === 1}
+                      disabled={!options || variants.length === 1}
                       onClick={() =>
                         setVariants((list) =>
                           list.filter((v) => v.key !== variant.key),

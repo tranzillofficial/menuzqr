@@ -1,3 +1,5 @@
+import {activeOffers} from '@/lib/offers';
+import type {BusinessOffer} from '@/lib/types';
 import {featureEnabled} from "@/lib/business-features";
 import { activeOrders } from '@/lib/order-data';
 import { IncomingOrders } from '@/components/dashboard/IncomingOrders';
@@ -18,6 +20,9 @@ export default async function PosPage(){
  const db=await createServerSupabase();
  const [products,categories,tables]=await Promise.all([db.from('products').select('*,product_variants(*)').eq('restaurant_id',member.restaurant.id).eq('is_active',true).order('sort_order').order('id').range(0,40),db.from('categories').select('*').eq('restaurant_id',member.restaurant.id).eq('is_active',true).order('sort_order'),moduleEnabled(member.restaurant,'tables')?db.from('restaurant_tables').select('*').eq('restaurant_id',member.restaurant.id).eq('is_active',true).order('sort_order'):Promise.resolve({data:[],error:null})]);
  if(products.error||categories.error||tables.error) throw new Error('Could not load POS');
+ const offerResult=featureEnabled(member.restaurant,'offer_pos')?await db.from('business_offers').select('*').eq('restaurant_id',member.restaurant.id).eq('is_active',true):{data:[],error:null};
+ if(offerResult.error)throw new Error('Could not load POS offers');
+ const offers=activeOffers((offerResult.data??[]) as BusinessOffer[],undefined,member.restaurant);
  const incoming=moduleEnabled(member.restaurant,"orders")?await activeOrders(member.restaurant.id,true):[];
- return <>{moduleEnabled(member.restaurant,"orders")&&<IncomingOrders orders={incoming} retail={member.restaurant.enabled_modules != null && !moduleEnabled(member.restaurant,"tables")}/>}<PosScreen printingEnabled={featureEnabled(member.restaurant,"receipt_printing")} barcodeEnabled={featureEnabled(member.restaurant,"product_barcode")} tablesEnabled={moduleEnabled(member.restaurant,"tables")} restaurantId={member.restaurant.id} restaurantName={member.restaurant.name} currency={member.restaurant.currency} initialHasMore={(products.data??[]).length>40} products={(products.data??[]).slice(0,40) as ProductWithVariants[]} categories={(categories.data??[]) as Category[]} tables={(tables.data??[]) as RestaurantTable[]} taxSettings={member.restaurant} /></>;
+ return <>{moduleEnabled(member.restaurant,"orders")&&<IncomingOrders orders={incoming} retail={member.restaurant.enabled_modules != null && !moduleEnabled(member.restaurant,"tables")}/>}<PosScreen offers={offers} printingEnabled={featureEnabled(member.restaurant,"receipt_printing")} barcodeEnabled={featureEnabled(member.restaurant,"product_barcode")} tablesEnabled={moduleEnabled(member.restaurant,"tables")} restaurantId={member.restaurant.id} restaurantName={member.restaurant.name} currency={member.restaurant.currency} initialHasMore={(products.data??[]).length>40} products={(products.data??[]).slice(0,40) as ProductWithVariants[]} categories={(categories.data??[]) as Category[]} tables={(tables.data??[]) as RestaurantTable[]} taxSettings={member.restaurant} /></>;
 }

@@ -3,7 +3,7 @@ export type PosReceipt = {
   testPrint?: boolean; orderId?: string; documentNumber?: string; originalDocumentNumber?: string; currency?: string; fiscal?: FiscalSnapshot | null; paidAt?: string | null; creditNote?: boolean; creditDate?: string;
   number: number; total: number; received: number; tableLabel: string | null;
   payment: 'cash' | 'card' | 'transfer'; fiscalState?: string; createdAt: string; note: string;
-  lines: { variantId: string; name: string; variant: string; price: number; quantity: number; gross?: number; net?: number; vat?: number; rate?: number; code?: string }[];
+  lines: { variantId: string; name: string; variant: string; price: number; quantity: number; baseTotal?: number; discount?: number; gross?: number; net?: number; vat?: number; rate?: number; code?: string }[];
 };
 export type PrinterSettings = { token: string; printer: string; width: 58 | 80 };
 export const DEFAULT_PRINTER: PrinterSettings = { token: '', printer: '', width: 80 };
@@ -68,13 +68,15 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
   if (fiscal?.customer?.vat_number) wrap(`Customer VAT: ${fiscal.customer.vat_number}`);
   for (const line of receipt.lines) {
     const price = amount(fiscal && fiscal.mode !== 'egypt' ? (line.net ?? 0)/line.quantity : line.price);
-    const total = amount(sign * (fiscal?.mode === 'egypt' ? line.price * line.quantity : line.gross ?? line.price * line.quantity));
+    const total = amount(sign * (fiscal?.mode === 'egypt' ? line.baseTotal ?? line.price * line.quantity : line.gross ?? line.price * line.quantity));
     // Give the product name the full printable width on every roll size.
     wrap(`${line.name}${line.variant && line.variant !== 'Regular' ? ` (${line.variant})` : ''}`, true);
-    wrap(`${line.quantity} × ${price} = ${total}`, true, false, 'right', 'ltr');
+    wrap((line.discount??0)>0 ? `${line.quantity} × ${amount(line.price)} | ${label('الإجمالي','Total')}: ${total}` : `${line.quantity} × ${price} = ${total}`, true, false, 'right', 'ltr');
+    if ((line.discount??0)>0) wrap(`${label('خصم العرض','Offer discount')}: -${amount(sign*line.discount!)}`);
     if (fiscal?.registered && fiscal.mode !== 'egypt') wrap(`${line.code ?? ''} ${line.rate ?? 0}% | VAT ${money(sign * (line.vat ?? 0))}`);
   }
 
+  if (fiscal?.discount_total) wrap(`${label('خصم العروض','Offer discount')}: -${money(sign * fiscal.discount_total)}`);
   if (fiscal?.delivery_fee) wrap(`${label('التوصيل','Delivery')}: ${money(sign * fiscal.delivery_fee)}`);
   if (fiscal?.registered) wrap(`${label('الإجمالي قبل الضريبة','Subtotal')}: ${money(sign * fiscal.net)}`);
   if (fiscal?.registered) wrap(`${label('الضريبة','VAT')}: ${money(sign * fiscal.vat)}`);

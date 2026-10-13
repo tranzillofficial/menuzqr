@@ -21,3 +21,17 @@ Inventory tracks each selling variant separately. A trusted financial-event trig
 Storefront delivery/payment/contact fields are additive. Supermarket delivery charges and free-delivery thresholds are calculated on the server and frozen in fiscal snapshots. Existing receipts remain unchanged. Public supermarket catalogs fetch 24 products per page and dashboard product management fetches 40. Search runs against the account in Postgres, not just the current page. Product pages are cached for 30 seconds with per-business invalidation on product/category changes; immutable image caching remains enabled. R2 migration is deferred.
 
 The existing web-push service worker handles notifications with closed tabs. Production requires stable VAPID public/private keys and each phone's notification permission and subscription. Device power management and browser policies still affect delivery.
+
+## QR, products, offers and invoices (2026-10-13)
+
+Per-account capabilities now include product images/options; QR menu/WhatsApp/tables/design/exports; offer bundle/discount/image/schedule/barcode and automatic POS pricing (`offer_pos`). Master admin can allow these in activity templates and override them for each account. Table QR additionally requires the tables module; supermarket defaults do not enable tables. Existing v3 accounts retain their previous flags, with new capabilities seeded only under their already-enabled parent modules.
+
+QR preferences are saved independently per type in `business_qr_settings`, with tenant RLS and atomic per-kind updates. Built-in simple/cream/dark themes and active assigned QR templates are supported. Export PNG includes the label; SVG exports the code. WhatsApp uses normalized international numbers.
+
+Bundle/discount offers store variant IDs and integer quantities; the database validates current active tenant products and derives prices. Promotion cards do not discount invoices. In POS, complete bundles/discount recipes apply automatically when `offer_pos` is enabled. The highest saving per complete recipe takes priority, ties use offer ID, and the maximum complete repetitions are consumed before considering the next recipe. A unit participates in only one offer. This deterministic priority is not a global optimization across every possible combination of overlapping offers.
+
+Checkout recalculates offers inside the fiscal transaction using locked product prices and active/current offer records. Fixed bundle prices remain fixed; percent/fixed discounts use current prices. No client price or discount is trusted. Discounts are allocated in cents before existing VAT calculations. Original unit prices, discounted base totals, allocations, offer names and repetitions are frozen in invoice lines/snapshots. Retry, refund and stock accounting use the recorded transaction. Historical invoices remain unchanged. Automatic pricing currently applies to POS checkout, not customer online ordering.
+
+Invoices use 30-row tenant-scoped pagination with number/customer, date, state and payment filters. Dates use the business timezone. List, detail, export and thermal receipt show saved offer discounts.
+
+Verification: `npm run test:offers`, `npm run test:tax`, `npm run test:configuration`, production build; responsive real-component browser fixtures at 320/390/1440 pixels for QR, offers, POS and invoices. Browser fixtures mock server writes and printer hardware.

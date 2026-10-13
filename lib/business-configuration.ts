@@ -8,8 +8,9 @@ export function resolveConfiguration(type:Pick<BusinessType,'default_modules'|'d
  for(const override of overrides)if(CONFIGURATION_KEYS.includes(override.feature_key as BusinessModule|BusinessFeature)){if(override.enabled)flags.add(override.feature_key);else flags.delete(override.feature_key);}
  const unavailable=overrides.filter(o=>o.enabled&&(BUSINESS_MODULES.includes(o.feature_key as BusinessModule)?type.available_modules&&!type.available_modules.includes(o.feature_key):type.available_capabilities&&!type.available_capabilities.includes(o.feature_key)));
  const modules=BUSINESS_MODULES.filter(id=>flags.has(id));
- const capabilities=BUSINESS_FEATURES.filter(id=>flags.has(id)&&flags.has(FEATURE_REGISTRY[id].module));
+ const capabilities=BUSINESS_FEATURES.filter(id=>flags.has(id)&&flags.has(FEATURE_REGISTRY[id].module)&&(id!=='qr_tables'||flags.has('tables')));
  const errors:string[]=unavailable.map(o=>`${o.feature_key} is not available for this business type`);
+ if(overrides.some(o=>o.feature_key==='qr_tables'&&o.enabled)&&!flags.has('tables'))errors.push('qr_tables requires tables');
  if(flags.has('service_calls')&&!flags.has('tables'))errors.push('service_calls requires tables');
  for(const override of overrides)if(override.enabled&&BUSINESS_FEATURES.includes(override.feature_key as BusinessFeature)&&!flags.has(FEATURE_REGISTRY[override.feature_key as BusinessFeature].module))errors.push(`${override.feature_key} requires ${FEATURE_REGISTRY[override.feature_key as BusinessFeature].module}`);
  return {modules,capabilities,errors,enabled_modules:[...modules,...capabilities,'features_v2','features_v3']};

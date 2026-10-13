@@ -1,4 +1,6 @@
 "use client";
+import {pricePosOffers} from '@/lib/pos-offers';
+import type {BusinessOffer} from '@/lib/types';
 import {ALHAMD_ID,alhamdUnitLabel} from "@/lib/alhamd-units";
 
 import { useEffect, useRef, useState, useTransition } from 'react';
@@ -18,9 +20,9 @@ import type { ProductWithVariants, Category, RestaurantTable } from '@/lib/types
 
 type Line = { variantId: string; name: string; variant: string; price: number; quantity: number; basePrice: number; rate: number };
 
-export function PosScreen({ restaurantId, restaurantName, currency, products, categories, tables, taxSettings, tablesEnabled = true, barcodeEnabled = false, printingEnabled = true, initialHasMore = false }: {
+export function PosScreen({ restaurantId, restaurantName, currency, products, categories, tables, taxSettings, tablesEnabled = true, barcodeEnabled = false, printingEnabled = true, initialHasMore = false, offers = [] }: {
   restaurantId: string; restaurantName: string; currency: string; products: ProductWithVariants[];
-  initialHasMore?:boolean; printingEnabled?:boolean; tablesEnabled?: boolean; barcodeEnabled?: boolean; categories: Category[]; tables: RestaurantTable[]; taxSettings: TaxSettings;
+  offers?:BusinessOffer[]; initialHasMore?:boolean; printingEnabled?:boolean; tablesEnabled?: boolean; barcodeEnabled?: boolean; categories: Category[]; tables: RestaurantTable[]; taxSettings: TaxSettings;
 }) {
   const { locale } = useI18n();
   const label = (ar: string, en: string) => locale === 'ar' ? ar : en;
@@ -47,7 +49,8 @@ export function PosScreen({ restaurantId, restaurantName, currency, products, ca
   const printer = useRef<ReceiptPrinterHandle>(null);
   const request = useRef<string | null>(null);
   const money = (value: number) => formatMoney(value, currency);
-  const totals = orderTaxAmounts(cart.map(line => ({ price: line.basePrice, quantity: line.quantity, rate: line.rate })), taxSettings);
+  const quote = pricePosOffers(cart,offers);
+  const totals = orderTaxAmounts(quote.lines.map(line => ({ price: line.baseTotal, quantity: 1, rate: line.rate })), taxSettings);
   const total = totals.gross;
   const vat = totals.vat;
   const grossPrice = (price: number, product: ProductWithVariants) => displayPrice(Number(price), product.vat_code, taxSettings);
@@ -129,11 +132,12 @@ export function PosScreen({ restaurantId, restaurantName, currency, products, ca
       {!cart.length ? <div className="rounded-xl border border-dashed border-ink-200 px-4 py-10 text-center text-sm text-ink-500">{label('اختار المنتجات وهتظهر هنا', 'Added products appear here')}</div> :
         <ul data-testid="cart-lines" className="max-h-[38dvh] space-y-2 overflow-y-auto overscroll-contain">
           {cart.map(line => <li key={line.variantId} className="rounded-xl bg-ink-50 p-3">
-            <div className="flex items-start justify-between gap-2"><div className="min-w-0"><p className="text-sm font-medium">{line.name}</p><p className="text-xs text-ink-500">{line.variant}</p></div><strong className="shrink-0 text-sm">{money(taxSettings.prices_include_vat || taxSettings.menu_prices_include_vat !== false ? taxAmounts(line.basePrice, line.quantity, line.rate, taxSettings.prices_include_vat).gross : line.basePrice * line.quantity)}</strong></div>
+            <div className="flex items-start justify-between gap-2"><div className="min-w-0"><p className="text-sm font-medium">{line.name}</p><p className="text-xs text-ink-500">{line.variant}</p></div><strong className="shrink-0 text-sm">{money(taxAmounts(quote.lines.find(i=>i.variantId===line.variantId)!.baseTotal, 1, line.rate, taxSettings.prices_include_vat).gross)}</strong></div>
             <div className="mt-2 flex items-center gap-2"><button type="button" aria-label={`${label('تقليل كمية', 'Decrease')} ${line.name}`} onClick={() => quantity(line.variantId, -1)} className="size-9 rounded-lg border border-ink-200 bg-white">−</button><span className="min-w-6 text-center text-sm font-semibold">{line.quantity}</span><button type="button" disabled={line.quantity >= 99} aria-label={`${label('زيادة كمية', 'Increase')} ${line.name}`} onClick={() => quantity(line.variantId, 1)} className="size-9 rounded-lg border border-ink-200 bg-white disabled:opacity-40">+</button><button type="button" onClick={() => { changed(); setCart(previous => previous.filter(item => item.variantId !== line.variantId)); }} className="ms-auto px-2 py-2 text-xs text-red-600">{label('حذف', 'Remove')}</button></div>
           </li>)}
         </ul>}
       <input value={note} onChange={event => { setNote(event.target.value); changed(); }} maxLength={400} placeholder={label('ملاحظة للطلب', 'Order note')} aria-label={label('ملاحظة للطلب', 'Order note')} className="h-11 w-full rounded-xl border border-ink-200 px-3 text-sm" />
+      {quote.discount>0&&<div className="rounded-xl bg-brand-50 p-3 text-xs text-brand-800"><p className="flex justify-between font-semibold"><span>{label('خصم العروض','Offer discount')}</span><span data-testid="offer-discount">−{money(quote.discount)}</span></p>{quote.applied.map(o=><p key={o.id} className="mt-1">{o.title} × {o.count}</p>)}<p className="mt-2">{label('الخصم على أسعار الأصناف قبل إضافة الضريبة إن وجدت.','Discount on item prices before any added VAT.')}</p></div>}
       <div className="space-y-1 text-sm"><p className="flex justify-between"><span>{label('قبل الضريبة', 'Subtotal')}</span><span>{money(total - vat)}</span></p><p className="flex justify-between"><span>VAT</span><span>{money(vat)}</span></p></div>
       {taxSettings.vat_registered && ['uk','uae'].includes(taxSettings.tax_mode) && <div className="space-y-2 text-sm">
         <label className="flex gap-2"><input type="checkbox" checked={fullInvoice} onChange={e => { setFullInvoice(e.target.checked); changed(); }} />{label('فاتورة ضريبية كاملة', 'Full VAT invoice')}</label>

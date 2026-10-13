@@ -73,8 +73,10 @@ export const getPublicMenu = cache(async function getPublicMenu(
   const offerPage=categoryFilter==='__offers';
   const offerResult=moduleEnabled(restaurant,'offers')?await supabase.from('business_offers').select('*').eq('restaurant_id',restaurant.id).eq('is_active',true).order('sort_order').order('created_at',{ascending:false}):{data:[],error:null};
   if(offerResult.error)throw Error('Could not load offers');
-  const currentOffers=activeOffers(offerResult.data??[]);
+  let currentOffers=activeOffers(offerResult.data??[],Date.now(),restaurant);
   const offeredIds=[...new Set(currentOffers.flatMap(o=>o.product_ids))];
+  if(offeredIds.length){const linked=await supabase.from('products').select('id,category_id').eq('restaurant_id',restaurant.id).eq('is_active',true).in('id',offeredIds);if(linked.error)throw Error('Could not validate offer visibility');const allowed=new Set((linked.data??[]).filter(p=>!p.category_id||visibleIds.includes(p.category_id)).map(p=>p.id));currentOffers=currentOffers.filter(o=>o.product_ids.every(id=>allowed.has(id)));}
+
   let productQuery=supabase.from('products').select('*, product_variants(id,restaurant_id,product_id,name,name_en,price,image_url,sort_order,is_active,created_at)',{count:market?'exact':undefined}).eq('restaurant_id',restaurant.id).eq('is_active',true).order('sort_order').order('created_at').order('id');
   if(market){
     if(categoryFilter && visibleIds.includes(categoryFilter))productQuery=productQuery.in('category_id',[...categoryDescendants(categories??[],categoryFilter)].filter(id=>visibleIds.includes(id)));
@@ -84,7 +86,7 @@ export const getPublicMenu = cache(async function getPublicMenu(
     if(needle)productQuery=productQuery.or(`name.ilike.%${needle}%,barcode.ilike.%${needle}%`);
     productQuery=offerPage?productQuery.in("id",offeredIds.length?offeredIds:["00000000-0000-0000-0000-000000000000"]).limit(1000):productQuery.range((page-1)*pageSize,page*pageSize-1);
   }
-  const [{ data: products,error:productError,count:productCount }, {data: payments}, {data: offers,error:offerError}] = await Promise.all([
+  const [{ data: products,error:productError,count:productCount }, {data: payments}, {error:offerError}] = await Promise.all([
     market ? unstable_cache(async()=>await productQuery,["market-products-v2",restaurant.id,slug,String(page),categoryFilter,searchInput,visibleIds.join(",")],{revalidate:30,tags:[`menu-products:${slug}`]})() : productQuery,
     supabase.from("restaurant_settings").select("remote_ordering_enabled,cash_wallet,instapay_address,payment_whatsapp,delivery_fee,free_delivery_above,payment_details,location_url,facebook_url,instagram_url,website_url").eq("restaurant_id",restaurant.id).maybeSingle(),
     Promise.resolve(offerResult),
@@ -160,7 +162,7 @@ export const getPublicMenu = cache(async function getPublicMenu(
       ...(market&&!offerPage?{pagination:{page,pageSize,total:productCount??0,query:searchInput.slice(0,80),category:visibleIds.includes(categoryFilter)||categoryFilter==="uncategorised"?categoryFilter:""}}:{}),
       menu_path:domain?"/menu":`/${slug}/menu`,
       payments: payments ?? undefined,
-      offers: preview ? [] : activeOffers(offers ?? []),
+      offers: preview ? [] : currentOffers,
       restaurant: { enabled_modules: restaurant.enabled_modules, business_kind: restaurant.business_kind, business_timezone:restaurant.business_timezone, id: restaurant.id, name: restaurant.name, slug: restaurant.slug, description: restaurant.description, logo_url: restaurant.logo_url, cover_url: restaurant.cover_url, phone: restaurant.phone, address: restaurant.address, currency: restaurant.currency, language: restaurant.language, menu_theme: restaurant.menu_theme, ordering_enabled: restaurant.ordering_enabled, waiter_calls_enabled: restaurant.waiter_calls_enabled, prices_include_vat: restaurant.prices_include_vat, menu_prices_include_vat: restaurant.menu_prices_include_vat, vat_registered: restaurant.vat_registered, tax_mode: restaurant.tax_mode, tax_rates: restaurant.tax_rates },
       categories: market || moduleEnabled(restaurant,"subcategories") ? grouped : grouped.filter((c) => c.products.length > 0),
     },
