@@ -47,3 +47,9 @@ Customer management has tenant-scoped search/filter/sort, real activity statisti
 Sales charts show seven actual daily reports, ending on the selected day, in the business currency. Financial totals keep currencies separate. Day-close reports are real stored Z reports; event and audit lists show at most 50 records with full-day CSV export.
 
 Validation: `npm run test:dashboard`, fiscal and configuration regressions, production build, responsive browser tests at 320/390/1024/1440 pixels. Browser tests mock server writes while PostgreSQL fixtures verify authorization, atomic saves, disabled controls and snapshot preservation.
+
+## Public pricing (2026-10-13)
+
+The public landing page quotes Egyptian pounds in both languages: lifetime QR menu activation EGP 800 once; POS EGP 100/month or 1,000/year; Business EGP 250/month or 2,500/year; Pro EGP 400/month or 4,000/year. Annual business plans cost ten monthly payments. QR activation is separate from the business subscription and remains one-time when the billing toggle changes.
+
+Business includes POS, online ordering, customers, offers/bundles and inventory. Pro adds team roles and activity-specific table/service features plus account customization. A branded domain is a separate add-on from EGP 1,200/year, subject to name/extension availability and final quote. These new public Business/Pro selections initiate plan-specific WhatsApp enquiries; feature assignment and payment confirmation remain managed by admin. Existing billing records and account permissions are preserved.

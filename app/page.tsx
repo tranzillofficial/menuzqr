@@ -1,5 +1,5 @@
 import { SiteFooter } from "@/components/SiteFooter";
-import { localizedPricing } from "@/lib/pricing";
+import {PricingSection} from "@/components/PricingSection";
 import Image from "next/image";
 import { LinkButton } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icons";
@@ -12,8 +12,7 @@ import type { TranslationKey } from "@/lib/i18n";
 export default async function HomePage() {
   const [user, platform, t] = await Promise.all([getUser(), getPlatformSettings(), getT()]);
   const locale = await getLocale();
-  const pricing = localizedPricing(platform, locale);
-  const price = pricing.format(pricing.menu);
+  const price = locale==="ar"?"800 جنيه":"EGP 800";
 
   const features: Array<{ icon: keyof typeof Icon; title: TranslationKey; body: TranslationKey }> = [
     { icon: "palette", title: "landing.f1Title", body: "landing.f1Body" },
@@ -30,15 +29,6 @@ export default async function HomePage() {
     "landing.step3",
     "landing.step4",
     "landing.step5",
-  ];
-
-  const perks: TranslationKey[] = [
-    "landing.pricingP1",
-    "landing.pricingP2",
-    "landing.pricingP3",
-    "landing.pricingP4",
-    "landing.pricingP5",
-    "landing.pricingP6",
   ];
 
   const faqs: Array<[TranslationKey, TranslationKey]> = [
@@ -166,52 +156,11 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* ----------------------------------------------------------- pricing */}
-        <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
-          <div className="grid gap-10 lg:grid-cols-[1fr_420px] lg:items-start">
-            <div>
-              <h2 className="font-serif text-3xl text-ink-900 sm:text-4xl">
-                {t("landing.faqTitle")}
-              </h2>
-              <div className="mt-6 divide-y divide-ink-200 border-y border-ink-200">
-                {faqs.map(([question, answer]) => (
-                  <details key={question} className="group py-4">
-                    <summary className="flex cursor-pointer list-none items-center gap-3 text-base font-medium text-ink-900">
-                      <span className="flex-1">{t(question)}</span>
-                      <span className="grid size-6 shrink-0 place-items-center rounded-full border border-ink-200 text-ink-500 transition-transform group-open:rotate-45">
-                        <Icon.plus className="size-3.5" />
-                      </span>
-                    </summary>
-                    <p className="mt-3 text-sm leading-relaxed text-ink-600">{t(answer)}</p>
-                  </details>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-ink-200 bg-white p-7 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-              <p className="text-sm font-medium text-ink-500">{t("landing.pricingLabel")}</p>
-              <p className="mt-2 flex items-baseline gap-2 font-serif text-5xl text-ink-900">
-                <span>{price}</span>
-                <span className="font-sans text-base text-ink-500">
-                  {t("landing.pricingUnit")}
-                </span>
-              </p>
-
-              {platform.offerEnabled && <p className="mt-3 text-sm text-brand-700"><span className="me-2 line-through text-ink-400">{pricing.format(pricing.original)}</span>{locale === "ar" ? "عرض لفترة محدودة" : "Limited time offer"}</p>}
-              <ul className="mt-6 space-y-2.5 text-sm text-ink-700">
-                {perks.map((perk) => (
-                  <li key={perk} className="flex items-start gap-2">
-                    <Icon.check className="mt-0.5 size-4 shrink-0 text-emerald-600" />
-                    {t(perk)}
-                  </li>
-                ))}
-              </ul>
-
-              <LinkButton href="/signup" size="lg" className="mt-7 w-full">
-                {t("landing.pricingCta")}
-              </LinkButton>
-              <p className="mt-3 text-center text-xs text-ink-500">{t("landing.pricingNote")}</p>
-            </div>
+        <PricingSection locale={locale} whatsappUrl={platform.supportWhatsappUrl} signedIn={Boolean(user)} />
+        <section className="mx-auto max-w-3xl px-4 py-14 sm:px-6 sm:py-20">
+          <h2 className="text-2xl font-semibold sm:text-3xl">{t("landing.faqTitle")}</h2>
+          <div className="mt-6 divide-y divide-ink-100">
+            {faqs.map(([question,answer])=><details key={question} className="group py-4"><summary className="flex cursor-pointer list-none items-center gap-3 text-sm font-medium"><span className="flex-1">{t(question)}</span><Icon.plus className="size-4 shrink-0 text-ink-400 transition-transform group-open:rotate-45"/></summary><p className="mt-3 text-sm leading-7 text-ink-500">{t(answer)}</p></details>)}
           </div>
         </section>
 

@@ -8,8 +8,8 @@ export async function SiteHeader({ brandName, signedIn }: { brandName: string; s
   const [t, locale] = await Promise.all([getT(), getLocale()]);
   const ar = locale === 'ar';
   const actions = signedIn
-    ? [{ href: '/dashboard', label: ar ? 'لوحة التحكم' : 'Dashboard', primary: true }]
-    : [{ href: '/login', label: t('landing.signIn'), primary: false }, { href: '/signup', label: t('landing.getStarted'), primary: true }];
+    ? [{ href: "/#pricing", label: ar ? "الأسعار" : "Pricing", primary: false },{ href: '/dashboard', label: ar ? 'لوحة التحكم' : 'Dashboard', primary: true }]
+    : [{ href: "/#pricing", label: ar ? "الأسعار" : "Pricing", primary: false },{ href: '/login', label: t('landing.signIn'), primary: false }, { href: '/signup', label: t('landing.getStarted'), primary: true }];
   return <header className={styles.header}>
     <div className={styles.headerRow}>
       <Link href="/" className={styles.brand}>
