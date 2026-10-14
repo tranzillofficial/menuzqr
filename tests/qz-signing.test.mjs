@@ -1,3 +1,5 @@
+import {readFileSync} from 'node:fs';
+import {QZ_CERTIFICATE} from '../lib/qz-certificate.ts';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {generateKeyPairSync, createHash, verify} from 'node:crypto';
@@ -22,3 +24,5 @@ test('signature matches QZ SHA256-hex then RSA-SHA512 and rejects tampering',()=
  assert.equal(verify('RSA-SHA512',hash(raw),publicKey,Buffer.from(signature,'base64')),true);
  assert.equal(verify('RSA-SHA512',hash(raw+' '),publicKey,Buffer.from(signature,'base64')),false);
 });
+
+test('browser certificate is identical to the installer certificate',()=>{assert.equal(QZ_CERTIFICATE,readFileSync(new URL('../public/printing/menuzqr.crt',import.meta.url),'utf8'));});

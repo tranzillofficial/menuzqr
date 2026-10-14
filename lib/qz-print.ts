@@ -1,15 +1,10 @@
+import {QZ_CERTIFICATE} from './qz-certificate';
 let connecting: Promise<void> | null = null;
 let configured = false;
 export async function qzConnection() {
   const {default:qz} = await import('qz-tray');
   if (!configured) {
-    qz.security.setCertificatePromise(async (resolve, reject) => {
-      try {
-        const response = await fetch('/printing/menuzqr.crt', {cache:'no-store'});
-        if (!response.ok) throw new Error('Print certificate unavailable');
-        resolve(await response.text());
-      } catch (error) { reject(error); }
-    });
+    qz.security.setCertificatePromise(resolve => resolve(QZ_CERTIFICATE));
     qz.security.setSignatureAlgorithm('SHA512');
     // Delegate hashing to the server so it can validate the full operation before
     // signing. QZ only passes this callback's result to setSignaturePromise.
