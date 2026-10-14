@@ -16,3 +16,8 @@ Corresponding release/source: https://github.com/qzind/tray/releases/tag/v2.1.6
 Source archive: https://github.com/qzind/tray/archive/refs/tags/v2.1.6.zip
 Liberica includes its original license and third-party notices in the jre folder.
 Java release and sources: https://github.com/bell-sw/Liberica/releases/tag/8u502%2B9
+
+Version 1.1 authorizes requests signed by MenuzQR Print on this computer.
+Only the public MenuzQR certificate is installed; the signing key stays on the
+server. The site requires an authenticated cashier and only signs receipt image
+printing and printer discovery. Other sites do not gain anonymous printer access.

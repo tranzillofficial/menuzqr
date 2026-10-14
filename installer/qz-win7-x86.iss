@@ -1,7 +1,7 @@
 [Setup]
 AppId={{7F627AF7-2C71-47E3-9696-45807B7C58A7}
 AppName=MenuzQR QZ Windows 7 Compatibility
-AppVersion=1.0.0
+AppVersion=1.1.0
 AppPublisher=MenuzQR
 DefaultDirName={autopf32}\QZ Tray
 DisableDirPage=yes
@@ -18,6 +18,7 @@ UninstallDisplayIcon={app}\qz-tray.exe
 InfoBeforeFile=qz-win7-notice.txt
 
 [Files]
+Source: "..\public\printing\menuzqr.crt"; DestDir: "{app}"; DestName: "override.crt"; Flags: ignoreversion
 Source: "..\dist\qz-win7\jre\*"; DestDir: "{app}\jre"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\dist\qz-win7\qz-setup.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
 Source: "qz-win7-notice.txt"; DestDir: "{app}"; Flags: ignoreversion
@@ -28,6 +29,16 @@ Filename: "{app}\uninstall.exe"; Parameters: "/S"; Flags: runhidden waituntilter
 [Code]
 function SetEnvironmentVariable(Name, Value: String): Boolean;
   external 'SetEnvironmentVariableW@kernel32.dll stdcall';
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var Code: Integer;
+begin
+  Result := '';
+  if FileExists(ExpandConstant('{app}\qz-tray.jar')) and FileExists(ExpandConstant('{app}\jre\bin\java.exe')) then begin
+    if not Exec(ExpandConstant('{app}\jre\bin\java.exe'), '-jar "' + ExpandConstant('{app}\qz-tray.jar') + '" preinstall', '', SW_HIDE, ewWaitUntilTerminated, Code) then
+      Result := 'Please close QZ Tray and retry installation.';
+  end;
+end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 var
@@ -46,5 +57,9 @@ begin
       RaiseException('QZ installation did not produce the application. Check the setup log.');
     if not FileExists(ExpandConstant('{app}\qz-tray.properties')) then
       RaiseException('QZ local certificate configuration is missing. Check the setup log.');
+    if not Exec(ExpandConstant('{app}\jre\bin\java.exe'), '-jar "' + ExpandConstant('{app}\qz-tray.jar') + '" --allow "' + ExpandConstant('{app}\override.crt') + '"', ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, Code) then
+      RaiseException('Could not authorize MenuzQR printing.');
+    if Code <> 0 then
+      RaiseException('MenuzQR authorization failed. Error: ' + IntToStr(Code));
   end;
 end;
