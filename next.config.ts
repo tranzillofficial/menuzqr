@@ -65,6 +65,10 @@ const nextConfig: NextConfig = {
         source: "/images/supermarket-categories/:image",
         headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
       },
+      {
+        source: "/images/product-samples/:image",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
     ];
   },
 };
