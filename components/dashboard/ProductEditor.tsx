@@ -15,6 +15,10 @@ import {
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ProductBarcodeScanner } from "./ProductBarcodeScanner";
+import {lookupSupermarketDraft} from "@/lib/actions/supermarket-catalog";
+import {normalizeBarcode} from "@/lib/barcode";
+import {SUPERMARKET_SECTIONS,type SupermarketItem} from "@/lib/supermarket-catalog";
+import {SupermarketDraftSuggestions,SupermarketSuggestionRows} from "./SupermarketDraftSuggestions";
 import { ConfirmButton } from "@/components/ui/ConfirmDialog";
 import { deleteProductAction } from "@/lib/actions/products";
 import { saveProductAction } from "@/lib/actions/products";
@@ -98,7 +102,8 @@ export function ProductEditor({
       isAlhamd(restaurant));
   const options = featureEnabled(restaurant, "product_options");
   const photos = featureEnabled(restaurant, "product_images");
-  const supermarket = restaurant.business_kind === "supermarket";
+  const supermarket = ["supermarket","market"].includes(restaurant.business_kind??"");
+  const catalogEnabled=moduleEnabled(restaurant,"catalog");
   const formId = useId();
   const [deleting, startDelete] = useTransition();
   const [state, formAction, saving] = useActionState(saveProductAction, null);
@@ -140,6 +145,43 @@ export function ProductEditor({
 
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [suggestionsHidden, setSuggestionsHidden] = useState(false);
+
+  const lookupSequence=useRef(0);
+  const [barcodeLoading,setBarcodeLoading]=useState(false);
+  const [barcodeMessage,setBarcodeMessage]=useState("");
+  const [barcodeMatches,setBarcodeMatches]=useState<SupermarketItem[]>([]);
+  useEffect(()=>()=>{lookupSequence.current++;},[]);
+
+  function applySupermarketItem(item:SupermarketItem){
+    lookupSequence.current++;
+    setBarcodeLoading(false);
+    setName(item.name_ar);
+    if(photos&&item.supermarket_catalog_images?.[0]?.url){setImageUrl(item.supermarket_catalog_images[0].url);setImageSource("library");}
+    const section=SUPERMARKET_SECTIONS[item.category as keyof typeof SUPERMARKET_SECTIONS];
+    const sectionName=section?.[locale==='ar'?0:1]??"";
+    const match=categoryList.find(c=>section?.some(value=>c.name.trim()===value||c.name_en?.trim()===value));
+    setCategoryId(match?.id??"");setCatalogSectionName(match?"":sectionName);
+    const unit=[item.size,item.size_unit].filter(v=>v!==null&&v!==undefined&&v!=='').join(' ');
+    if(unit)setVariants(previous=>previous.length===1?[{...previous[0],name:unit}]:previous);
+    setSuggestionsHidden(true);setBarcodeMatches([]);
+    setBarcodeMessage(label("تم ملء بيانات المنتج. راجع العبوة وحدد سعر متجرك؛ الباركود الذي أدخلته محفوظ.","Details filled. Check the pack and set your selling price; your entered barcode is retained."));
+  }
+
+  async function findScannedProduct(raw:string){
+    const code=normalizeBarcode(raw);setBarcode(code);
+    if(!supermarket||product||!catalogEnabled||!code)return;
+    const request=++lookupSequence.current;setBarcodeLoading(true);setBarcodeMessage("");setBarcodeMatches([]);
+    try{
+      const result=await lookupSupermarketDraft(code,'barcode');
+      if(request!==lookupSequence.current)return;
+      if(result.error){setBarcodeMessage(result.error);return;}
+      if(result.items.length===1){applySupermarketItem(result.items[0]);return;}
+      setBarcodeMatches(result.items);
+      setBarcodeMessage(result.items.length?label("أكثر من نتيجة لهذا الباركود؛ اختار المنتج والعبوة المطابقين.","Multiple matches. Choose the correct product and pack."):label("الباركود مش موجود في المنيو العام. اكتب اسم المنتج لعرض المشابه، أو كمّل يدويًا.","Barcode not found in the shared catalog. Type the product name for similar matches, or continue manually."));
+      setSuggestionsHidden(false);
+    }catch{if(request===lookupSequence.current)setBarcodeMessage(label("تعذر البحث، حاول مرة أخرى.","Could not search. Try again."));}
+    finally{if(request===lookupSequence.current)setBarcodeLoading(false);}
+  }
 
   function addCategory(
     name: string,
@@ -265,6 +307,7 @@ export function ProductEditor({
   );
 
   function updateVariant(key: string, patch: Partial<VariantDraft>) {
+    lookupSequence.current++;setBarcodeLoading(false);
     setVariants((list) =>
       list.map((v) => (v.key === key ? { ...v, ...patch } : v)),
     );
@@ -284,7 +327,7 @@ export function ProductEditor({
             type="submit"
             form={formId}
             loading={saving}
-            disabled={savingCategory || deleting}
+            disabled={savingCategory || deleting || barcodeLoading}
             className="h-11 flex-1 sm:flex-none"
           >
             <Icon.check className="size-4" />
@@ -368,6 +411,19 @@ export function ProductEditor({
         <input type="hidden" name="variants" value={serialisedVariants} />
         <input type="hidden" name="category_id" value={categoryId} />
 
+        {featureEnabled(restaurant,"product_barcode")&&<section className="rounded-xl border border-brand-100 bg-white p-3">
+          <label htmlFor="p-barcode" className="mb-2 block text-sm font-medium">{label("باركود المنتج (اختياري)","Product barcode (optional)")}</label>
+          <div className="relative" dir="ltr"><Input id="p-barcode" name="barcode" type="text" dir="ltr" autoComplete="off" maxLength={128} value={barcode} className="pe-12"
+            onChange={e=>{lookupSequence.current++;setBarcodeLoading(false);setBarcode(e.target.value);setBarcodeMessage('');setBarcodeMatches([]);}}
+            onBlur={()=>{if(barcode.trim())void findScannedProduct(barcode);}}
+            onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();void findScannedProduct(barcode);}}}/>
+            <div className="absolute end-0.5 top-0"><ProductBarcodeScanner compact onScan={code=>void findScannedProduct(code)}/></div>
+          </div>
+          <p role="status" aria-live="polite" className="mt-2 text-xs leading-5 text-ink-600">{barcodeLoading?label("جاري البحث في المنيو العام…","Searching the shared catalog…"):barcodeMessage||(supermarket&&catalogEnabled&&!product?label("امسح باركود المنتج لملء البيانات، أو ابدأ بكتابة الاسم.","Scan the product to fill its details, or start typing its name."):label("امسح الباركود أو اكتبه. الخانة اختيارية.","Scan or enter a barcode. This field is optional."))}</p>
+          {barcodeMatches.length>0&&<SupermarketSuggestionRows items={barcodeMatches} onPick={applySupermarketItem}/>}
+          {state?.fieldErrors?.barcode&&<p role="alert" className="mt-1 text-xs text-red-600">{state.fieldErrors.barcode}</p>}
+        </section>}
+
         <div className="grid min-w-0 gap-3 lg:grid-cols-[250px_minmax(0,1fr)] lg:items-start">
           <aside className="min-w-0 space-y-3">
             {/* --- image --- */}
@@ -428,7 +484,7 @@ export function ProductEditor({
                       {t("products.name")}{" "}
                       <span className="text-brand-600">*</span>
                     </label>
-                    {moduleEnabled(restaurant, "catalog") && (
+                    {moduleEnabled(restaurant, "catalog") && !supermarket && (
                       <div className="flex flex-wrap gap-1.5">
                         <button
                           type="button"
@@ -464,7 +520,7 @@ export function ProductEditor({
                     name="name"
                     required
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => {lookupSequence.current++;setBarcodeLoading(false);setName(e.target.value);setSuggestionsHidden(false);}}
                     placeholder={
                       supermarket
                         ? label("اسم المنتج", "Product name")
@@ -480,7 +536,7 @@ export function ProductEditor({
                   {moduleEnabled(restaurant, "catalog") &&
                     !suggestionsHidden &&
                     name.trim().length >= 2 && (
-                      <CatalogSuggestions
+                      supermarket ? (!product&&<SupermarketDraftSuggestions query={name} onPick={applySupermarketItem}/>) : <CatalogSuggestions
                         query={name}
                         onPick={applyCatalogItem}
                         onDismiss={() => setSuggestionsHidden(true)}
@@ -892,58 +948,6 @@ export function ProductEditor({
               )}
             </section>
 
-            {featureEnabled(restaurant, "product_barcode") && (
-              <section className="rounded-2xl bg-white p-3 ring-1 ring-black/[.04] sm:p-4">
-                <h3 className="mb-3 text-sm font-semibold">
-                  {label("الباركود", "Barcode")}
-                </h3>
-                {featureEnabled(restaurant, "product_barcode") && (
-                  <div className="space-y-1.5 sm:col-span-2">
-                    <label
-                      htmlFor="p-barcode"
-                      className="text-sm font-medium text-ink-800"
-                    >
-                      {label(
-                        "باركود المنتج (اختياري)",
-                        "Product barcode (optional)",
-                      )}
-                    </label>
-                    <div className="relative" dir="ltr">
-                      <Input
-                        className="pe-12"
-                        id="p-barcode"
-                        name="barcode"
-                        type="text"
-                        dir="ltr"
-                        autoComplete="off"
-                        maxLength={128}
-                        value={barcode}
-                        onChange={(e) => setBarcode(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                          }
-                        }}
-                      />
-                      <div className="absolute end-0.5 top-0">
-                        <ProductBarcodeScanner compact onScan={setBarcode} />
-                      </div>
-                    </div>
-                    <p className="text-xs text-ink-500">
-                      {label(
-                        "اضغط في الخانة واقرأ الباركود بالاسكانر أو اكتبه. الباركود يخص منتجًا واحدًا داخل حسابك.",
-                        "Focus this field and scan or type the barcode. Each barcode identifies one product in your account.",
-                      )}
-                    </p>
-                    {state?.fieldErrors?.barcode && (
-                      <p role="alert" className="text-xs text-red-600">
-                        {state.fieldErrors.barcode}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </section>
-            )}
             {!packaging &&
               (featureEnabled(restaurant, "product_english") ||
                 featureEnabled(restaurant, "product_ingredients")) && (
