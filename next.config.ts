@@ -28,6 +28,7 @@ const nextConfig: NextConfig = {
     deviceSizes: [360, 420, 640, 828, 1080, 1440, 1920],
     imageSizes: [48, 64, 96, 128, 200, 256, 384],
     remotePatterns: [
+      { protocol: "https" as const, hostname: "ik.imagekit.io", pathname: "/redom/menuzqr/catalog/supermarket/**" },
       { protocol: "https" as const, hostname: "images.unsplash.com", pathname: "/photo-*" },
       ...(supabaseHost
       ? [
