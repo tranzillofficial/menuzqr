@@ -1,3 +1,4 @@
+export const SUPERMARKET_PAGE_SIZE = 10;
 export const SUPERMARKET_SECTIONS = {
   bakery: ['مخبوزات', 'Bakery'], beverages: ['مشروبات', 'Beverages'],
   dairy_and_cheese: ['ألبان وجبن', 'Dairy and cheese'],
