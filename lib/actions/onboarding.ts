@@ -5,6 +5,7 @@ import {normalizeDraft,SETUP_MODULES} from '@/lib/onboarding';
 import {validateSlug} from '@/lib/slug';
 import {revalidatePath} from 'next/cache';
 import {getLocale} from '@/lib/i18n/server';
+import {sanitiseImageUrl} from './helpers';
 
 export async function saveOnboardingDraft(value:unknown){
  const db=await createServerSupabase();
@@ -32,6 +33,7 @@ export async function completeOnboarding(value:unknown){
  const accepted=draft.activity==='supermarket'?['qr','starter','business','pro']:['qr','pos','business','pro'];
  if(!accepted.includes(draft.plan))return {ok:false,message:'اختر باقة صحيحة. Choose a valid plan.'};
  for(const key of ['website_url','instagram_url','facebook_url','logo_url'] as const){if(!draft[key])continue;try{const u=new URL(draft[key]);if(u.protocol!=='https:'||u.username||u.password)throw Error();}catch{return {ok:false,message:'الروابط يجب أن تبدأ بـ https://. Links must use HTTPS.'};}}
+ if(draft.logo_url&&!sanitiseImageUrl(draft.logo_url))return {ok:false,message:'يمكنك رفع الشعار من صفحة بيانات النشاط بعد الإنشاء. Upload your logo from the business profile after signup.'};
  const admin=createAdminSupabase();
  const existing=await admin.from('restaurants').select('id').eq('owner_id',user.id).limit(1);
  if(existing.error)return {ok:false,message:'Could not verify account.'};
