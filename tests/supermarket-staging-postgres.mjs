@@ -1,0 +1,13 @@
+import {PGlite} from '@electric-sql/pglite';import {readFileSync} from 'node:fs';import assert from 'node:assert/strict';
+const db=new PGlite();await db.exec('create role anon;create role authenticated;create role service_role bypassrls;');
+await db.exec(readFileSync('supabase/migrations/20261016152938_supermarket_catalog_staging.sql','utf8'));
+const id='00000000-0000-4000-8000-000000000001';
+await db.query("insert into supermarket_catalog_products(id,external_id,name_ar,category,source_data) values($1,'source-1','منتج','beverages','{}')",[id]);
+await db.exec('set role authenticated');assert.equal((await db.query('select * from supermarket_catalog_products')).rows.length,0);
+await assert.rejects(()=>db.query("update supermarket_catalog_products set review_status='approved'"),/permission denied/);
+await db.exec('reset role');await db.query("update supermarket_catalog_products set review_status='approved' where id=$1",[id]);
+await db.query("insert into supermarket_catalog_images(id,product_id,file_id,url,file_path,source_data) values($1,$1,'real-file','https://ik.imagekit.io/example','/example','{}')",[id]);
+await db.exec('set role authenticated');assert.equal((await db.query('select * from supermarket_catalog_products')).rows.length,1);assert.equal((await db.query('select * from supermarket_catalog_images')).rows.length,0);
+await db.exec('reset role');await db.exec("update supermarket_catalog_images set rights_status='approved'");await db.exec('set role authenticated');assert.equal((await db.query('select * from supermarket_catalog_images')).rows.length,1);
+await db.exec('reset role;set role anon');await assert.rejects(()=>db.query('select * from supermarket_catalog_products'),/permission denied/);
+await db.close();console.log('PASS: pending products hidden; approval cannot be forged; image rights enforced; anonymous access denied.');

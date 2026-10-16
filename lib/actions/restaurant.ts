@@ -1,5 +1,6 @@
 "use server";
 
+import {completeOnboarding} from './onboarding';
 import {normalizeWhatsapp} from "@/lib/phone";
 import {featureEnabled} from "@/lib/business-features";
 import { moduleEnabled } from "@/lib/business-modules";
@@ -7,7 +8,7 @@ import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { MENU_THEME_IDS, CURRENCIES, LANGUAGES } from "@/lib/constants";
-import { randomSlug, slugify, validateSlug } from "@/lib/slug";
+import { validateSlug } from "@/lib/slug";
 import type { ActionState } from "@/lib/types";
 import {
   assertAdmin,
@@ -36,52 +37,8 @@ export async function createRestaurantAction(
   _prev: ActionState,
   form: FormData
 ): Promise<ActionState> {
-  const supabase = await createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return fail("You need to sign in first.");
-
-  const { data: existing } = await supabase
-    .from("restaurants")
-    .select("id")
-    .eq("owner_id", user.id)
-    .limit(1);
-  if (existing && existing.length > 0) {
-    return fail("You already have a restaurant. Edit it instead.");
-  }
-
-  const name = str(form, "name");
-  if (name.length < 2) return fail("Enter a restaurant name.", { name: "Required." });
-
-  const rawSlug = str(form, "slug") || slugify(name) || randomSlug(name);
-  const { value: slug, error: slugError } = validateSlug(rawSlug);
-  if (slugError) return fail(slugError, { slug: slugError });
-  if (await slugIsTaken(slug)) {
-    return fail("That link is already taken.", { slug: "Already taken. try another." });
-  }
-
-  const currency = str(form, "currency");
-  const language = str(form, "language");
-
-  const { error } = await supabase.from("restaurants").insert({
-    owner_id: user.id,
-    name,
-    slug,
-    description: optionalStr(form, "description"),
-    phone: optionalStr(form, "phone"),
-    address: optionalStr(form, "address"),
-    restaurant_type: optionalStr(form, "restaurant_type"),
-    currency: CURRENCY_CODES.includes(currency) ? currency : "USD",
-    language: LANG_CODES.includes(language) ? language : "en",
-    logo_url: sanitiseImageUrl(optionalStr(form, "logo_url")),
-    cover_url: sanitiseImageUrl(optionalStr(form, "cover_url")),
-  });
-
-  if (error) return fail(error.message);
-
-  revalidatePath("/dashboard", "layout");
-  return done("Restaurant created.");
+  // Keep the previous entry point subject to the same setup-only creation policy.
+  return completeOnboarding(Object.fromEntries(form.entries()));
 }
 
 export async function updateRestaurantAction(

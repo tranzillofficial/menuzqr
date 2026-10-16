@@ -14,9 +14,9 @@ import { AccountMenu } from "./AccountMenu";
 import { useDrawer } from "@/components/ui/useDrawer";
 
 const NAV: Array<{href:string;label:TranslationKey;icon:(typeof Icon)[keyof typeof Icon];exact?:boolean}> = [
+ {href:"/dashboard",label:"nav.overview",icon:Icon.home,exact:true},
  ...MODULE_NAVIGATION.map(item=>({href:item.href,label:item.label,icon:Icon[item.icon]})),
  {href:"/dashboard/categories",label:"nav.categories",icon:Icon.grid},
- {href:"/dashboard",label:"nav.overview",icon:Icon.home,exact:true},
  {href:"/dashboard/billing",label:"nav.billing",icon:Icon.sparkles},
 ];
 
@@ -45,15 +45,12 @@ export function DashboardShell({
   const isActive = (href: string, exact?: boolean) =>
     exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
 
-  const financeModules=['invoices','orders','reports'] as const;
-  const financeTarget=financeModules.find(m=>moduleEnabled(businessConfig,m));
-  const visibleNav=NAV.filter(item=>!financeModules.some(m=>item.href===`/dashboard/${m}`)&&dashboardPathEnabled(businessConfig,item.href));
-  if(financeTarget)visibleNav.splice(1,0,{href:`/dashboard/${financeTarget}`,label:'nav.invoices',icon:Icon.receipt});
+  const order=['/dashboard','/dashboard/products','/dashboard/categories','/dashboard/catalog','/dashboard/tables','/dashboard/orders','/dashboard/pos','/dashboard/inventory','/dashboard/customers','/dashboard/invoices','/dashboard/reports','/dashboard/offers','/dashboard/staff','/dashboard/qr-codes','/dashboard/design','/dashboard/billing','/dashboard/restaurant','/dashboard/settings'];
+  const visibleNav=NAV.filter(item=>restaurantId?dashboardPathEnabled(businessConfig,item.href):['/dashboard','/dashboard/restaurant'].includes(item.href)).sort((a,b)=>order.indexOf(a.href)-order.indexOf(b.href));
   const nav = (
     <nav className="flex flex-col gap-0.5">
       {visibleNav.map((item) => {
-        const financeItem=financeTarget&&item.href===`/dashboard/${financeTarget}`;
-        const active = financeItem?financeModules.some(m=>isActive(`/dashboard/${m}`)):isActive(item.href, item.exact);
+        const active = isActive(item.href, item.exact);
         return (
           <Link
             key={item.href}
