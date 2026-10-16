@@ -1,0 +1,14 @@
+{
+  "products": 21342,
+  "image_links": 0,
+  "duplicate_source_ids": 0,
+  "barcode_checksum_valid": 11009,
+  "barcode_verified": 0,
+  "review_reasons": {
+    "source_flagged": 2190,
+    "barcode_requires_evidence": 21342,
+    "invalid_or_missing_gtin": 10333,
+    "possible_retailer_or_variable_weight_code": 315
+  },
+  "source_sha256": "9e7fdbbe426c2391941b43ab317f43c2fe284fe76f6c3fa38a2c99b8a49391d0"
+}

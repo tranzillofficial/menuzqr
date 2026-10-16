@@ -1,3 +1,4 @@
+import {redirect} from 'next/navigation';
 import { dashboardPathEnabled, moduleEnabled } from "@/lib/business-modules";
 import Link from "next/link";
 import type { Metadata } from "next";
@@ -17,22 +18,7 @@ export const metadata: Metadata = { title: "Overview" };
 export default async function DashboardPage() {
   const [restaurant, t] = await Promise.all([getMyRestaurant(), getT()]);
 
-  if (!restaurant) {
-    return (
-      <div className="mx-auto max-w-lg py-10 text-center">
-        <span className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-brand-50 text-brand-700">
-          <Icon.store className="size-7" />
-        </span>
-        <h1 className="text-2xl font-semibold text-ink-900">{t("dash.setupTitle")}</h1>
-        <p className="mt-2 text-sm text-ink-500">
-          {t("dash.setupBody")}
-        </p>
-        <LinkButton href="/dashboard/restaurant" size="lg" className="mt-6">
-          {t("dash.setupCta")}
-        </LinkButton>
-      </div>
-    );
-  }
+  if (!restaurant) redirect('/dashboard/restaurant');
 
   const supabase = await createServerSupabase();
   const [categories, products, tables, openOrders, pendingWaiters, recentOrders] =

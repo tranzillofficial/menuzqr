@@ -1,3 +1,4 @@
+import { OnboardingWizard } from '@/components/dashboard/OnboardingWizard';
 import { moduleEnabled } from "@/lib/business-modules";
 import type { Metadata } from "next";
 import { getMyRestaurant, requireUser } from "@/lib/auth";
@@ -8,8 +9,10 @@ import { RestaurantForm } from "@/components/dashboard/RestaurantForm";
 export const metadata: Metadata = { title: "Restaurant" };
 
 export default async function RestaurantPage() {
-  await requireUser();
+  const user = await requireUser();
   const [restaurant, t] = await Promise.all([getMyRestaurant(), getT()]);
+
+  if (!restaurant) return <OnboardingWizard initial={user.user_metadata?.menuzqr_onboarding} />;
 
   const retail = restaurant?.enabled_modules != null && !moduleEnabled(restaurant,"tables");
   const ar = await getLocale() === "ar";

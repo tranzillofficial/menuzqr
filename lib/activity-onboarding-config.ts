@@ -29,7 +29,7 @@ export const SUPERMARKET_PLANS: Record<PlanId, {
   },
   starter: {
     label: "Starter", monthlyEgp: 100, yearlyEgp: 1000, lifetimeEgp: null,
-    modules: ["overview", "catalog", "categories", "qr", "settings", "orders", "pos", "barcode", "customers"],
+    modules: ["overview", "catalog", "categories", "qr", "settings", "orders", "pos", "barcode", "staff"],
   },
   business: {
     label: "Business", monthlyEgp: 200, yearlyEgp: 2000, lifetimeEgp: null,
@@ -71,5 +71,5 @@ export function suggestedSlug(input: string): string {
     .replace(/[^a-z0-9\s-]/g, "")
     .replace(/[\s-]+/g, "-")
     .replace(/^-|-$/g, "")
-    .slice(0, 48);
+    .slice(0, 48).replace(/-+$/g, "");
 }
