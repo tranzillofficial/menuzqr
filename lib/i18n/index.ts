@@ -38,9 +38,12 @@ export function interpolate(template: string, vars?: Vars) {
 
 export type Translator = (key: TranslationKey, vars?: Vars) => string;
 
-export function createTranslator(locale: Locale, retail = false): Translator {
+export function createTranslator(locale: Locale, retail = false, brandName?: string | null): Translator {
   const dict = DICTIONARIES[locale] ?? DICTIONARIES[DEFAULT_LOCALE];
-  return (key, vars) => interpolate((retail ? retailTranslations[locale][key] : undefined) ?? dict[key] ?? en[key] ?? key, vars);
+  return (key, vars) => {
+    const text = (retail ? retailTranslations[locale][key] : undefined) ?? dict[key] ?? en[key] ?? key;
+    return interpolate(brandName ? text.replace(/MenuzQR/gi, () => brandName) : text, vars);
+  };
 }
 
 export type { TranslationKey };

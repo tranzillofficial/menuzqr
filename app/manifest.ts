@@ -1,3 +1,4 @@
+import {getTenantDomain} from "@/lib/tenant-domain";
 import type { MetadataRoute } from "next";
 
 /**
@@ -5,10 +6,12 @@ import type { MetadataRoute } from "next";
  * notifications possible at all: on iOS, web push is only delivered to a page
  * that has been added to the Home Screen.
  */
-export default function manifest(): MetadataRoute.Manifest {
+export default async function manifest(): Promise<MetadataRoute.Manifest> {
+  const tenant=await getTenantDomain();
+  const brand=tenant?.restaurants.name;
   return {
-    name: "MenuzQR. restaurant dashboard",
-    short_name: "MenuzQR",
+    name: brand ?? "MenuzQR. restaurant dashboard",
+    short_name: brand ?? "MenuzQR",
     description:
       "Run your QR menu: live orders, waiter calls and kitchen tickets on any phone or tablet.",
     start_url: "/dashboard",

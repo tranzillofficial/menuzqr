@@ -1,4 +1,4 @@
-import {getTenantDomain} from "@/lib/tenant-domain";
+import {getTenantDomain,getBusinessBrandName} from "@/lib/tenant-domain";
 import { I18nProvider } from "@/components/i18n/I18nProvider";
 import { getLocale } from "@/lib/i18n/server";
 import { moduleEnabled } from "@/lib/business-modules";
@@ -8,6 +8,12 @@ import { LiveProvider } from "@/components/realtime/LiveProvider";
 import { PwaSetup } from "@/components/pwa/PwaSetup";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMembership } from "@/lib/membership";
+
+export async function generateMetadata() {
+ const membership=await getMembership();
+ const brand=membership?await getBusinessBrandName(membership.restaurant.id):null;
+ return brand?{title:{default:brand,template:`%s · ${brand}`},applicationName:brand,appleWebApp:{capable:true,title:brand,statusBarStyle:'default' as const}}:{};
+}
 
 export default async function DashboardLayout({
   children,
@@ -43,6 +49,8 @@ export default async function DashboardLayout({
 
   const restaurant = membership?.restaurant ?? null;
 
+  const brandName=restaurant?await getBusinessBrandName(restaurant.id):null;
+
   let soundEnabled = true;
   if (restaurant) {
     const { data: settings } = await supabase
@@ -55,6 +63,7 @@ export default async function DashboardLayout({
 
   const shell = (
     <DashboardShell
+      brandName={brandName}
       restaurantName={restaurant?.name ?? null}
       restaurantId={restaurant?.id ?? null}
       isAdmin={Boolean(profile?.is_admin)&&!await getTenantDomain()}
@@ -66,7 +75,7 @@ export default async function DashboardLayout({
   );
 
   return (
-    <I18nProvider locale={await getLocale()} retail={restaurant?.enabled_modules != null && !moduleEnabled(restaurant,"tables")}>
+    <I18nProvider brandName={brandName} locale={await getLocale()} retail={restaurant?.enabled_modules != null && !moduleEnabled(restaurant,"tables")}>
       <PwaSetup />
       {restaurant ? (
         <LiveProvider

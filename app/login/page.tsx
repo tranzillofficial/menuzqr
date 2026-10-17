@@ -20,7 +20,7 @@ export default async function LoginPage({
   const { next } = await searchParams;
   return (
     <main className="flex min-h-screen items-center bg-ink-50 px-4 py-12">
-      <I18nProvider locale={domain?(domain.restaurants.language==="ar"?"ar":"en"):await getLocale()}><AuthForm mode="login" businessName={domain?.restaurants.name} next={isSafeNext(next) ? next : undefined} /></I18nProvider>
+      <I18nProvider brandName={domain?.restaurants.name} locale={domain?(domain.restaurants.language==="ar"?"ar":"en"):await getLocale()}><AuthForm mode="login" businessName={domain?.restaurants.name} next={isSafeNext(next) ? next : undefined} /></I18nProvider>
     </main>
   );
 }

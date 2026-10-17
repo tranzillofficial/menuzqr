@@ -10,15 +10,17 @@ const I18nContext = createContext<I18nValue | null>(null);
 export function I18nProvider({
   locale,
   retail = false,
+  brandName,
   children,
 }: {
   retail?: boolean;
+  brandName?: string | null;
   locale: Locale;
   children: ReactNode;
 }) {
   const value = useMemo<I18nValue>(
-    () => ({ locale, t: createTranslator(locale, retail), dir: dirOf(locale) }),
-    [locale, retail]
+    () => ({ locale, t: createTranslator(locale, retail, brandName), dir: dirOf(locale) }),
+    [locale, retail, brandName]
   );
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }

@@ -20,3 +20,11 @@ export async function businessMenuUrl(restaurant:Pick<Restaurant,'id'|'slug'>){
  if(data)return `https://${data.hostname}/menu`;
  const {absoluteUrl}=await import('./utils');return absoluteUrl(`/${restaurant.slug}/menu`);
 }
+
+/** Use tenant branding for accounts with an active custom domain, on either host. */
+export const getBusinessBrandName=cache(async(restaurantId:string):Promise<string|null>=>{
+ const {data,error}=await createAdminSupabase().from('business_domains').select('restaurants(name)').eq('restaurant_id',restaurantId).eq('status','active').eq('enabled',true).limit(1).maybeSingle();
+ if(error)throw new Error('Could not load business branding');
+ const business=data?.restaurants as unknown as {name:string}|{name:string}[]|null;
+ return (Array.isArray(business)?business[0]:business)?.name??null;
+});

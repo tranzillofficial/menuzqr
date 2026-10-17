@@ -26,5 +26,7 @@ export async function getBusinessT(): Promise<Translator> {
   const { moduleEnabled } = await import("@/lib/business-modules");
   const membership = await getMembership();
   const r = membership?.restaurant;
-  return createTranslator(await getLocale(), r?.enabled_modules != null && !moduleEnabled(r,"tables"));
+  const {getBusinessBrandName}=await import("@/lib/tenant-domain");
+  const brandName=r?await getBusinessBrandName(r.id):null;
+  return createTranslator(await getLocale(), r?.enabled_modules != null && !moduleEnabled(r,"tables"), brandName);
 }

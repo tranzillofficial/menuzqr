@@ -61,7 +61,7 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
   const amount = (n: number) => n.toFixed(2);
   const money = (n: number) => `${amount(n)} ${receipt.currency || currency}`;
   if (receipt.testPrint) {
-    text('MenuzQR TEST', fontSize, 'center', 'ltr');
+    text(restaurantName + ' TEST', fontSize, 'center', 'ltr');
     text(label('اختبار الطباعة', 'Print test'), fontSize, 'center');
   } else {
     text(brandName, fontSize + 14, 'center', hasArabicBrand(brandName)?'rtl':'ltr', brandFont);

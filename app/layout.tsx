@@ -1,3 +1,4 @@
+import {getTenantDomain} from "@/lib/tenant-domain";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Playfair_Display, Cairo } from "next/font/google";
 import "./globals.css";
@@ -19,7 +20,7 @@ const cairo = Cairo({
   weight: ["400", "500", "600", "700"],
 });
 
-export const metadata: Metadata = {
+const platformMetadata: Metadata = {
   title: {
     default: "MenuzQR. Digital QR menus for restaurants & cafés",
     template: "%s · MenuzQR",
@@ -42,6 +43,13 @@ export const metadata: Metadata = {
   },
 };
 
+export async function generateMetadata(): Promise<Metadata> {
+ const tenant=await getTenantDomain();
+ if(!tenant)return platformMetadata;
+ const brand=tenant.restaurants.name;
+ return {...platformMetadata,title:{default:brand,template:`%s · ${brand}`},description:tenant.restaurants.description||brand,applicationName:brand,appleWebApp:{capable:true,title:brand,statusBarStyle:'default'}};
+}
+
 export const viewport: Viewport = {
   themeColor: "#ea580c",
   width: "device-width",
@@ -54,6 +62,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const locale = await getLocale();
+  const tenant=await getTenantDomain();
 
   return (
     <html
@@ -62,7 +71,7 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} ${cairo.variable} h-full`}
     >
       <body className="min-h-full">
-        <I18nProvider locale={locale}>
+        <I18nProvider locale={locale} brandName={tenant?.restaurants.name}>
           <ToastProvider>{children}</ToastProvider>
         </I18nProvider>
       </body>

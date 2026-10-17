@@ -489,8 +489,8 @@ export function ProductEditor({
                         <button
                           type="button"
                           onClick={() => setCatalogOpen(true)}
-                          title="Browse the MenuzQR catalog"
-                          aria-label="Browse the MenuzQR catalog"
+                          title={t("products.catalogTitle")}
+                          aria-label={t("products.catalogTitle")}
                           className="inline-flex items-center gap-1 rounded-lg border border-ink-200 bg-white px-2 py-1.5 text-xs font-medium text-ink-600 transition-colors hover:border-brand-300 hover:text-brand-700"
                         >
                           <svg

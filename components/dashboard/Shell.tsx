@@ -23,6 +23,7 @@ const NAV: Array<{href:string;label:TranslationKey;icon:(typeof Icon)[keyof type
 export function DashboardShell({
   children,
   restaurantName,
+  brandName,
   restaurantId,
   isAdmin,
   userEmail,
@@ -30,6 +31,7 @@ export function DashboardShell({
 }: {
   children: ReactNode;
   restaurantName: string | null;
+  brandName?: string | null;
   restaurantId: string | null;
   isAdmin: boolean;
   userEmail: string;
@@ -122,6 +124,7 @@ export function DashboardShell({
         */}
         <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-e border-ink-200 bg-white p-4 lg:block">
           <SidebarBody
+            brandName={brandName}
             nav={nav}
             userEmail={userEmail}
             signOutLabel={t("common.signOut")}
@@ -154,6 +157,7 @@ export function DashboardShell({
           />
           <aside className="animate-slide-in absolute inset-y-0 start-0 w-72 max-w-[85vw] overflow-y-auto border-e border-ink-200 bg-white p-4">
             <SidebarBody
+              brandName={brandName}
               nav={nav}
               userEmail={userEmail}
               signOutLabel={t("common.signOut")}
@@ -168,11 +172,13 @@ export function DashboardShell({
 
 /** Shared by the desktop sidebar and the mobile drawer. */
 function SidebarBody({
+  brandName,
   nav,
   userEmail,
   signOutLabel,
   onClose,
 }: {
+  brandName?: string | null;
   nav: ReactNode;
   userEmail: string;
   signOutLabel: string;
@@ -185,7 +191,7 @@ function SidebarBody({
           <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-brand-600 text-white">
             <Icon.qr className="size-4.5" />
           </span>
-          <span className="truncate font-semibold text-ink-900">MenuzQR</span>
+          <span className="truncate font-semibold text-ink-900">{brandName ?? "MenuzQR"}</span>
         </Link>
         {onClose && (
           <button

@@ -1,3 +1,4 @@
+import {getBusinessBrandName,businessMenuUrl} from "@/lib/tenant-domain";
 import {featureEnabled} from "@/lib/business-features";
 import { moduleEnabled } from "@/lib/business-modules";
 import { ThermalPrinter } from "@/components/dashboard/ThermalPrinter";
@@ -40,7 +41,7 @@ export default async function SettingsPage() {
   const rows: Array<[string, string, boolean?]> = [
     [
       t("settings.planName"),
-      `${platform.brandName}. $${
+      `${(await getBusinessBrandName(restaurant.id))??platform.brandName}. $${
         restaurant.pos_status === "active" ? platform.menuBundleUsd : platform.priceUsd
       } ${t("settings.oneTime")}`,
       true,
@@ -50,7 +51,7 @@ export default async function SettingsPage() {
       restaurant.payment_status === "paid" ? t("settings.paid") : t("settings.awaiting"),
     ],
     [t("settings.activated"), formatDate(restaurant.activated_at), true],
-    [t("settings.menuLink"), `/${restaurant.slug}/menu`, true],
+    [t("settings.menuLink"), await businessMenuUrl(restaurant), true],
   ];
 
   return (
