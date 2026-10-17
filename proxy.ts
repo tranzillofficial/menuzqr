@@ -18,7 +18,7 @@ export async function proxy(request:NextRequest){
    if(pathname==='/'){url.pathname='/business-site';return NextResponse.rewrite(url);}
    if(pathname==='/offers'){url.pathname=`/${domain.restaurants.slug}/offers`;return NextResponse.rewrite(url);}
    if(pathname==='/menu'){url.pathname=`/${domain.restaurants.slug}/menu`;return NextResponse.rewrite(url);}
-   if(pathname!==`/${domain.restaurants.slug}/menu`&&pathname!==`/${domain.restaurants.slug}/offers`&&!pathname.startsWith('/api/')&&!pathname.startsWith('/auth/')&&pathname!=='/disabled')return new NextResponse('Not found',{status:404});
+   if(pathname!==`/${domain.restaurants.slug}/menu`&&pathname!==`/${domain.restaurants.slug}/offers`&&!pathname.startsWith('/api/')&&!pathname.startsWith('/auth/')&&pathname!=='/disabled'&&pathname!=='/manifest.webmanifest')return new NextResponse('Not found',{status:404});
   }
  }
  if(!protectedPath&&!AUTH_PAGES.includes(pathname))return NextResponse.next();
