@@ -1,3 +1,4 @@
+import {businessMenuUrl} from "@/lib/tenant-domain";
 import {redirect} from 'next/navigation';
 import { dashboardPathEnabled, moduleEnabled } from "@/lib/business-modules";
 import Link from "next/link";
@@ -9,7 +10,7 @@ import { PageHeader } from "@/components/dashboard/Shell";
 import { Card } from "@/components/ui/Card";
 import { LinkButton } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icons";
-import { absoluteUrl, formatMoney } from "@/lib/utils";
+import { formatMoney } from "@/lib/utils";
 import { getBusinessT as getT } from "@/lib/i18n/server";
 import type { TranslationKey } from "@/lib/i18n";
 
@@ -80,7 +81,7 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       <PageHeader
         title={restaurant.name}
-        description={absoluteUrl(`/${restaurant.slug}/menu`)}
+        description={await businessMenuUrl(restaurant)}
         action={<StatusBadge status={restaurant.status} t={t} />}
       />
 

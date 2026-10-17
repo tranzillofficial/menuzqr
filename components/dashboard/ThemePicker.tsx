@@ -150,11 +150,13 @@ function Preview({ theme }: { theme: MenuThemeId }) {
 export function ThemePicker({
   current,
   slug,
+  menuUrl,
   isActive,
   adminDemo = false,
 }: {
   current: MenuThemeId;
   slug: string;
+  menuUrl?: string;
   isActive: boolean;
   adminDemo?: boolean;
 }) {
@@ -228,7 +230,7 @@ export function ThemePicker({
         <p className="text-sm text-ink-600">{t("design.note")}</p>
         <div className="ms-auto flex flex-wrap gap-2">
           <Link
-            href={`/${slug}/menu`}
+            href={menuUrl ?? `/${slug}/menu`}
             target="_blank"
             className="inline-flex h-10 items-center gap-2 rounded-xl border border-ink-200 px-4 text-sm font-medium text-ink-700 hover:bg-ink-50"
           >

@@ -15,7 +15,7 @@ import { slugify } from "@/lib/slug";
 import { siteOrigin } from "@/lib/utils";
 import type { Restaurant } from "@/lib/types";
 
-export function RestaurantForm({ restaurant }: { restaurant: Restaurant | null }) {
+export function RestaurantForm({ restaurant, menuUrl }: { restaurant: Restaurant | null; menuUrl?: string }) {
   const router = useRouter();
   const toast = useToast();
   const t = useT();
@@ -69,7 +69,7 @@ export function RestaurantForm({ restaurant }: { restaurant: Restaurant | null }
             error={state?.fieldErrors?.slug}
             hint={
               <span className="break-all">
-                {origin}/<strong>{slug || "your-restaurant"}</strong>/menu
+                {menuUrl && new URL(menuUrl).pathname === "/menu" ? menuUrl : <>{origin}/<strong>{slug || "your-restaurant"}</strong>/menu</>}
               </span>
             }
           >

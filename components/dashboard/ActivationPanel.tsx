@@ -1,10 +1,11 @@
+import {businessMenuUrl} from "@/lib/tenant-domain";
 import Link from "next/link";
 import { Badge } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icons";
 import { getPlatformSettings } from "@/lib/platform";
 import { getT } from "@/lib/i18n/server";
 import type { Restaurant } from "@/lib/types";
-import { absoluteUrl, formatDate } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import type { Translator } from "@/lib/i18n";
 
 export function StatusBadge({
@@ -21,7 +22,7 @@ export function StatusBadge({
 
 export async function ActivationPanel({ restaurant }: { restaurant: Restaurant }) {
   const [platform, t] = await Promise.all([getPlatformSettings(), getT()]);
-  const menuUrl = absoluteUrl(`/${restaurant.slug}/menu`);
+  const menuUrl = await businessMenuUrl(restaurant);
 
   if (restaurant.status === "active") {
     return (
@@ -41,7 +42,7 @@ export async function ActivationPanel({ restaurant }: { restaurant: Restaurant }
           </div>
           <div className="flex flex-wrap gap-2">
             <Link
-              href={`/${restaurant.slug}/menu`}
+              href={menuUrl}
               target="_blank"
               className="inline-flex h-10 items-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-medium text-white hover:bg-emerald-700"
             >
@@ -90,7 +91,7 @@ export async function ActivationPanel({ restaurant }: { restaurant: Restaurant }
 
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href={`/${restaurant.slug}/menu`} target="_blank" className="inline-flex h-10 items-center rounded-xl border border-ink-200 bg-white px-4 text-sm">{t("activation.openMenu")}</Link>
+          <Link href={menuUrl} target="_blank" className="inline-flex h-10 items-center rounded-xl border border-ink-200 bg-white px-4 text-sm">{t("activation.openMenu")}</Link>
           {!suspended && (
             <Link
               href="/dashboard/billing"

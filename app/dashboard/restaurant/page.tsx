@@ -1,3 +1,4 @@
+import {businessMenuUrl} from "@/lib/tenant-domain";
 import { OnboardingWizard } from '@/components/dashboard/OnboardingWizard';
 import { moduleEnabled } from "@/lib/business-modules";
 import type { Metadata } from "next";
@@ -24,7 +25,7 @@ export default async function RestaurantPage() {
           retail ? (ar ? "بيانات النشاط ووسائل التواصل" : "Business details and contact information") : restaurant ? t("restaurant.sub") : t("restaurant.createSub")
         }
       />
-      <RestaurantForm restaurant={restaurant} />
+      <RestaurantForm restaurant={restaurant} menuUrl={await businessMenuUrl(restaurant)} />
     </div>
   );
 }
