@@ -1,6 +1,8 @@
+import QRCode from "qrcode";
+import {receiptRuqaa,hasArabicBrand} from "./receipt-brand";
 import type { FiscalSnapshot } from "./tax";
 export type PosReceipt = {
-  testPrint?: boolean; orderId?: string; documentNumber?: string; originalDocumentNumber?: string; currency?: string; fiscal?: FiscalSnapshot | null; paidAt?: string | null; creditNote?: boolean; creditDate?: string;
+  menuUrl?: string; testPrint?: boolean; orderId?: string; documentNumber?: string; originalDocumentNumber?: string; currency?: string; fiscal?: FiscalSnapshot | null; paidAt?: string | null; creditNote?: boolean; creditDate?: string;
   number: number; total: number; received: number; tableLabel: string | null;
   payment: 'cash' | 'card' | 'transfer'; fiscalState?: string; createdAt: string; note: string;
   lines: { variantId: string; name: string; variant: string; price: number; quantity: number; baseTotal?: number; discount?: number; gross?: number; net?: number; vat?: number; rate?: number; code?: string }[];
@@ -12,6 +14,11 @@ export function printerDots(width: 58 | 80): 384 | 576 { return width === 58 ? 3
 // Render Arabic with the browser's shaping engine, then send monochrome raster
 // commands. This avoids dependence on the printer's Arabic code page support.
 async function receiptCanvas(receipt: PosReceipt, restaurantName: string, currency: string, ar: boolean, width: 58 | 80) {
+  const brandName = receipt.fiscal?.legal_name || restaurantName;
+  const brandFont = hasArabicBrand(brandName) ? receiptRuqaa.style.fontFamily : 'Arial, sans-serif';
+  if (hasArabicBrand(brandName)) await Promise.race([document.fonts.load(`700 40px ${brandFont}`,brandName).catch(()=>[]),new Promise(resolve=>setTimeout(resolve,2000))]);
+  let qr:HTMLCanvasElement|undefined;
+  if (receipt.menuUrl && !receipt.testPrint) { qr=document.createElement('canvas'); const modules=QRCode.create(receipt.menuUrl,{errorCorrectionLevel:'M'}).modules.size; await QRCode.toCanvas(qr,receipt.menuUrl,{errorCorrectionLevel:'M',margin:4,scale:Math.max(3,Math.floor((width===58?190:220)/(modules+8)))}); }
   // Do not let a stalled web font request block the cashier indefinitely.
   await new Promise<void>(resolve => {
     const timer = setTimeout(resolve, 2000);
@@ -21,12 +28,12 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
   const dots = printerDots(width);
   const padding = 12, usable = dots - padding * 2;
   const fontSize = width === 58 ? 25 : 30;
-  const rows: {text?: string; value?: string; size: number; height: number; align?: CanvasTextAlign; direction?: CanvasDirection; rule?: boolean}[] = [];
+  const rows: {text?: string; value?: string; size: number; height: number; align?: CanvasTextAlign; direction?: CanvasDirection; rule?: boolean; font?:string}[] = [];
   canvas.width = dots; canvas.height = 1;
   const context = canvas.getContext('2d');
   if (!context) throw new Error('Receipt rendering is unavailable');
-  const split = (text: string, available: number, size: number) => {
-    context.font = `bold ${size}px Arial, sans-serif`;
+  const split = (text: string, available: number, size: number, font = "Arial, sans-serif") => {
+    context.font = `bold ${size}px ${font}`;
     const lines: string[] = []; let line = '';
     for (const word of text.replace(/[\r\n]/g, ' ').split(/\s+/)) {
       if (line && context.measureText(`${line} ${word}`).width > available) { lines.push(line); line = ''; }
@@ -38,8 +45,8 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
     if (line) lines.push(line);
     return lines;
   };
-  const text = (value: string, size = fontSize, align: CanvasTextAlign = ar ? 'right' : 'left', direction: CanvasDirection = ar ? 'rtl' : 'ltr') => {
-    for (const line of split(value, usable, size)) rows.push({text: line, size, height: size + 12, align, direction});
+  const text = (value: string, size = fontSize, align: CanvasTextAlign = ar ? 'right' : 'left', direction: CanvasDirection = ar ? 'rtl' : 'ltr', font = 'Arial, sans-serif') => {
+    for (const line of split(value, usable, size, font)) rows.push({text: line, size, height: size + (font !== 'Arial, sans-serif' ? 22 : 12), align, direction, font});
   };
   const gap = (height = 8) => rows.push({size: 0, height});
   const rule = () => rows.push({size: 0, height: 18, rule: true});
@@ -57,7 +64,7 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
     text('MenuzQR TEST', fontSize, 'center', 'ltr');
     text(label('اختبار الطباعة', 'Print test'), fontSize, 'center');
   } else {
-    text(fiscal?.legal_name || restaurantName, fontSize + 6, 'center');
+    text(brandName, fontSize + 14, 'center', hasArabicBrand(brandName)?'rtl':'ltr', brandFont);
     if (fiscal?.address) text(fiscal.address, fontSize - 2, 'center');
     if (fiscal?.registered && fiscal.vat_number) text(`VAT / TRN: ${fiscal.vat_number}`, fontSize - 2, 'center', 'ltr');
     gap();
@@ -109,7 +116,7 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
     gap();
     text(label('شكرًا لزيارتكم', 'Thank you for your visit'), fontSize - 3, 'center');
   }
-  canvas.height = rows.reduce((height, row) => height + row.height, 8);
+  canvas.height = rows.reduce((height, row) => height + row.height, 8 + (qr ? qr.height + 12 : 0));
   if (receipt.testPrint && canvas.height > 160) throw new Error('Test receipt exceeds 20 mm');
   if (canvas.height > 20000) throw new Error('Receipt is too long');
   context.fillStyle = '#fff'; context.fillRect(0, 0, dots, canvas.height);
@@ -121,7 +128,7 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
   };
   for (const row of rows) {
     context.fillStyle = '#000';
-    context.font = `bold ${row.size}px Arial, sans-serif`;
+    context.font = `bold ${row.size}px ${row.font ?? "Arial, sans-serif"}`;
     const y = top + row.height / 2;
     if (row.rule) context.fillRect(padding, Math.floor(y), usable, 2);
     else if (row.value !== undefined) {
@@ -133,6 +140,7 @@ async function receiptCanvas(receipt: PosReceipt, restaurantName: string, curren
     }
     top += row.height;
   }
+  if(qr) { context.imageSmoothingEnabled=false; context.drawImage(qr,Math.floor((dots-qr.width)/2),top+4); }
   return canvas;
 }
 

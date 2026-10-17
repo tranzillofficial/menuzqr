@@ -20,8 +20,8 @@ import type { ProductWithVariants, Category, RestaurantTable } from '@/lib/types
 
 type Line = { variantId: string; name: string; variant: string; price: number; quantity: number; basePrice: number; rate: number };
 
-export function PosScreen({ restaurantId, restaurantName, currency, products, categories, tables, taxSettings, tablesEnabled = true, barcodeEnabled = false, printingEnabled = true, initialHasMore = false, offers = [] }: {
-  restaurantId: string; restaurantName: string; currency: string; products: ProductWithVariants[];
+export function PosScreen({ restaurantId, restaurantName, menuUrl, currency, products, categories, tables, taxSettings, tablesEnabled = true, barcodeEnabled = false, printingEnabled = true, initialHasMore = false, offers = [] }: {
+  menuUrl?:string; restaurantId: string; restaurantName: string; currency: string; products: ProductWithVariants[];
   offers?:BusinessOffer[]; initialHasMore?:boolean; printingEnabled?:boolean; tablesEnabled?: boolean; barcodeEnabled?: boolean; categories: Category[]; tables: RestaurantTable[]; taxSettings: TaxSettings;
 }) {
   const { locale } = useI18n();
@@ -155,7 +155,7 @@ export function PosScreen({ restaurantId, restaurantName, currency, products, ca
   return <div className="space-y-4 pb-24 lg:pb-0">
     <header className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-xl font-semibold">{label('الكاشير', 'Point of sale')}</h1><p className="text-xs text-ink-500">{restaurantName}</p></div><Link href="/dashboard/orders" className="rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm">{label('متابعة الطلبات', 'View orders')}</Link><Link href="/dashboard/reports" className="rounded-xl border px-3 py-2 text-sm">{label('التقارير وإغلاق اليوم', 'Reports and end of day')}</Link></header>
     <p role="status" aria-live="polite" className="sr-only">{announcement}</p>
-    {printingEnabled&&<ThermalPrinter compact printRef={printer} restaurantId={restaurantId} restaurantName={restaurantName} currency={currency} receipt={receipt} />}
+    {printingEnabled&&<ThermalPrinter menuUrl={menuUrl} compact printRef={printer} restaurantId={restaurantId} restaurantName={restaurantName} currency={currency} receipt={receipt} />}
     {barcodeEnabled && <PosBarcode disabled={pending} onAdd={add} onBusyChange={setBarcodeBusy}/>}
     <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_310px]">
       <section className="min-w-0" aria-label={label('المنتجات', 'Products')}>

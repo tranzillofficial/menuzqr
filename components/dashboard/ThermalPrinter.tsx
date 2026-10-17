@@ -10,7 +10,7 @@ import {Modal} from '@/components/ui/Modal';
 import {useI18n} from '@/components/i18n/I18nProvider';
 export type ReceiptPrinterHandle={printReceipt:(receipt:PosReceipt)=>Promise<void>};
 let printBusy=false;
-export function ThermalPrinter({restaurantId,restaurantName,currency,receipt,printRef,compact=false}:{compact?:boolean;printRef?:Ref<ReceiptPrinterHandle>;restaurantId:string;restaurantName:string;currency:string;receipt:PosReceipt|null}){
+export function ThermalPrinter({restaurantId,restaurantName,currency,menuUrl,receipt,printRef,compact=false}:{menuUrl?:string;compact?:boolean;printRef?:Ref<ReceiptPrinterHandle>;restaurantId:string;restaurantName:string;currency:string;receipt:PosReceipt|null}){
  const {locale}=useI18n();const ar=locale==='ar';const l=(a:string,e:string)=>ar?a:e;
  const [open,setOpen]=useState(false),[busy,setBusy]=useState(false),[printers,setPrinters]=useState<string[]>([]),[printer,setPrinter]=useState(''),[width,setWidth]=useState<58|80>(80),[message,setMessage]=useState(''),[preview,setPreview]=useState<string>(''),[pendingReceipt,setPendingReceipt]=useState<PosReceipt|null>(null);
  const content=useRef<HTMLDivElement>(null);const pending=useRef<PosReceipt|null>(null);const printed=useRef(new Set<string>());const prepared=useRef<PosReceipt|null>(null);
@@ -28,7 +28,7 @@ export function ThermalPrinter({restaurantId,restaurantName,currency,receipt,pri
    const paper=saved.width===58?58:width;setPrinters(names);save(preferred,paper);setMessage(l('تم الاتصال بالطابعة.','Printer connected.'));return {qz,printer:preferred,width:paper};
   }catch{setOpen(true);setMessage(l('شغّل QZ Tray على جهاز الطابعة واسمح باتصال الموقع، ثم اضغط اتصال.','Start QZ Tray on the printer computer, allow the site connection, then press Connect.'));return null;}finally{setBusy(false);}
  }
- async function image(data:PosReceipt,paper:58|80){return receiptImage({...data,lines:data.lines.map(line=>({...line,variant:alhamdUnitLabel(line.variant,restaurantId)}))},restaurantName,currency,savedLanguage()==='ar',paper);}
+ async function image(data:PosReceipt,paper:58|80){return receiptImage({...data,menuUrl,lines:data.lines.map(line=>({...line,variant:alhamdUnitLabel(line.variant,restaurantId)}))},restaurantName,currency,savedLanguage()==='ar',paper);}
  async function print(data:PosReceipt,reprint=false){
   if(printBusy)return;printBusy=true;setBusy(true);pending.current=data;setPendingReceipt(data);
   const job=`${data.orderId??data.number}:${data.creditNote?'credit':'sale'}`;

@@ -6,6 +6,7 @@ const path=require('node:path');
 (async()=>{
 const root=path.resolve(__dirname,'..');
 const mocks={
+ 'next/font/google':`export const Aref_Ruqaa=()=>({style:{fontFamily:"Arial"},className:"receipt-ruqaa"});`,
  '@/components/i18n/I18nProvider':`export const useI18n=()=>({locale:'ar'});`,
  '@/lib/actions/fiscal':`export async function recordReceiptPrint(){window.journal++;return {ok:true}}`,
  '@/lib/qz-print':`export async function qzConnection(){if(window.failConnection)throw Error('offline');return {printers:{find:async()=>['XP-80C'],getDefault:async()=> 'XP-80C'},configs:{create:(printer,options)=>({printer,options})},print:async(config,data)=>{window.jobs.push({config,data});if(window.failPrint)throw Error('unknown response');await new Promise(r=>setTimeout(r,150));}};}`,

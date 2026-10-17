@@ -229,3 +229,5 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 .product-editor-fields textarea { padding-top: 10px; padding-bottom: 10px; }
 .product-editor-fields label { font-size: 12px; }
 .product-editor-fields input[type="file"] { min-height: 0; }
+
+@media print { #pos-receipt:not([data-report]) h1.receipt-brand { font-size: 30px; line-height: 1.5; } }
