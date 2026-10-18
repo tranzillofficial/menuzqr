@@ -1,7 +1,7 @@
 {
   "phone": "01154267415",
   "whatsapp": "201154267415",
-  "address": "East Walk Mall, Al Andalus Square, next to the American University in Cairo, Fifth Settlement, New Cairo, Egypt",
+  "address": "EastWalk Mall - Fifth Settlement - Cairo",
   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=East+Walk+Mall+Al+Andalus+Square+New+Cairo",
   "instagram": "",
   "facebook": "",
@@ -249,32 +249,42 @@
         {
           "id": "item-6-1",
           "name": "Orange",
-          "price": "",
-          "image": ""
+          "price": "85",
+          "image": "/belmir-site/assets/belmir-orange.webp",
+          "description": "Bright citrus notes with a refreshing finish.",
+          "priceApproximate": true
         },
         {
           "id": "item-6-2",
           "name": "Strawberry",
-          "price": "",
-          "image": ""
+          "price": "95",
+          "image": "/belmir-site/assets/belmir-strawberry.webp",
+          "description": "Sweet berry flavour with a smooth, fruity finish.",
+          "priceApproximate": true
         },
         {
           "id": "item-6-3",
           "name": "Guava",
-          "price": "",
-          "image": ""
+          "price": "85",
+          "image": "/belmir-site/assets/belmir-guava.webp",
+          "description": "Mellow tropical flavour with a soft, velvety texture.",
+          "priceApproximate": true
         },
         {
           "id": "item-6-4",
           "name": "Mango",
-          "price": "",
-          "image": ""
+          "price": "100",
+          "image": "/belmir-site/assets/belmir-mango.webp",
+          "description": "Rich mango flavour with a golden tropical sweetness.",
+          "priceApproximate": true
         },
         {
           "id": "item-6-5",
           "name": "Lemon Mint",
-          "price": "",
-          "image": ""
+          "price": "85",
+          "image": "/belmir-site/assets/belmir-lemon-mint.webp",
+          "description": "Zesty lemon and cool mint for a refreshing sip.",
+          "priceApproximate": true
         }
       ]
     },
