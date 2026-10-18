@@ -47,6 +47,7 @@ const nextConfig: NextConfig = {
         ]),
     ],
   },
+  outputFileTracingIncludes: { "/belmir/dashboard": ["./public/belmir-site/dashboard.html"] },
   async rewrites() {
     return [
       { source: "/belmir", destination: "/belmir-site/index.html" },

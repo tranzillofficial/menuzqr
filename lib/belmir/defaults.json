@@ -1,0 +1,686 @@
+{
+  "phone": "01154267415",
+  "whatsapp": "201154267415",
+  "address": "East Walk Mall, Al Andalus Square, next to the American University in Cairo, Fifth Settlement, New Cairo, Egypt",
+  "mapsUrl": "https://www.google.com/maps/search/?api=1&query=East+Walk+Mall+Al+Andalus+Square+New+Cairo",
+  "instagram": "",
+  "facebook": "",
+  "currency": "EGP",
+  "defaultView": "list",
+  "categories": [
+    {
+      "id": "cat-1",
+      "name": "Hot Coffee",
+      "type": "drinks",
+      "image": "/belmir-site/assets/coffee.jpg",
+      "items": [
+        {
+          "id": "item-1-1",
+          "name": "Espresso",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-1-2",
+          "name": "Macchiato",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-1-3",
+          "name": "Cortado",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-1-4",
+          "name": "Flat White",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-1-5",
+          "name": "Latte",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-1-6",
+          "name": "Cappuccino",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-1-7",
+          "name": "Dark Mocha",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-1-8",
+          "name": "White Mocha",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-1-9",
+          "name": "Spanish Latte",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-1-10",
+          "name": "Caramel Macchiato",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-1-11",
+          "name": "Hot Matcha",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-1-12",
+          "name": "Americano",
+          "price": "",
+          "image": ""
+        }
+      ]
+    },
+    {
+      "id": "cat-2",
+      "name": "Iced Coffee",
+      "type": "drinks",
+      "image": "",
+      "items": [
+        {
+          "id": "item-2-1",
+          "name": "Iced Latte",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-2-2",
+          "name": "Iced Americano",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-2-3",
+          "name": "Iced Spanish Latte",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-2-4",
+          "name": "Iced White Mocha",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-2-5",
+          "name": "Iced Dark Mocha",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-2-6",
+          "name": "Iced Matcha",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-2-7",
+          "name": "Strawberry Matcha",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-2-8",
+          "name": "Iced Shake & Classic",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-2-9",
+          "name": "Iced Shake & White Mocha",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-2-10",
+          "name": "Iced Shake & Vanilla",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-2-11",
+          "name": "Cold Brew",
+          "price": "",
+          "image": ""
+        }
+      ]
+    },
+    {
+      "id": "cat-3",
+      "name": "Mojitos",
+      "type": "drinks",
+      "image": "",
+      "items": [
+        {
+          "id": "item-3-1",
+          "name": "Pink Lemonade",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-3-2",
+          "name": "Passion Mango",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-3-3",
+          "name": "Red Sun",
+          "price": "",
+          "image": ""
+        }
+      ]
+    },
+    {
+      "id": "cat-4",
+      "name": "Iced Tea",
+      "type": "drinks",
+      "image": "",
+      "items": [
+        {
+          "id": "item-4-1",
+          "name": "Classic Iced Tea",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-4-2",
+          "name": "Passion Iced Tea",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-4-3",
+          "name": "Peach Iced Tea",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-4-4",
+          "name": "Mango Passion Iced Tea",
+          "price": "",
+          "image": ""
+        }
+      ]
+    },
+    {
+      "id": "cat-5",
+      "name": "Turkish Coffee",
+      "type": "drinks",
+      "image": "",
+      "items": [
+        {
+          "id": "item-5-1",
+          "name": "Single",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-5-2",
+          "name": "Double",
+          "price": "",
+          "image": ""
+        }
+      ]
+    },
+    {
+      "id": "cat-6",
+      "name": "Fresh Juices",
+      "type": "drinks",
+      "image": "/belmir-site/assets/juice.jpg",
+      "items": [
+        {
+          "id": "item-6-1",
+          "name": "Orange",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-6-2",
+          "name": "Strawberry",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-6-3",
+          "name": "Guava",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-6-4",
+          "name": "Mango",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-6-5",
+          "name": "Lemon Mint",
+          "price": "",
+          "image": ""
+        }
+      ]
+    },
+    {
+      "id": "cat-7",
+      "name": "Coffee Blends",
+      "type": "drinks",
+      "image": "",
+      "items": [
+        {
+          "id": "item-7-1",
+          "name": "Mocha Crushed",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-7-2",
+          "name": "White Mocha Crushed",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-7-3",
+          "name": "Matcha Blended",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-7-4",
+          "name": "Spanish Blended",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-7-5",
+          "name": "Choco Crushed",
+          "price": "",
+          "image": ""
+        }
+      ]
+    },
+    {
+      "id": "cat-8",
+      "name": "Bakery & Pastries",
+      "type": "food",
+      "image": "/belmir-site/assets/bakery.jpg",
+      "items": [
+        {
+          "id": "item-8-1",
+          "name": "Plain Croissant",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-8-2",
+          "name": "Cheddar Croissant",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-8-3",
+          "name": "Labneh & Zaatar Croissant",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-8-4",
+          "name": "Turkish Cheese Croissant",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-8-5",
+          "name": "Almond Croissant",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-8-6",
+          "name": "Nutella Croissant",
+          "price": "",
+          "image": ""
+        }
+      ]
+    },
+    {
+      "id": "cat-9",
+      "name": "Sandwiches",
+      "type": "food",
+      "image": "",
+      "items": [
+        {
+          "id": "item-9-1",
+          "name": "Turkish Cheese Sandwich",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-9-2",
+          "name": "Creamy Cheese Bagel",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-9-3",
+          "name": "Roast Beef Bagel",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-9-4",
+          "name": "Salmon Bagel",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-9-5",
+          "name": "Honey Master Chicken Sandwich",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-9-6",
+          "name": "Chicken Pesto Sandwich",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-9-7",
+          "name": "Sea Racha Sandwich",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-9-8",
+          "name": "Chicken Mushroom Sandwich",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-9-9",
+          "name": "Mixed Cheese Sandwich",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-9-10",
+          "name": "Halloumi Cheese Sandwich",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-9-11",
+          "name": "Roast Beef Toast",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-9-12",
+          "name": "Chicken Mushroom Toast",
+          "price": "",
+          "image": ""
+        }
+      ]
+    },
+    {
+      "id": "cat-10",
+      "name": "Salads",
+      "type": "food",
+      "image": "",
+      "items": [
+        {
+          "id": "item-10-1",
+          "name": "Greek Salad",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-10-2",
+          "name": "Caesar Salad",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-10-3",
+          "name": "Tuna Salad",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-10-4",
+          "name": "Taco Salad",
+          "price": "",
+          "image": ""
+        }
+      ]
+    },
+    {
+      "id": "cat-11",
+      "name": "Cakes",
+      "type": "food",
+      "image": "",
+      "items": [
+        {
+          "id": "item-11-1",
+          "name": "Chocolate Cake",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-11-2",
+          "name": "Carrot Cake",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-11-3",
+          "name": "Honey Cake",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-11-4",
+          "name": "Tiramisu Cake",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-11-5",
+          "name": "Lotus Cheesecake",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-11-6",
+          "name": "Raspberry Cheesecake",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-11-7",
+          "name": "English Cake",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-11-8",
+          "name": "Lemon Cake",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-11-9",
+          "name": "Orange Cake",
+          "price": "",
+          "image": ""
+        }
+      ]
+    },
+    {
+      "id": "cat-12",
+      "name": "French Toast",
+      "type": "food",
+      "image": "",
+      "items": [
+        {
+          "id": "item-12-1",
+          "name": "Classic French Toast",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-12-2",
+          "name": "Nutella French Toast",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-12-3",
+          "name": "Lotus French Toast",
+          "price": "",
+          "image": ""
+        }
+      ]
+    },
+    {
+      "id": "cat-13",
+      "name": "Puddings",
+      "type": "food",
+      "image": "",
+      "items": [
+        {
+          "id": "item-13-1",
+          "name": "Banana Pudding",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-13-2",
+          "name": "Mango Pudding",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-13-3",
+          "name": "Chocolate Pudding",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-13-4",
+          "name": "Strawberry Pudding",
+          "price": "",
+          "image": ""
+        }
+      ]
+    },
+    {
+      "id": "cat-14",
+      "name": "Cookies",
+      "type": "food",
+      "image": "",
+      "items": [
+        {
+          "id": "item-14-1",
+          "name": "Bilgen Chocolate Cookies",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-14-2",
+          "name": "White Chocolate Cookies",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-14-3",
+          "name": "Lotus Cookies",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-14-4",
+          "name": "Nutella Cookies",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-14-5",
+          "name": "Dark Espresso Cookies",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-14-6",
+          "name": "Cinnamon Cookies",
+          "price": "",
+          "image": ""
+        }
+      ]
+    },
+    {
+      "id": "cat-15",
+      "name": "Muffins",
+      "type": "food",
+      "image": "",
+      "items": [
+        {
+          "id": "item-15-1",
+          "name": "Chocolate Muffins",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-15-2",
+          "name": "Vanilla Muffins",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-15-3",
+          "name": "Blueberry Muffins",
+          "price": "",
+          "image": ""
+        }
+      ]
+    },
+    {
+      "id": "cat-16",
+      "name": "Mille-feuille",
+      "type": "food",
+      "image": "",
+      "items": [
+        {
+          "id": "item-16-1",
+          "name": "Classic Mille-feuille",
+          "price": "",
+          "image": ""
+        },
+        {
+          "id": "item-16-2",
+          "name": "Mango Mille-feuille",
+          "price": "",
+          "image": ""
+        }
+      ]
+    }
+  ]
+}

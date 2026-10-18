@@ -1,0 +1,11 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {validateBelmirContent} from '../lib/belmir/validation.ts';
+const defaults=JSON.parse(readFileSync(new URL('../lib/belmir/defaults.json',import.meta.url),'utf8'));
+const fresh=()=>structuredClone(defaults);
+test('preserves all 91 products, optional prices and exactly three category images',()=>{const v=validateBelmirContent(defaults);assert.equal(v.categories.flatMap(c=>c.items).length,91);assert.equal(v.categories.filter(c=>c.image).length,3);assert.equal(v.categories.flatMap(c=>c.items).filter(p=>p.image).length,0);});
+test('accepts grid view and persisted product pictures with a decimal price',()=>{const v=fresh();v.defaultView='grid';v.categories[0].items[0].image='https://example.com/espresso.webp';v.categories[0].items[0].price='65.50';assert.equal(validateBelmirContent(v).categories[0].items[0].price,'65.50');});
+test('rejects executable or credential-bearing social and image URLs',()=>{for(const key of ['instagram','facebook','mapsUrl']){const v=fresh();v[key]='javascript:alert(1)';assert.throws(()=>validateBelmirContent(v));}for(const bad of ['data:image/svg+xml,<svg/>','//evil.test/a.jpg','https://user:password@example.com/a.jpg']){const v=fresh();v.categories[0].items[0].image=bad;assert.throws(()=>validateBelmirContent(v));}});
+test('rejects duplicate IDs and invalid prices without stripping products',()=>{const v=fresh();v.categories[0].items[0].id=v.categories[1].items[0].id;assert.throws(()=>validateBelmirContent(v));for(const bad of ['-1','5e4','1.234','NaN']){const d=fresh();d.categories[0].items[0].price=bad;assert.throws(()=>validateBelmirContent(d));}});
+test('rejects malformed WhatsApp numbers and empty required fields',()=>{for(const key of ['address','phone','currency']){const v=fresh();v[key]='';assert.throws(()=>validateBelmirContent(v));}const v=fresh();v.whatsapp='abc';assert.throws(()=>validateBelmirContent(v));});
