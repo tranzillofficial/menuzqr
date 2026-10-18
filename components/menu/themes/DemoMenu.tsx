@@ -29,7 +29,7 @@ export function DemoMenu({ showMarketing = true }: { showMarketing?: boolean } =
       <div className="relative mx-auto max-w-6xl px-4 pb-9 pt-5 sm:px-6 sm:pb-14 sm:pt-7">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5"><MenuImage src={data.restaurant.logo_url} alt="" className={data.restaurant.slug === "belmir" ? "size-14 shrink-0 bg-white sm:size-16" : "size-10 bg-white"} rounded="rounded-xl" priority sizes={data.restaurant.slug === "belmir" ? "64px" : "40px"} /><span className="text-sm font-semibold">{data.restaurant.slug === "belmir" ? <BelmirBrandName transparent /> : data.restaurant.name}</span></div>
-          <span className="shrink-0 rounded-full border border-white/25 bg-black/20 px-3 py-1.5 text-xs text-white/90">{showMarketing ? (ar ? "منيو تجريبي" : "Demo menu") : "Café & Bakery"}</span>
+          {data.restaurant.slug !== "belmir" && <span className="shrink-0 rounded-full border border-white/25 bg-black/20 px-3 py-1.5 text-xs text-white/90">{showMarketing ? (ar ? "منيو تجريبي" : "Demo menu") : "Café & Bakery"}</span>}
         </div>
         <div className="max-w-2xl pt-12 sm:pt-20">
           <p className="mb-3 text-sm font-medium text-[#ffbf8c]">{ar ? "اختار اللي على مزاجك" : "Find your next favourite"}</p>
