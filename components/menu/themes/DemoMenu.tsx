@@ -1,5 +1,7 @@
 "use client";
 
+import { BelmirBrandName } from "../BelmirBrandName";
+
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useMenu } from "../MenuContext";
@@ -26,7 +28,7 @@ export function DemoMenu({ showMarketing = true }: { showMarketing?: boolean } =
       <div className="absolute inset-0 -z-0 bg-gradient-to-t from-[#211a15] via-[#211a15]/80 to-[#211a15]/45" />
       <div className="relative mx-auto max-w-6xl px-4 pb-9 pt-5 sm:px-6 sm:pb-14 sm:pt-7">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5"><MenuImage src={data.restaurant.logo_url} alt="" className="size-10 bg-white" rounded="rounded-xl" priority sizes="40px" /><span className="text-sm font-semibold">{data.restaurant.name}</span></div>
+          <div className="flex items-center gap-2.5"><MenuImage src={data.restaurant.logo_url} alt="" className="size-10 bg-white" rounded="rounded-xl" priority sizes="40px" /><span className="text-sm font-semibold">{data.restaurant.slug === "belmir" ? <BelmirBrandName /> : data.restaurant.name}</span></div>
           <span className="shrink-0 rounded-full border border-white/25 bg-black/20 px-3 py-1.5 text-xs text-white/90">{showMarketing ? (ar ? "منيو تجريبي" : "Demo menu") : "Café & Bakery"}</span>
         </div>
         <div className="max-w-2xl pt-12 sm:pt-20">

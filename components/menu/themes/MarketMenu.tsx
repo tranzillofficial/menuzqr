@@ -1,5 +1,7 @@
 "use client";
 
+import { BelmirBrandName } from "../BelmirBrandName";
+
 import { useMemo } from "react";
 import { useMenu } from "../MenuContext";
 import { MenuImage } from "../MenuMedia";
@@ -43,7 +45,7 @@ export function MarketMenu() {
           )}
 
           <h1 className="mt-5 text-3xl font-extrabold tracking-tight text-white">
-            {restaurant.name}
+            {restaurant.slug === "belmir" ? <BelmirBrandName /> : restaurant.name}
           </h1>
 
           {restaurant.description && (

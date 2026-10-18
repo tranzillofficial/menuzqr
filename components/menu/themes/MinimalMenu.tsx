@@ -1,5 +1,7 @@
 "use client";
 
+import { BelmirBrandName } from "../BelmirBrandName";
+
 import { useMemo } from "react";
 import { useMenu } from "../MenuContext";
 import { MenuImage } from "../MenuMedia";
@@ -27,7 +29,7 @@ export function MinimalMenu() {
             />
           )}
           <div className="min-w-0">
-            <h1 className="truncate text-xl font-semibold tracking-tight">{restaurant.name}</h1>
+            <h1 className="truncate text-xl font-semibold tracking-tight">{restaurant.slug === "belmir" ? <BelmirBrandName /> : restaurant.name}</h1>
             {restaurant.address && (
               <p className="truncate text-xs text-ink-500">{restaurant.address}</p>
             )}

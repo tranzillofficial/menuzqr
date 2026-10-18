@@ -1,5 +1,7 @@
 "use client";
 
+import { BelmirBrandName } from "../BelmirBrandName";
+
 import { useMemo } from "react";
 import { useMenu } from "../MenuContext";
 import { MenuImage } from "../MenuMedia";
@@ -43,7 +45,7 @@ export function ElegantMenu() {
           )}
 
           <h1 className="mt-5 font-serif text-[2.6rem] leading-[1.1] tracking-tight">
-            {restaurant.name}
+            {restaurant.slug === "belmir" ? <BelmirBrandName /> : restaurant.name}
           </h1>
 
           {restaurant.description && (

@@ -15,6 +15,6 @@
  options.addEventListener('click',event=>{const button=event.target.closest('[data-design-option]');if(!button)return;apply(button.dataset.designOption);picker.open=false;picker.querySelector('summary').focus();feedback.textContent='';});
  picker.addEventListener('keydown',event=>{if(event.key==='Escape'){picker.open=false;picker.querySelector('summary').focus()}});
  document.addEventListener('click',event=>{if(!picker.contains(event.target))picker.open=false});
- share.addEventListener('click',async()=>{synchronize({design:document.body.dataset.design});try{await navigator.clipboard.writeText(location.href);feedback.textContent='Design link copied';}catch{feedback.textContent='Copy the page link from your address bar.'}});
+ share?.addEventListener('click',async()=>{synchronize({design:document.body.dataset.design});try{await navigator.clipboard.writeText(location.href);feedback.textContent='Design link copied';}catch{feedback.textContent='Copy the page link from your address bar.'}});
  window.Belmir.designs={styles,apply,synchronize};
 })();
