@@ -291,7 +291,7 @@ export type AdminAction = {
 
 /** Everything a public menu theme needs to render. */
 export type StorefrontDetails = {delivery_fee:number;free_delivery_above:number|null;payment_details:string;location_url:string;facebook_url:string;instagram_url:string;website_url:string};
-export type PaymentInstructions = Partial<StorefrontDetails> & { remote_ordering_enabled: boolean; cash_wallet: string; instapay_address: string; payment_whatsapp: string };
+export type PaymentInstructions = Partial<StorefrontDetails> & { tiktok_url?: string; remote_ordering_enabled: boolean; cash_wallet: string; instapay_address: string; payment_whatsapp: string };
 
 export type OfferItem = {variant_id:string;quantity:number;product_id?:string;name?:string;variant_name?:string;unit_price?:number;image_url?:string|null};
 export type BusinessOffer = {all_day?:boolean;offer_type?:"promotion"|"bundle"|"discount";bundle_items?:OfferItem[];sale_price?:number|null;discount_kind?:"percent"|"fixed"|null;discount_value?:number|null;original_total?:number;id:string;restaurant_id:string;title:string;description:string;image_url:string|null;product_ids:string[];starts_at:string|null;ends_at:string|null;is_active:boolean;sort_order:number;created_at:string};

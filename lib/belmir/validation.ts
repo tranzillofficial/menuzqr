@@ -1,6 +1,6 @@
 export type BelmirItem = { id: string; name: string; price: string; image: string; description?: string; priceApproximate?: boolean };
 export type BelmirCategory = { id: string; name: string; type: 'drinks' | 'food'; image: string; items: BelmirItem[] };
-export type BelmirContent = { phone: string; whatsapp: string; address: string; mapsUrl: string; instagram: string; facebook: string; currency: string; defaultView: 'list' | 'grid'; categories: BelmirCategory[] };
+export type BelmirContent = { phone: string; whatsapp: string; address: string; mapsUrl: string; instagram: string; facebook: string; tiktok?: string; currency: string; defaultView: 'list' | 'grid'; categories: BelmirCategory[] };
 function text(value: unknown, max: number, required = false): string {
  if(typeof value !== 'string' || value.length > max || (required && !value.trim())) throw Error('Please check the required fields and text length.');
  return value.trim();
@@ -24,5 +24,5 @@ export function validateBelmirContent(value: unknown): BelmirContent {
  if(!/^[+\d ()-]{6,30}$/.test(phone)|| (whatsapp&&!/^\d{8,15}$/.test(whatsapp)))throw Error('Check phone and WhatsApp numbers.');
  const currency=text(v.currency,3,true);if(!/^[A-Z]{3}$/.test(currency))throw Error('Use a three-letter currency, e.g. EGP.');
  if(v.defaultView!=='list'&&v.defaultView!=='grid')throw Error('Choose list or grid view.');
- return {phone,whatsapp,address:text(v.address,500,true),mapsUrl:url(v.mapsUrl),instagram:url(v.instagram),facebook:url(v.facebook),currency,defaultView:v.defaultView,categories};
+ return {phone,whatsapp,address:text(v.address,500,true),mapsUrl:url(v.mapsUrl),instagram:url(v.instagram),facebook:url(v.facebook),tiktok:url(v.tiktok ?? ''),currency,defaultView:v.defaultView,categories};
 }

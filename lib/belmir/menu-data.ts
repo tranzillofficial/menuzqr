@@ -20,7 +20,7 @@ export function belmirMenuData(content: BelmirContent, theme: MenuThemeId): Menu
     payments: {
       remote_ordering_enabled: false, cash_wallet: '', instapay_address: '',
       payment_whatsapp: content.whatsapp, location_url: content.mapsUrl,
-      instagram_url: content.instagram, facebook_url: content.facebook,
+      instagram_url: content.instagram, facebook_url: content.facebook, tiktok_url: content.tiktok,
       website_url: 'https://menuzqr.shop/belmir',
     },
     categories: content.categories.map((category, index) => ({

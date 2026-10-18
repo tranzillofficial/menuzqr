@@ -73,7 +73,7 @@ export async function signInAction(
   const domain=await getTenantDomain();
   if(domain){const {data:member}=await supabase.from("restaurant_members").select("id").eq("user_id",data.user.id).eq("restaurant_id",domain.restaurant_id).eq("is_active",true).maybeSingle();if(!member){await supabase.auth.signOut();return fail("الحساب ده مش تابع للنشاط. This account does not belong to this business.");}}
   revalidatePath("/", "layout");
-  redirect(safeNext(next));
+  redirect(data.user.app_metadata?.belmir_admin === true && !domain ? "/belmir/dashboard" : safeNext(next));
 }
 
 export async function signOutAction() {

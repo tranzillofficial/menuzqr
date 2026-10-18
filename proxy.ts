@@ -24,6 +24,7 @@ export async function proxy(request:NextRequest){
  if(!protectedPath&&!AUTH_PAGES.includes(pathname))return NextResponse.next();
  const {response,user,supabase}=await updateSession(request);
  if(!user&&protectedPath){const url=request.nextUrl.clone();url.pathname='/login';url.searchParams.set('next',pathname);const redirect=NextResponse.redirect(url);response.cookies.getAll().forEach(c=>redirect.cookies.set(c));return redirect;}
+ if(user?.app_metadata?.belmir_admin===true&&(protectedPath||AUTH_PAGES.includes(pathname))){const url=request.nextUrl.clone();url.pathname="/belmir/dashboard";url.search="";const redirect=NextResponse.redirect(url);response.cookies.getAll().forEach(c=>redirect.cookies.set(c));return redirect;}
  if(user&&protectedPath){
   const {data:members}=await supabase.from('restaurant_members').select('restaurant_id,role,restaurants(enabled_modules,business_kind)').eq('user_id',user.id).eq('is_active',true).order('created_at');
   const member=domain?members?.find(m=>m.restaurant_id===domain.restaurant_id):members?.sort((a,b)=>['owner','manager','chef','waiter','staff'].indexOf(a.role)-['owner','manager','chef','waiter','staff'].indexOf(b.role))[0];
