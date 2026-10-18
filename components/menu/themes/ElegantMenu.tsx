@@ -121,7 +121,7 @@ export function ElegantMenu() {
                             className="h-px flex-1 translate-y-[-3px] border-b border-dotted border-[#cfc0a6]"
                             aria-hidden="true"
                           />
-                          {showPrices && (
+                          {showPrices && prices.length > 0 && (
                             <span className="ltr-nums font-serif text-lg">
                               {product.product_variants.length === 1
                                 ? formatMoney(prices[0] ?? 0, currency)

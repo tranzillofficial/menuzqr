@@ -78,7 +78,7 @@ export function MinimalMenu() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-baseline gap-2">
                           <h3 className="text-[15px] font-medium leading-snug">{product.name}</h3>
-                          {showPrices && (
+                          {showPrices && prices.length > 0 && (
                             <>
                               <span
                                 className="h-px min-w-4 flex-1 self-end border-b border-dotted border-ink-300"

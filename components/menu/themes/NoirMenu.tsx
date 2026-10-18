@@ -110,7 +110,7 @@ export function NoirMenu() {
                           <h3 className="truncate text-[15px] font-medium text-white">
                             {product.name}
                           </h3>
-                          {showPrices && (
+                          {showPrices && prices.length > 0 && (
                             <span className="ltr-nums ms-auto shrink-0 font-serif text-[15px] text-[#c9a227]">
                               {product.product_variants.length === 1
                                 ? formatMoney(prices[0] ?? 0, currency)

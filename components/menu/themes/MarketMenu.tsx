@@ -114,7 +114,7 @@ export function MarketMenu() {
                             {ingredients.join(" · ")}
                           </p>
                         )}
-                        {showPrices && (
+                        {showPrices && prices.length > 0 && (
                           <span className="ltr-nums mt-3 inline-flex w-fit rounded-full bg-[#0f766e] px-3 py-1 text-xs font-bold text-white">
                             {product.product_variants.length === 1
                               ? formatMoney(prices[0] ?? 0, currency)
