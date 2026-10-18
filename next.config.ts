@@ -47,6 +47,12 @@ const nextConfig: NextConfig = {
         ]),
     ],
   },
+  async rewrites() {
+    return [
+      { source: "/belmir", destination: "/belmir-site/index.html" },
+      { source: "/belmir/menu", destination: "/belmir-site/menu.html" },
+    ];
+  },
   async headers() {
     return [
       {

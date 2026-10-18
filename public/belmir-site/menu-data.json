@@ -1,0 +1,125 @@
+{
+  "Hot Coffee": [
+    "Espresso",
+    "Macchiato",
+    "Cortado",
+    "Flat White",
+    "Latte",
+    "Cappuccino",
+    "Dark Mocha",
+    "White Mocha",
+    "Spanish Latte",
+    "Caramel Macchiato",
+    "Hot Matcha",
+    "Americano"
+  ],
+  "Iced Coffee": [
+    "Iced Latte",
+    "Iced Americano",
+    "Iced Spanish Latte",
+    "Iced White Mocha",
+    "Iced Dark Mocha",
+    "Iced Matcha",
+    "Strawberry Matcha",
+    "Iced Shake & Classic",
+    "Iced Shake & White Mocha",
+    "Iced Shake & Vanilla",
+    "Cold Brew"
+  ],
+  "Mojitos": [
+    "Pink Lemonade",
+    "Passion Mango",
+    "Red Sun"
+  ],
+  "Iced Tea": [
+    "Classic Iced Tea",
+    "Passion Iced Tea",
+    "Peach Iced Tea",
+    "Mango Passion Iced Tea"
+  ],
+  "Turkish Coffee": [
+    "Single",
+    "Double"
+  ],
+  "Fresh Juices": [
+    "Orange",
+    "Strawberry",
+    "Guava",
+    "Mango",
+    "Lemon Mint"
+  ],
+  "Coffee Blends": [
+    "Mocha Crushed",
+    "White Mocha Crushed",
+    "Matcha Blended",
+    "Spanish Blended",
+    "Choco Crushed"
+  ],
+  "Bakery & Pastries": [
+    "Plain Croissant",
+    "Cheddar Croissant",
+    "Labneh & Zaatar Croissant",
+    "Turkish Cheese Croissant",
+    "Almond Croissant",
+    "Nutella Croissant"
+  ],
+  "Sandwiches": [
+    "Turkish Cheese Sandwich",
+    "Creamy Cheese Bagel",
+    "Roast Beef Bagel",
+    "Salmon Bagel",
+    "Honey Master Chicken Sandwich",
+    "Chicken Pesto Sandwich",
+    "Sea Racha Sandwich",
+    "Chicken Mushroom Sandwich",
+    "Mixed Cheese Sandwich",
+    "Halloumi Cheese Sandwich",
+    "Roast Beef Toast",
+    "Chicken Mushroom Toast"
+  ],
+  "Salads": [
+    "Greek Salad",
+    "Caesar Salad",
+    "Tuna Salad",
+    "Taco Salad"
+  ],
+  "Cakes": [
+    "Chocolate Cake",
+    "Carrot Cake",
+    "Honey Cake",
+    "Tiramisu Cake",
+    "Lotus Cheesecake",
+    "Raspberry Cheesecake",
+    "English Cake",
+    "Lemon Cake",
+    "Orange Cake"
+  ],
+  "French Toast": [
+    "Classic French Toast",
+    "Nutella French Toast",
+    "Lotus French Toast"
+  ],
+  "Puddings": [
+    "Banana Pudding",
+    "Mango Pudding",
+    "Chocolate Pudding",
+    "Strawberry Pudding"
+  ],
+  "Cookies": [
+    "Bilgen Chocolate Cookies",
+    "White Chocolate Cookies",
+    "Lotus Cookies",
+    "Nutella Cookies",
+    "Dark Espresso Cookies",
+    "Cinnamon Cookies"
+  ],
+  "Muffins": [
+    "Chocolate Muffins",
+    "Vanilla Muffins",
+    "Blueberry Muffins"
+  ],
+  "Mille-feuille": [
+    "Classic Mille-feuille",
+    "Mango Mille-feuille"
+  ]
+}
