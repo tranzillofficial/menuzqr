@@ -18,7 +18,9 @@ export async function getLocale(): Promise<Locale> {
 }
 
 export async function getT(): Promise<Translator> {
-  return createTranslator(await getLocale());
+  const {getTenantDomain}=await import("@/lib/tenant-domain");
+  const [locale,tenant]=await Promise.all([getLocale(),getTenantDomain()]);
+  return createTranslator(locale,false,tenant?.restaurants.name);
 }
 
 export async function getBusinessT(): Promise<Translator> {

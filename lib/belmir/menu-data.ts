@@ -21,7 +21,7 @@ export function belmirMenuData(content: BelmirContent, theme: MenuThemeId): Menu
       remote_ordering_enabled: false, cash_wallet: '', instapay_address: '',
       payment_whatsapp: content.whatsapp, location_url: content.mapsUrl,
       instagram_url: content.instagram, facebook_url: content.facebook, tiktok_url: content.tiktok,
-      website_url: 'https://menuzqr.shop/belmir',
+      website_url: 'https://belmircoffee.com',
     },
     categories: content.categories.map((category, index) => ({
       id: category.id, restaurant_id: 'belmir', name: category.name,

@@ -34,7 +34,7 @@ export async function generateMetadata({
   return {
     title: `${restaurant.name}. Menu`,
     description:
-      restaurant.description ?? `Browse the menu at ${restaurant.name}, powered by MenuzQR.`,
+      restaurant.description ?? `Browse the menu at ${restaurant.name}.`,
     openGraph: {
       title: `${restaurant.name}. Menu`,
       description: restaurant.description ?? undefined,

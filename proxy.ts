@@ -13,6 +13,14 @@ export async function proxy(request:NextRequest){
  if(!isPlatformHost(host)&&!domain)return new NextResponse('Domain is not active',{status:404});
  if(domain){
   if(pathname==='/admin'||pathname.startsWith('/admin/')||pathname==='/signup')return new NextResponse('Not found',{status:404});
+  // Belmir keeps its existing managed menu and editor on its own domain.
+  if(domain.restaurants.owner_id==='a218bdc9-c6ea-4e81-9f85-bb2570831e23'){
+   const url=request.nextUrl.clone();
+   if(pathname==='/'){url.pathname='/belmir-site/index.html';return NextResponse.rewrite(url);}
+   if(pathname==='/menu'){url.pathname='/belmir/template';return NextResponse.rewrite(url);}
+   if(pathname==='/dashboard'){url.pathname='/belmir/dashboard';return NextResponse.redirect(url);}
+   if(pathname==='/belmir'||pathname.startsWith('/belmir/'))return NextResponse.next();
+  }
   if(!protectedPath&&!AUTH_PAGES.includes(pathname)){
    const url=request.nextUrl.clone();
    if(pathname==='/'){url.pathname='/business-site';return NextResponse.rewrite(url);}
