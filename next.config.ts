@@ -51,8 +51,7 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       { source: "/belmir", destination: "/belmir-site/index.html" },
-      { source: "/belmir/menu", has: [{ type: "query", key: "design", value: "(?<nativeTheme>elegant|modern|minimal|noir|market)" }], destination: "/belmir/template?theme=:nativeTheme" },
-      { source: "/belmir/menu", destination: "/belmir-site/menu.html" },
+      { source: "/belmir/menu", destination: "/belmir/template?theme=modern" },
     ];
   },
   async headers() {

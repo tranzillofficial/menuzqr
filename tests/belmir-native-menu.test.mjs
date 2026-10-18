@@ -14,10 +14,10 @@ test('shared templates receive all managed products, actual images and only know
  assert.equal(menu.restaurant.ordering_enabled, false);
  assert.equal(menu.restaurant.address, content.address);
 });
-test('Belmir imports actual demo templates and uses a query rewrite, not theme CSS', () => {
+test('Belmir uses the selected modern template with no public design switcher', () => {
  const source = readFileSync(new URL('../components/menu/BelmirNativeMenu.tsx',import.meta.url),'utf8');
- for (const name of ['ElegantMenu','DemoMenu','MinimalMenu','NoirMenu','MarketMenu']) assert.ok(source.includes(`from './themes/${name}'`));
+ assert.ok(source.includes("from './themes/DemoMenu'"));
+ assert.ok(!source.includes('<details'));
  const config=readFileSync(new URL('../next.config.ts',import.meta.url),'utf8');
- assert.ok(config.includes('(?<nativeTheme>elegant|modern|minimal|noir|market)'));
- assert.ok(config.includes('/belmir/template?theme=:nativeTheme'));
+ assert.ok(config.includes('/belmir/template?theme=modern'));
 });

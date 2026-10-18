@@ -28,14 +28,14 @@ export function DemoMenu({ showMarketing = true }: { showMarketing?: boolean } =
       <div className="absolute inset-0 -z-0 bg-gradient-to-t from-[#211a15] via-[#211a15]/80 to-[#211a15]/45" />
       <div className="relative mx-auto max-w-6xl px-4 pb-9 pt-5 sm:px-6 sm:pb-14 sm:pt-7">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5"><MenuImage src={data.restaurant.logo_url} alt="" className="size-10 bg-white" rounded="rounded-xl" priority sizes="40px" /><span className="text-sm font-semibold">{data.restaurant.slug === "belmir" ? <BelmirBrandName /> : data.restaurant.name}</span></div>
+          <div className="flex items-center gap-2.5"><MenuImage src={data.restaurant.logo_url} alt="" className={data.restaurant.slug === "belmir" ? "size-14 shrink-0 bg-white sm:size-16" : "size-10 bg-white"} rounded="rounded-xl" priority sizes={data.restaurant.slug === "belmir" ? "64px" : "40px"} /><span className="text-sm font-semibold">{data.restaurant.slug === "belmir" ? <BelmirBrandName transparent /> : data.restaurant.name}</span></div>
           <span className="shrink-0 rounded-full border border-white/25 bg-black/20 px-3 py-1.5 text-xs text-white/90">{showMarketing ? (ar ? "منيو تجريبي" : "Demo menu") : "Café & Bakery"}</span>
         </div>
         <div className="max-w-2xl pt-12 sm:pt-20">
           <p className="mb-3 text-sm font-medium text-[#ffbf8c]">{ar ? "اختار اللي على مزاجك" : "Find your next favourite"}</p>
           <h1 className="text-4xl font-bold leading-[1.35] tracking-tight sm:text-6xl">{ar ? <>أكلة حلوة.<br /><span className="text-[#ffad70]">وقهوة تكمّلها.</span></> : <>Good food.<br /><span className="text-[#ffad70]">Great coffee.</span></>}</h1>
           {data.restaurant.description && <p className="mt-4 max-w-lg text-sm leading-7 text-white/80 sm:text-base">{data.restaurant.description}</p>}
-          <div className="mt-6 flex flex-wrap items-center gap-3 text-xs"><a href={`#${data.categories[0]?.id ?? "products"}`} className="rounded-full bg-[#f47726] px-5 py-3 font-semibold text-white transition hover:bg-[#df6317]">{ar ? "شوف المنيو" : "Explore the menu"}<span aria-hidden="true" className="ms-2">↓</span></a><span className="text-white/70">{ar ? "صور وأسعار وتفاصيل كل اختيار" : "Photos, prices and every detail"}</span></div>
+          {data.restaurant.slug !== "belmir" && <div className="mt-6 flex flex-wrap items-center gap-3 text-xs"><a href={`#${data.categories[0]?.id ?? "products"}`} className="rounded-full bg-[#f47726] px-5 py-3 font-semibold text-white transition hover:bg-[#df6317]">{ar ? "شوف المنيو" : "Explore the menu"}<span aria-hidden="true" className="ms-2">↓</span></a><span className="text-white/70">{ar ? "صور وأسعار وتفاصيل كل اختيار" : "Photos, prices and every detail"}</span></div>}
         </div>
       </div>
     </header>
