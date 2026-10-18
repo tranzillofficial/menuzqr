@@ -47,7 +47,8 @@ export async function generateMetadata(): Promise<Metadata> {
  const tenant=await getTenantDomain();
  if(!tenant)return platformMetadata;
  const brand=tenant.restaurants.name;
- return {...platformMetadata,title:{default:brand,template:`%s · ${brand}`},description:tenant.restaurants.description||brand,applicationName:brand,appleWebApp:{capable:true,title:brand,statusBarStyle:'default'}};
+ const belmir=tenant.restaurants.owner_id==='a218bdc9-c6ea-4e81-9f85-bb2570831e23';
+ return {...platformMetadata,...(belmir?{icons:{icon:[{url:'/belmir-site/assets/brand/belmir-icon.svg?v=2',type:'image/svg+xml',sizes:'any'}],shortcut:'/belmir-site/assets/brand/belmir-icon.svg?v=2',apple:[{url:'/belmir-site/assets/brand/belmir-icon-192.png',sizes:'192x192',type:'image/png'}]}}:{}),title:{default:brand,template:`%s · ${brand}`},description:tenant.restaurants.description||brand,applicationName:brand,appleWebApp:{capable:true,title:brand,statusBarStyle:'default'}};
 }
 
 export const viewport: Viewport = {

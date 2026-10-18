@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
+import belmirStyles from "@/components/belmir/BelmirLogin.module.css";
 import { useActionState, useState } from "react";
 import { signInAction, signUpAction } from "@/lib/actions/account";
 import { Field, Input } from "@/components/ui/Field";
@@ -8,20 +10,23 @@ import { SubmitButton } from "@/components/ui/SubmitButton";
 import { Icon } from "@/components/ui/Icons";
 import { useT } from "@/components/i18n/I18nProvider";
 
-export function AuthForm({ mode, next, businessName }: { mode: "login" | "signup"; next?: string; businessName?:string }) {
+export function AuthForm({ mode, next, businessName, appearance }: { mode: "login" | "signup"; next?: string; businessName?:string; appearance?: "belmir" }) {
   const t = useT();
   const [email, setEmail] = useState("");
   const action = mode === "login" ? signInAction : signUpAction;
   const [state, formAction] = useActionState(action, null);
 
   return (
-    <div className="mx-auto w-full max-w-md">
-      <Link href="/" className="mb-8 flex items-center gap-2 font-semibold text-ink-900">
+    <div className={appearance === "belmir" ? belmirStyles.form : "mx-auto w-full max-w-md"}>
+      {appearance === "belmir" ? <Link href="/" className={belmirStyles.logo} aria-label="Belmir home">
+        <Image src="/belmir-site/assets/brand/belmir-english.svg" alt="Belmir" width={174} height={81} priority />
+        <span dir="ltr">CAFÉ &amp; BAKERY</span>
+      </Link> : <Link href="/" className="mb-8 flex items-center gap-2 font-semibold text-ink-900">
         <span className="grid size-8 place-items-center rounded-lg bg-brand-600 text-white">
           <Icon.qr className="size-4.5" />
         </span>
         {businessName??"MenuzQR"}
-      </Link>
+      </Link>}
 
       <h1 className="font-serif text-3xl text-ink-900">
         {mode === "login" ? t("auth.welcomeBack") : t("auth.createAccount")}
