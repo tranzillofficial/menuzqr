@@ -34,7 +34,7 @@ export default async function SettingsPage() {
 
   const { data: settings } = await supabase
     .from("restaurant_settings")
-    .select("sound_enabled, show_prices, show_ingredients,remote_ordering_enabled,cash_wallet,instapay_address,payment_whatsapp,delivery_fee,free_delivery_above,payment_details,location_url,facebook_url,instagram_url,website_url")
+    .select("sound_enabled, show_prices, show_ingredients,remote_ordering_enabled,cash_wallet,instapay_address,payment_whatsapp,delivery_fee,free_delivery_above,payment_details,location_url,facebook_url,instagram_url,website_url,whatsapp_url,tiktok_url")
     .eq("restaurant_id", restaurant.id)
     .maybeSingle();
 

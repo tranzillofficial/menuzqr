@@ -14,6 +14,7 @@ grant usage on schema public,auth to authenticated,service_role;grant all on all
 `);
 const base=readFileSync('supabase/migrations/20261009165845_supermarket_customers.sql','utf8').split('CREATE OR REPLACE FUNCTION public.create_fiscal_order')[0];await db.exec(base);
 await db.exec(readFileSync('supabase/migrations/20261013085352_dashboard_settings_and_customers.sql','utf8'));
+await db.exec(readFileSync('supabase/migrations/20261019160907_menu_social_links.sql','utf8'));
 await db.exec(`insert into restaurants(id,owner_id,business_kind,enabled_modules) values('${rid}','${actor}','supermarket',array['settings','customers','customer_create','customer_edit','invoices','payment_settings','online_ordering','delivery_settings','contact_settings']),('${other}','00000000-0000-4000-8000-000000000099','supermarket',array['customers']);insert into restaurant_members values('${rid}','${actor}',true,'owner');
 alter table orders enable row level security;create policy orders_read on orders for select to authenticated using(can_manage_restaurant(restaurant_id));grant select on orders,financial_events to authenticated;`);
 await db.exec(`set role authenticated;select set_config('test.actor','${actor}',false)`);
@@ -22,6 +23,13 @@ await db.query('select save_dashboard_settings($1,$2)',[rid,JSON.stringify(setti
 let row=(await db.query('select * from restaurant_settings where restaurant_id=$1',[rid])).rows[0];assert.equal(Number(row.delivery_fee),15);assert.equal(row.payment_details,'Bank 123');assert.equal(row.show_prices,true);
 await assert.rejects(()=>db.query('select save_dashboard_settings($1,$2)',[other,JSON.stringify(settings)]),/unavailable/);
 await assert.rejects(()=>db.query('select save_dashboard_settings($1,$2)',[rid,JSON.stringify({...settings,delivery_fee:-1})]),/delivery/);assert.equal(Number((await db.query('select delivery_fee from restaurant_settings where restaurant_id=$1',[rid])).rows[0].delivery_fee),15);
+// Social links save atomically, preserve payment settings, and can be removed explicitly.
+await db.query('select save_dashboard_settings($1,$2)',[rid,JSON.stringify({...settings,whatsapp_url:'https://wa.me/201012345678',tiktok_url:'https://www.tiktok.com/@market'})]);
+row=(await db.query('select * from restaurant_settings where restaurant_id=$1',[rid])).rows[0];assert.equal(row.whatsapp_url,'https://wa.me/201012345678');assert.equal(row.tiktok_url,'https://www.tiktok.com/@market');assert.equal(row.payment_whatsapp,settings.payment_whatsapp);
+await db.query('select save_dashboard_settings($1,$2)',[rid,JSON.stringify(settings)]);assert.equal((await db.query('select tiktok_url from restaurant_settings where restaurant_id=$1',[rid])).rows[0].tiktok_url,'https://www.tiktok.com/@market');
+await assert.rejects(()=>db.query('select save_dashboard_settings($1,$2)',[rid,JSON.stringify({...settings,whatsapp_url:'javascript:alert(1)',tiktok_url:''})]),/contact URL/);
+assert.equal((await db.query('select tiktok_url from restaurant_settings where restaurant_id=$1',[rid])).rows[0].tiktok_url,'https://www.tiktok.com/@market');
+await db.query('select save_dashboard_settings($1,$2)',[rid,JSON.stringify({...settings,whatsapp_url:'',tiktok_url:''})]);row=(await db.query('select * from restaurant_settings where restaurant_id=$1',[rid])).rows[0];assert.equal(row.whatsapp_url,'');assert.equal(row.tiktok_url,'');assert.equal(row.payment_whatsapp,settings.payment_whatsapp);
 const c=(await db.query("insert into business_customers(restaurant_id,name,phone,address,code)values($1,'Buyer','201012345678','Cairo','55') returning *",[rid])).rows[0];assert.equal(c.phone,'01012345678');
 await assert.rejects(()=>db.query("insert into business_customers(restaurant_id,name,phone)values($1,'Duplicate','01012345678')",[rid]),/unique/);
 await assert.rejects(()=>db.query("insert into business_customers(restaurant_id,name,phone)values($1,'Foreign','01022345678')",[other]),/unavailable|row-level/);

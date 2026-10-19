@@ -88,7 +88,7 @@ export const getPublicMenu = cache(async function getPublicMenu(
   }
   const [{ data: products,error:productError,count:productCount }, {data: payments}, {error:offerError}] = await Promise.all([
     market ? unstable_cache(async()=>await productQuery,["market-products-v2",restaurant.id,slug,String(page),categoryFilter,searchInput,visibleIds.join(",")],{revalidate:30,tags:[`menu-products:${slug}`]})() : productQuery,
-    supabase.from("restaurant_settings").select("remote_ordering_enabled,cash_wallet,instapay_address,payment_whatsapp,delivery_fee,free_delivery_above,payment_details,location_url,facebook_url,instagram_url,website_url").eq("restaurant_id",restaurant.id).maybeSingle(),
+    supabase.from("restaurant_settings").select("remote_ordering_enabled,cash_wallet,instapay_address,payment_whatsapp,delivery_fee,free_delivery_above,payment_details,location_url,facebook_url,instagram_url,website_url,whatsapp_url,tiktok_url").eq("restaurant_id",restaurant.id).maybeSingle(),
     Promise.resolve(offerResult),
   ]);
   if(productError)throw Error("Could not load products");
@@ -97,7 +97,7 @@ export const getPublicMenu = cache(async function getPublicMenu(
   if(payments){
     if(!featureEnabled(restaurant,'delivery_settings')){payments.delivery_fee=0;payments.free_delivery_above=null;}
     if(!featureEnabled(restaurant,'payment_settings')){payments.payment_details='';payments.cash_wallet='';payments.instapay_address='';}
-    if(!featureEnabled(restaurant,'contact_settings')){payments.location_url='';payments.facebook_url='';payments.instagram_url='';payments.website_url='';payments.payment_whatsapp='';}
+    if(!featureEnabled(restaurant,'contact_settings')){payments.whatsapp_url='';payments.tiktok_url='';payments.location_url='';payments.facebook_url='';payments.instagram_url='';payments.website_url='';payments.payment_whatsapp='';}
   }
   let table: Pick<RestaurantTable, "id" | "label"> | null = null;
   if (tableToken && !preview && moduleEnabled(restaurant,"tables")) {

@@ -13,7 +13,7 @@ export async function saveStorefrontDetails(_prev:ActionState,form:FormData):Pro
   patch.delivery_fee=Math.round(fee*100)/100;patch.free_delivery_above=free===null?null:Math.round(free*100)/100;
  }
  if(featureEnabled(owned.restaurant,'payment_settings'))patch.payment_details=str(form,'payment_details').slice(0,1200);
- if(featureEnabled(owned.restaurant,'contact_settings'))for(const key of ['location_url','facebook_url','instagram_url','website_url']){
+ if(featureEnabled(owned.restaurant,'contact_settings'))for(const key of ['whatsapp_url','facebook_url','instagram_url','tiktok_url','website_url','location_url']){
   const value=str(form,key);if(value){try{const url=new URL(value);if(url.protocol!=='https:'||url.username||url.password||value.length>500)throw Error();}catch{return fail('اكتب رابطًا يبدأ بـ https://. Enter a valid HTTPS URL.');}}patch[key]=value;
  }
  const db=await createServerSupabase();const {error}=await db.from('restaurant_settings').upsert({restaurant_id:owned.restaurant.id,...patch},{onConflict:'restaurant_id'});
