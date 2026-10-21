@@ -11,10 +11,12 @@ export function AccountMenu({
   email,
   restaurantName,
   isAdmin,
+  settingsEnabled = true,
 }: {
   email: string;
   restaurantName: string | null;
   isAdmin: boolean;
+  settingsEnabled?: boolean;
 }) {
   const t = useT();
   const [open, setOpen] = useState(false);
@@ -69,7 +71,7 @@ export function AccountMenu({
             </div>
 
             <div className="p-1.5">
-              <Link
+              {settingsEnabled && <Link
                 href="/dashboard/settings"
                 role="menuitem"
                 onClick={() => setOpen(false)}
@@ -77,7 +79,7 @@ export function AccountMenu({
               >
                 <Icon.settings className="size-4" />
                 {t("common.settings")}
-              </Link>
+              </Link>}
 
               {isAdmin && (
                 <Link

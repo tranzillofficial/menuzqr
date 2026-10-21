@@ -1,5 +1,5 @@
 import {redirect} from 'next/navigation';
-import { dashboardPathEnabled, moduleEnabled } from "@/lib/business-modules";
+import { dashboardPathEnabled, moduleEnabled, isMenuOnly } from "@/lib/business-modules";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -7,7 +7,6 @@ import { getMyRestaurant } from "@/lib/auth";
 import { ActivationPanel, StatusBadge } from "@/components/dashboard/ActivationPanel";
 import { PageHeader } from "@/components/dashboard/Shell";
 import { Card } from "@/components/ui/Card";
-import { LinkButton } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icons";
 import { absoluteUrl, formatMoney } from "@/lib/utils";
 import { getBusinessT as getT } from "@/lib/i18n/server";
@@ -19,6 +18,8 @@ export default async function DashboardPage() {
   const [restaurant, t] = await Promise.all([getMyRestaurant(), getT()]);
 
   if (!restaurant) redirect('/dashboard/restaurant');
+
+  if (isMenuOnly(restaurant)) redirect('/dashboard/products');
 
   const supabase = await createServerSupabase();
   const [categories, products, tables, openOrders, pendingWaiters, recentOrders] =

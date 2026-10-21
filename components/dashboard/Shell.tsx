@@ -1,6 +1,6 @@
 "use client";
 
-import { MODULE_NAVIGATION, dashboardPathEnabled, moduleEnabled, type BusinessConfig } from "@/lib/business-modules";
+import { MODULE_NAVIGATION, dashboardPathEnabled, moduleEnabled, isMenuOnly, type BusinessConfig } from "@/lib/business-modules";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useState, type ReactNode } from "react";
@@ -104,8 +104,8 @@ export function DashboardShell({
           {restaurantName ?? "MenuzQR"}
         </span>
         <div className="ms-auto flex shrink-0 items-center gap-2">
-          {restaurantId && <NotificationCenter />}
-          <AccountMenu email={userEmail} restaurantName={restaurantName} isAdmin={isAdmin} />
+          {restaurantId && !isMenuOnly(businessConfig) && <NotificationCenter />}
+          <AccountMenu email={userEmail} restaurantName={restaurantName} isAdmin={isAdmin} settingsEnabled={moduleEnabled(businessConfig,"settings")} />
         </div>
       </div>
 
@@ -131,8 +131,8 @@ export function DashboardShell({
         {/* Content */}
         <div className="min-w-0 flex-1">
           <div className="hidden h-16 items-center justify-end gap-3 border-b border-ink-200 bg-white px-6 lg:flex">
-            {restaurantId && <NotificationCenter />}
-            <AccountMenu email={userEmail} restaurantName={restaurantName} isAdmin={isAdmin} />
+            {restaurantId && !isMenuOnly(businessConfig) && <NotificationCenter />}
+            <AccountMenu email={userEmail} restaurantName={restaurantName} isAdmin={isAdmin} settingsEnabled={moduleEnabled(businessConfig,"settings")} />
           </div>
           <main className="px-4 py-6 sm:px-6 lg:px-8">{children}</main>
         </div>

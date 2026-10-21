@@ -1,7 +1,7 @@
 import {getTenantDomain} from "@/lib/tenant-domain";
 import { I18nProvider } from "@/components/i18n/I18nProvider";
 import { getLocale } from "@/lib/i18n/server";
-import { moduleEnabled } from "@/lib/business-modules";
+import { isMenuOnly, moduleEnabled } from "@/lib/business-modules";
 import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/Shell";
 import { LiveProvider } from "@/components/realtime/LiveProvider";
@@ -68,7 +68,7 @@ export default async function DashboardLayout({
   return (
     <I18nProvider locale={await getLocale()} retail={restaurant?.enabled_modules != null && !moduleEnabled(restaurant,"tables")}>
       <PwaSetup />
-      {restaurant ? (
+      {restaurant && !isMenuOnly(restaurant) ? (
         <LiveProvider
           restaurantId={restaurant.id}
           role={membership?.role ?? "owner"}

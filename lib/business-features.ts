@@ -149,3 +149,5 @@ export function presetFeatures(kind: string): BusinessFeature[] {
     featureEnabled({ business_kind: kind }, feature),
   );
 }
+
+export const MENU_ONLY_FEATURES: BusinessFeature[] = ['product_images','product_options','product_description','product_ingredients','product_english','qr_menu','qr_design','qr_exports'];

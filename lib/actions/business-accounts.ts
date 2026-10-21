@@ -3,14 +3,14 @@ import {businessSchemaMissing} from '@/lib/business-schema';
 import { revalidatePath } from 'next/cache';
 import { createServerSupabase } from '@/lib/supabase/server';
 import { createAdminSupabase } from '@/lib/supabase/admin';
-import { BUSINESS_FEATURES, FEATURE_REGISTRY } from '@/lib/business-features';
-import { BUSINESS_MODULES } from '@/lib/business-modules';
+import { BUSINESS_FEATURES, FEATURE_REGISTRY, MENU_ONLY_FEATURES } from '@/lib/business-features';
+import { BUSINESS_MODULES, MENU_ONLY_MODULES } from '@/lib/business-modules';
 import {MARKET,type TaxMode} from '@/lib/tax';
 import {CONFIGURATION_KEYS} from '@/lib/business-configuration';
 import { validateSlug } from '@/lib/slug';
 import { assertAdmin, done, fail, str } from './helpers';
 import type { ActionState } from '@/lib/types';
-function modules(form:FormData){const values=form.getAll('modules');const selected=BUSINESS_MODULES.filter(m=>values.includes(m));const features=form.getAll("features");return [...selected,...BUSINESS_FEATURES.filter(f=>features.includes(f)&&selected.includes(FEATURE_REGISTRY[f].module)),"features_v2","features_v3"];}
+function modules(form:FormData){if(form.get('account_package')==='menu_only')return [...MENU_ONLY_MODULES,...MENU_ONLY_FEATURES,'features_v2','features_v3'];const values=form.getAll('modules');const selected=BUSINESS_MODULES.filter(m=>values.includes(m));const features=form.getAll("features");return [...selected,...BUSINESS_FEATURES.filter(f=>features.includes(f)&&selected.includes(FEATURE_REGISTRY[f].module)),"features_v2","features_v3"];}
 export async function saveBusinessAccount(_previous:ActionState,form:FormData):Promise<ActionState>{
  const admin=await assertAdmin();if(!admin.ok)return admin.error;
  const id=str(form,'restaurant_id');const enabled=modules(form);const db=await createServerSupabase();
@@ -31,8 +31,8 @@ export async function createBusinessAccount(_previous:ActionState,form:FormData)
  const admin=await assertAdmin();if(!admin.ok)return admin.error;
  const name=str(form,'name'),email=str(form,'email').toLowerCase(),password=str(form,'password');
  const {value:slug,error:slugError}=validateSlug(str(form,'slug'));
- if(name.length<2||name.length>160||!email.includes('@')||password.length<12||slugError)return fail('راجع الاسم والإيميل والرابط. الباسورد 12 حرف على الأقل.');
- const typeId=str(form,'business_type_id');const sessionDb=await createServerSupabase();
+ if(name.length<2||name.length>160||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||password.length<8||slugError)return fail('راجع الاسم والإيميل والرابط. الباسورد 8 حروف على الأقل.');
+ const typeId=form.get('account_package')==='menu_only'?'':str(form,'business_type_id');const sessionDb=await createServerSupabase();
  const template=typeId?await sessionDb.from('business_types').select('*').eq('id',typeId).eq('is_active',true).maybeSingle():null;
  if(typeId&&(template?.error||!template?.data))return fail('Business template unavailable.');
  const selectedModules=modules(form);

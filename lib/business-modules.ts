@@ -34,6 +34,10 @@ export function moduleEnabled(config: BusinessConfig, module: BusinessModule): b
  return config.enabled_modules.includes(module)||(module==='staff'&&config.enabled_modules.includes('team'));
 }
 export const RETAIL_MODULES: BusinessModule[] = ['pos','reports','orders','staff','invoices','customers','offers','design','subcategories',...CORE];
+export const MENU_ONLY_MODULES: BusinessModule[] = ['products','design','qr'];
+export function isMenuOnly(config: BusinessConfig): boolean {
+ return config.enabled_modules != null && moduleEnabled(config,'products') && moduleEnabled(config,'design') && BUSINESS_MODULES.every(m=>MENU_ONLY_MODULES.includes(m)||!moduleEnabled(config,m));
+}
 export const BUSINESS_PRESETS = {
  restaurant:{ar:'مطعم أو كافيه',en:'Restaurant or cafe',modules:BUSINESS_MODULES.filter(m=>m!=='subcategories')},
  sweets:{ar:'حلويات وتجارة جملة',en:'Sweets and wholesale',modules:RETAIL_MODULES},
@@ -44,7 +48,11 @@ export function moduleForPath(path:string):BusinessModule|null {
  const segment=path.split('/')[2];
  return BUSINESS_MODULES.find(m=>(MODULE_REGISTRY[m].paths as readonly string[]).includes(segment))??null;
 }
-export function dashboardPathEnabled(config:BusinessConfig,path:string){const feature=moduleForPath(path);return !feature||moduleEnabled(config,feature);}
+export function dashboardPathEnabled(config:BusinessConfig,path:string){
+ const feature=moduleForPath(path);
+ if(isMenuOnly(config))return feature!=null&&moduleEnabled(config,feature);
+ return !feature||moduleEnabled(config,feature);
+}
 
 export const MODULE_NAVIGATION = BUSINESS_MODULES.flatMap(id=>{
  const feature=MODULE_REGISTRY[id];
