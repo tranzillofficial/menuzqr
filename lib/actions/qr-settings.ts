@@ -1,4 +1,5 @@
 "use server";
+import { qrTemplateAvailable } from "@/lib/qr-template-access";
 import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMenuRestaurant, str, done, fail } from "./helpers";
@@ -33,12 +34,13 @@ export async function saveQrSettings(
   if (preference.template_id) {
     const { data } = await db
       .from("qr_templates")
-      .select("scope")
+      .select("scope,layout,allowed_restaurant_ids")
       .eq("id", preference.template_id)
       .eq("is_active", true)
       .maybeSingle();
     if (
       !data ||
+      !qrTemplateAvailable(data,owner.restaurant.id) ||
       (kind === "table" && data.scope === "general") ||
       (kind !== "table" && data.scope === "table")
     )

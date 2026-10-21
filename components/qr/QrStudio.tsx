@@ -1,4 +1,5 @@
 "use client";
+import { qrTemplateAvailable } from "@/lib/qr-template-access";
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { featureEnabled } from "@/lib/business-features";
@@ -123,7 +124,7 @@ export function QrStudio({
         ? ""
         : menuUrl.toString();
   const availableTemplates = templates.filter((t) =>
-    kind === "table" ? t.scope !== "general" : t.scope !== "table",
+    qrTemplateAvailable(t,restaurant.id) && (kind === "table" ? t.scope !== "general" : t.scope !== "table"),
   );
   const selectedTemplate = availableTemplates.find(
     (t) => t.id === pref.template_id,

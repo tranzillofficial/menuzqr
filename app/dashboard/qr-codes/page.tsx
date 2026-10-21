@@ -1,3 +1,4 @@
+import { qrTemplateAvailable } from "@/lib/qr-template-access";
 import { featureEnabled } from "@/lib/business-features";
 import { requireBusinessModule } from "@/lib/business-access";
 import type { QrPreferences } from "@/lib/qr-preferences";
@@ -32,6 +33,7 @@ export default async function QrCodesPage() {
       .from("qr_templates")
       .select("*")
       .eq("is_active", true)
+      .or(`allowed_restaurant_ids.is.null,allowed_restaurant_ids.cs.{${restaurant.id}}`)
       .order("sort_order", { ascending: true }),
   ]);
 
@@ -65,7 +67,7 @@ export default async function QrCodesPage() {
         whatsapp={whatsapp}
         restaurant={restaurant}
         tables={(tables ?? []) as RestaurantTable[]}
-        templates={(templates ?? []) as QrTemplate[]}
+        templates={((templates ?? []) as QrTemplate[]).filter(template=>qrTemplateAvailable(template,restaurant.id))}
         generalUrl={await businessMenuUrl(restaurant)}
       />
     </div>

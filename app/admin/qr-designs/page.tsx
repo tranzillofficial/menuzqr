@@ -13,6 +13,11 @@ export default async function AdminQrDesignsPage() {
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
 
+  const {data:restaurants,error:accountsError}=await supabase.from('restaurants').select('id,name,slug,owner_id').order('name');
+  if(accountsError)throw Error('Could not load design assignment accounts');
+  const ownerIds=[...new Set((restaurants??[]).map(r=>r.owner_id))];
+  const {data:profiles}=ownerIds.length?await supabase.from('profiles').select('id,email').in('id',ownerIds):{data:[]};
+  const accounts=(restaurants??[]).map(r=>({id:r.id,name:r.name,email:profiles?.find(p=>p.id===r.owner_id)?.email??r.slug}));
   return (
     <div className="space-y-5">
       <div>
@@ -21,7 +26,7 @@ export default async function AdminQrDesignsPage() {
           The label templates restaurants choose from on their QR codes page.
         </p>
       </div>
-      <QrDesignManager templates={(data ?? []) as QrTemplate[]} />
+      <QrDesignManager templates={(data ?? []) as QrTemplate[]} accounts={accounts} />
     </div>
   );
 }

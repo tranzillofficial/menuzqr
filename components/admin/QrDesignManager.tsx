@@ -15,6 +15,8 @@ import { useToast } from "@/components/ui/Toast";
 import type { QrStyle } from "@/lib/qr-label";
 import type { QrTemplate } from "@/lib/types";
 
+type DesignAccount = {id:string;name:string;email:string};
+
 const LAYOUTS = [
   { id: "counter", label: "Counter card", note: "Portrait, big name on top" },
   { id: "plain", label: "QR only", note: "Plain background with QR only" },
@@ -59,7 +61,7 @@ function toStyle(t: {
   };
 }
 
-export function QrDesignManager({ templates }: { templates: QrTemplate[] }) {
+export function QrDesignManager({ templates, accounts=[] }: { templates: QrTemplate[]; accounts?: DesignAccount[] }) {
   const router = useRouter();
   const toast = useToast();
   const [editing, setEditing] = useState<QrTemplate | null | "new">(null);
@@ -99,6 +101,7 @@ export function QrDesignManager({ templates }: { templates: QrTemplate[] }) {
                   <p className="truncate text-xs text-ink-500">
                     {LAYOUTS.find((l) => l.id === template.layout)?.label} ·{" "}
                     {SCOPES.find((s) => s.id === template.scope)?.label}
+                    {template.allowed_restaurant_ids!=null ? ` · Private (${template.allowed_restaurant_ids.length})` : " · Public"}
                     {!template.is_active && " · hidden"}
                   </p>
                 </div>
@@ -135,6 +138,7 @@ export function QrDesignManager({ templates }: { templates: QrTemplate[] }) {
       {editing !== null && (
         <DesignModal
           template={editing === "new" ? null : editing}
+          accounts={accounts}
           onClose={() => setEditing(null)}
         />
       )}
@@ -144,9 +148,11 @@ export function QrDesignManager({ templates }: { templates: QrTemplate[] }) {
 
 function DesignModal({
   template,
+  accounts,
   onClose,
 }: {
   template: QrTemplate | null;
+  accounts: DesignAccount[];
   onClose: () => void;
 }) {
   const router = useRouter();
@@ -165,6 +171,9 @@ function DesignModal({
     headline: template?.headline ?? "Scan for our menu",
     cta_text: template?.cta_text ?? "Point your camera at the code",
   });
+  const [visibility,setVisibility]=useState(template?.allowed_restaurant_ids!=null||template?.layout==='cafe'?'private':'public');
+  const [assigned,setAssigned]=useState<string[]>(template?.allowed_restaurant_ids??[]);
+  const privateDesign=visibility==='private'||draft.layout==='cafe';
   const [isActive, setIsActive] = useState(template?.is_active ?? true);
 
   useEffect(() => {
@@ -234,6 +243,15 @@ function DesignModal({
             </Field>
           </div>
 
+          <Field label="Design access" htmlFor="d-visibility">
+            <Select id="d-visibility" name="visibility" value={privateDesign?'private':'public'} onChange={e=>setVisibility(e.target.value)} disabled={draft.layout==='cafe'}>
+              <option value="public">Public design</option><option value="private">Private · selected accounts only</option>
+            </Select>
+          </Field>
+          {privateDesign&&<fieldset className="space-y-2"><legend className="text-sm font-medium">Assigned accounts</legend>
+            <p className="text-xs text-ink-500">Only selected accounts can see and use this design.</p>
+            <div className="max-h-44 space-y-2 overflow-y-auto rounded-xl border border-ink-200 p-3">{accounts.map(account=><label key={account.id} className="flex items-start gap-2 text-sm"><input type="checkbox" name="allowed_restaurant_ids" value={account.id} checked={assigned.includes(account.id)} onChange={e=>setAssigned(ids=>e.target.checked?[...ids,account.id]:ids.filter(id=>id!==account.id))}/><span>{account.name}<span className="block text-xs text-ink-500">{account.email}</span></span></label>)}</div>
+          </fieldset>}
           <div>
             <p className="mb-2 text-sm font-medium text-ink-800">Colours</p>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">

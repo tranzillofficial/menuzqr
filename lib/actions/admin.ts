@@ -195,7 +195,13 @@ export async function saveQrTemplateAction(
   const layout = String(form.get("layout") ?? "counter");
   const scope = String(form.get("scope") ?? "both");
 
+  const privateDesign = layout === 'cafe' || form.get('visibility') === 'private';
+  const assigned = [...new Set(form.getAll('allowed_restaurant_ids').filter((v): v is string=>typeof v==='string'))];
+  if(assigned.length>100||assigned.some(v=>!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)))return fail('Invalid account selection.');
+  const supabase = await createServerSupabase();
+  if(privateDesign&&assigned.length){const result=await supabase.from('restaurants').select('id').in('id',assigned);if(result.error||result.data?.length!==assigned.length)return fail('Selected account unavailable.');}
   const payload = {
+    allowed_restaurant_ids: privateDesign ? assigned : null,
     name,
     layout: QR_LAYOUTS.includes(layout) ? layout : "counter",
     scope: QR_SCOPES.includes(scope) ? scope : "both",
@@ -209,7 +215,6 @@ export async function saveQrTemplateAction(
     is_active: form.get("is_active") === "on",
   };
 
-  const supabase = await createServerSupabase();
   const { error } = id
     ? await supabase.from("qr_templates").update(payload).eq("id", id)
     : await supabase.from("qr_templates").insert(payload);

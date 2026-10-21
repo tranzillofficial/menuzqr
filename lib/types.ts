@@ -210,6 +210,7 @@ export type LibraryImage = {
 };
 
 export type QrTemplate = {
+  allowed_restaurant_ids?: string[] | null;
   id: string;
   name: string;
   layout: "counter" | "square" | "tent" | "cafe" | "plain";
