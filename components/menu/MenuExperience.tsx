@@ -1,5 +1,6 @@
 "use client";
 
+import {BackToTop} from "./BackToTop";
 import {MenuContact} from "./MenuContact";
 import { useMemo, useRef, useState } from 'react';
 import { MENU_THEMES, type MenuThemeId } from '@/lib/constants';
@@ -103,6 +104,7 @@ export function MenuExperience({
       {data.restaurant.business_kind === "supermarket" ? <SupermarketMenu offersOnly={offersOnly}/> : <Theme />}
 
       {data.restaurant.business_kind === "supermarket" && <MenuContact/>}
+      <BackToTop/>
       <ProductSheet />
 
       <CartBar slug={data.restaurant.slug} tableToken={tableToken} />
