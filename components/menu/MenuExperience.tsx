@@ -47,10 +47,10 @@ export function MenuExperience({
   staffMode?: boolean;
   offersOnly?: boolean;
 }) {
-  const isDemo = data.restaurant.slug === "demo";
+  const canSwitchTheme = ["demo", "cilio-cafe"].includes(data.restaurant.slug) && data.restaurant.business_kind !== "supermarket" && !moduleEnabled(data.restaurant,"subcategories");
   const [previewTheme, setPreviewTheme] = useState<MenuThemeId>(data.restaurant.menu_theme);
   const pickerRef = useRef<HTMLDetailsElement>(null);
-  const menuTheme = data.restaurant.business_kind === "supermarket" ? "market" : isDemo ? previewTheme : data.restaurant.menu_theme;
+  const menuTheme = data.restaurant.business_kind === "supermarket" ? "market" : canSwitchTheme ? previewTheme : data.restaurant.menu_theme;
   const Theme = data.restaurant.business_kind === "supermarket" ? SupermarketMenu : moduleEnabled(data.restaurant,"subcategories") ? RetailMenu : THEMES[menuTheme] ?? ElegantMenu;
   const lightFab = menuTheme === "elegant" || menuTheme === "market";
 
@@ -64,7 +64,7 @@ export function MenuExperience({
     <I18nProvider locale={locale} retail={data.restaurant.enabled_modules != null && !moduleEnabled(data.restaurant,"tables")}>
       <div dir={dirOf(locale)} lang={locale}>
       <nav aria-label={locale === 'ar' ? 'لغة المينيو' : 'Menu language'} className="flex justify-end gap-1 border-b border-ink-100 bg-white px-3 py-2">
-        {isDemo && (
+        {canSwitchTheme && (
           <details ref={pickerRef} className="relative me-auto self-center" onKeyDown={event => { if (event.key === 'Escape' && pickerRef.current) { pickerRef.current.open = false; pickerRef.current.querySelector('summary')?.focus(); } }}>
             <summary className="cursor-pointer rounded-full border border-ink-200 px-3 py-2 text-xs font-semibold text-ink-700 focus-visible:outline-2 focus-visible:outline-brand-500">
               {locale === 'ar' ? 'غيّر التصميم' : 'Change design'}
