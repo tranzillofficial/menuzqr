@@ -1,4 +1,5 @@
 "use client";
+import {MenuContact} from "../MenuContact";
 
 import { useMemo } from "react";
 import { useMenu } from "../MenuContext";
@@ -43,11 +44,7 @@ export function NoirMenu() {
             />
           )}
 
-          {restaurant.address && (
-            <p className="mt-6 text-[11px] uppercase tracking-[0.42em] text-[#c9a227]">
-              {restaurant.address}
-            </p>
-          )}
+
 
           <h1 className="mt-3 font-serif text-[2.5rem] leading-tight text-white">
             {restaurant.name}
@@ -61,6 +58,7 @@ export function NoirMenu() {
 
           <div className="mx-auto mt-7 h-px w-24 bg-gradient-to-r from-transparent via-[#c9a227] to-transparent" />
         </div>
+        <MenuContact/>
       </header>
 
       <div className="sticky top-0 z-20 mt-6 border-y border-white/10 bg-[#0b0b0d]/95 backdrop-blur">

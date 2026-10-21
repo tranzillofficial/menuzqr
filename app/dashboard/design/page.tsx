@@ -1,14 +1,19 @@
 import type { Metadata } from "next";
-import { requireRestaurant } from "@/lib/auth";
+import {requireBusinessModule} from "@/lib/business-access";
 import { PageHeader } from "@/components/dashboard/Shell";
 import { getBusinessT as getT } from "@/lib/i18n/server";
 import { ThemePicker } from "@/components/dashboard/ThemePicker";
 import Link from "next/link";
+import {MenuContactForm} from "@/components/dashboard/MenuContactForm";
+import {createAdminSupabase} from "@/lib/supabase/admin";
 
 export const metadata: Metadata = { title: "Menu Design" };
 
 export default async function DesignPage() {
-  const [restaurant, t] = await Promise.all([requireRestaurant(), getT()]);
+  const [member, t] = await Promise.all([requireBusinessModule("design"), getT()]);
+  const restaurant=member.restaurant;
+
+  const {data:contactSettings}=await createAdminSupabase().from("restaurant_settings").select("payment_whatsapp,location_url,instagram_url,facebook_url,website_url").eq("restaurant_id",restaurant.id).maybeSingle();
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -28,6 +33,7 @@ export default async function DesignPage() {
         slug={restaurant.slug}
         isActive={restaurant.status === "active"}
       />}
+      <MenuContactForm restaurant={restaurant} settings={contactSettings}/>
     </div>
   );
 }

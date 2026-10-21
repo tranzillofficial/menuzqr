@@ -39,7 +39,7 @@ export const getPublicMenu = cache(async function getPublicMenu(
   const { data: restaurant } = await supabase
     .from("restaurants")
     .select(
-      "id,business_kind,enabled_modules,name,slug,description,logo_url,cover_url,phone,address,currency,language,menu_theme,ordering_enabled,waiter_calls_enabled,status,owner_id,activation_expires_at,business_timezone,tax_mode,vat_registered,prices_include_vat,tax_rates,menu_prices_include_vat"
+      "id,business_kind,enabled_modules,name,slug,description,logo_url,cover_url,phone,contact_phones,address,currency,language,menu_theme,ordering_enabled,waiter_calls_enabled,status,owner_id,activation_expires_at,business_timezone,tax_mode,vat_registered,prices_include_vat,tax_rates,menu_prices_include_vat"
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -97,7 +97,7 @@ export const getPublicMenu = cache(async function getPublicMenu(
   if(payments){
     if(!featureEnabled(restaurant,'delivery_settings')){payments.delivery_fee=0;payments.free_delivery_above=null;}
     if(!featureEnabled(restaurant,'payment_settings')){payments.payment_details='';payments.cash_wallet='';payments.instapay_address='';}
-    if(!featureEnabled(restaurant,'contact_settings')){payments.location_url='';payments.facebook_url='';payments.instagram_url='';payments.website_url='';payments.payment_whatsapp='';}
+    if(!moduleEnabled(restaurant,'design')&&!featureEnabled(restaurant,'contact_settings')){payments.location_url='';payments.facebook_url='';payments.instagram_url='';payments.website_url='';payments.payment_whatsapp='';}
   }
   let table: Pick<RestaurantTable, "id" | "label"> | null = null;
   if (tableToken && !preview && moduleEnabled(restaurant,"tables")) {

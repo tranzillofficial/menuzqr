@@ -1,4 +1,5 @@
 "use client";
+import {MenuContact} from "../MenuContact";
 
 import { useMemo } from "react";
 import { useMenu } from "../MenuContext";
@@ -52,12 +53,9 @@ export function MarketMenu() {
             </p>
           )}
 
-          {restaurant.address && (
-            <span className="mt-4 inline-block rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white">
-              {restaurant.address}
-            </span>
-          )}
+
         </div>
+        <div className="text-white"><MenuContact/></div>
       </header>
 
       <div className="sticky top-0 z-20 bg-[#fffbeb]/95 backdrop-blur">

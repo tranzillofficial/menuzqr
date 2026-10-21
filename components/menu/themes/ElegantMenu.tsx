@@ -1,4 +1,5 @@
 "use client";
+import {MenuContact} from "../MenuContact";
 
 import { useMemo } from "react";
 import { useMenu } from "../MenuContext";
@@ -52,15 +53,7 @@ export function ElegantMenu() {
             </p>
           )}
 
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs uppercase tracking-[0.14em] text-[#a2937f]">
-            {restaurant.address && <span>{restaurant.address}</span>}
-            {restaurant.address && restaurant.phone && <span aria-hidden="true">·</span>}
-            {restaurant.phone && (
-              <a href={`tel:${restaurant.phone}`} className="ltr-nums hover:text-[#6d6257]">
-                {restaurant.phone}
-              </a>
-            )}
-          </div>
+
 
           <div className="mx-auto mt-7 flex items-center justify-center gap-3" aria-hidden="true">
             <span className="h-px w-14 bg-gradient-to-r from-transparent to-[#cdbfa9]" />
@@ -68,6 +61,7 @@ export function ElegantMenu() {
             <span className="h-px w-14 bg-gradient-to-l from-transparent to-[#cdbfa9]" />
           </div>
         </div>
+        <MenuContact/>
       </header>
 
       <div className="sticky top-0 z-20 mt-7 border-y border-[#e6dcca] bg-[#faf7f2]/95 backdrop-blur">

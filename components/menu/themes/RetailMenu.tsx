@@ -1,4 +1,5 @@
 "use client";
+import {MenuContact} from "../MenuContact";
 
 import Link from 'next/link';
 import { Icon } from '@/components/ui/Icons';
@@ -68,8 +69,8 @@ export function RetailMenu() {
     {restaurant.cover_url && <MenuImage src={restaurant.cover_url} alt={ar?"صورة غلاف الشركة":"Business cover"} priority fit="cover" sizes="100vw" className="h-48 w-full sm:h-72"/>}
     <header className={alhamd?'relative overflow-hidden border-b border-[#ecdfd2] bg-gradient-to-br from-[#fffaf2] via-[#f6ebd9] to-[#e8d4b7] px-5 pb-7 pt-6 sm:py-10':'border-b border-ink-100 bg-white px-5 py-8'}>
       <div className="mx-auto flex max-w-5xl items-center gap-4">{restaurant.logo_url&&<MenuImage priority src={restaurant.logo_url} alt={restaurant.name} className="size-20 shrink-0 rounded-2xl bg-white shadow-sm sm:size-24" sizes="96px"/>}<div className="min-w-0"><p className="mb-1 text-[10px] font-semibold uppercase tracking-[.15em] text-[#8a6746]">{ar?'كتالوج المنتجات':'PRODUCT COLLECTION'}</p><h1 className="text-2xl font-bold sm:text-3xl">{restaurant.name}</h1><p className="mt-2 max-w-md text-xs leading-6 text-ink-600 sm:text-sm">{restaurant.description||(ar?'كل أصنافك في مكان واحد. اختار، تصفّح، واطلب بسهولة.':'Your collection in one place. Browse, choose and order easily.')}</p></div></div>
-      {(restaurant.address||restaurant.phone)&&<div className="mx-auto mt-4 flex max-w-5xl flex-wrap items-center gap-3 text-xs text-ink-600">{restaurant.address&&<p>{restaurant.address}</p>}{restaurant.phone&&<a className="rounded-full bg-white/75 px-3 py-2" href={`tel:${restaurant.phone}`}>{ar?'تواصل مع الفرع':'Contact the branch'} · {restaurant.phone}</a>}</div>}
-    </header>
+    <MenuContact/>
+      </header>
     <main className="mx-auto max-w-5xl space-y-4 px-3 py-4 sm:p-6">
       <section aria-label={ar ? 'البحث وتصفية الأصناف' : 'Search and filter products'} className="space-y-3 rounded-2xl border border-ink-200/60 bg-white p-3 sm:p-4">
         <div className="flex gap-2"><label className="relative min-w-0 flex-1"><span className="sr-only">{ar?'ابحث عن صنف أو شركة':'Search products or companies'}</span><Icon.search className="pointer-events-none absolute start-3 top-3.5 size-5 text-ink-400"/><input type="search" placeholder={ar?'بتدور على إيه؟ صنف أو شركة…':'Search products or companies…'} className="h-12 w-full rounded-xl border border-ink-200 bg-ink-50/70 ps-10 pe-3 text-sm outline-none focus:border-[#bc9567]" value={query} onChange={e=>setQuery(e.target.value)}/></label><button type="button" aria-expanded={filtersOpen} aria-controls="retail-filters" onClick={()=>setFiltersOpen(!filtersOpen)} className="flex h-12 items-center gap-2 rounded-xl bg-[#704728] px-3 text-xs font-semibold text-white"><Icon.settings className="size-4"/>{ar?'فلترة':'Filters'}</button></div>

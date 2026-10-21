@@ -28,6 +28,7 @@ export type Restaurant = TaxSettings & {
   logo_url: string | null;
   cover_url: string | null;
   phone: string | null;
+  contact_phones?: string[];
   address: string | null;
   currency: string;
   language: string;
@@ -313,6 +314,7 @@ export type MenuData = {
     | "logo_url"
     | "cover_url"
     | "phone"
+    | "contact_phones"
     | "address"
     | "currency"
     | "language"

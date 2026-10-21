@@ -1,4 +1,5 @@
 "use client";
+import {MenuContact} from "../MenuContact";
 
 import { useMemo } from "react";
 import { useMenu } from "../MenuContext";
@@ -28,14 +29,13 @@ export function MinimalMenu() {
           )}
           <div className="min-w-0">
             <h1 className="truncate text-xl font-semibold tracking-tight">{restaurant.name}</h1>
-            {restaurant.address && (
-              <p className="truncate text-xs text-ink-500">{restaurant.address}</p>
-            )}
+
           </div>
         </div>
         {restaurant.description && (
           <p className="mt-4 text-sm leading-relaxed text-ink-600">{restaurant.description}</p>
         )}
+        <MenuContact/>
       </header>
 
       <div className="sticky top-0 z-20 mt-6 border-b border-ink-100 bg-white/95 backdrop-blur">

@@ -1,4 +1,5 @@
 "use client";
+import {MenuContact} from "../MenuContact";
 
 import { DemoMenu } from "./DemoMenu";
 import { useMemo, useState } from "react";
@@ -60,9 +61,7 @@ function StandardModernMenu() {
               <h1 className="truncate text-2xl font-bold tracking-tight sm:text-3xl">
                 {restaurant.name}
               </h1>
-              {restaurant.address && (
-                <p className="truncate text-sm text-ink-500">{restaurant.address}</p>
-              )}
+
             </div>
           </div>
 
@@ -72,6 +71,7 @@ function StandardModernMenu() {
             </p>
           )}
         </div>
+        <MenuContact/>
       </header>
 
       <div className="sticky top-0 z-20 mt-5 border-b border-ink-100 bg-white/95 backdrop-blur">
