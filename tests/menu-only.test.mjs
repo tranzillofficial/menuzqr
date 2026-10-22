@@ -14,8 +14,8 @@ test('menu-only account grants menu tools and denies other module actions',()=>{
  for(const feature of BUSINESS_FEATURES)assert.equal(featureEnabled(config,feature),MENU_ONLY_FEATURES.includes(feature),feature);
 });
 test('direct dashboard URLs and nested routes cannot open unrelated tools',()=>{
- for(const path of ['products','categories','design','qr-codes'])assert.equal(dashboardPathEnabled(config,'/dashboard/'+path),true,path);
- for(const path of ['billing','billing/upgrade','settings','pos','pos/history','orders','inventory','restaurant','staff','unknown'])assert.equal(dashboardPathEnabled(config,'/dashboard/'+path),false,path);
+ for(const path of ['products','categories','design','qr-codes','settings','settings/account'])assert.equal(dashboardPathEnabled(config,'/dashboard/'+path),true,path);
+ for(const path of ['billing','billing/upgrade','pos','pos/history','orders','inventory','restaurant','staff','unknown'])assert.equal(dashboardPathEnabled(config,'/dashboard/'+path),false,path);
  assert.equal(dashboardPathEnabled(config,'/dashboard'),false);
 });
 test('legacy and upgraded accounts retain their navigation',()=>{

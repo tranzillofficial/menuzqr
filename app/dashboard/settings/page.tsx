@@ -4,7 +4,7 @@ import { ThermalPrinter } from "@/components/dashboard/ThermalPrinter";
 import { InvoiceExport } from "@/components/dashboard/InvoiceExport";
 import { TaxSettingsForm } from "@/components/dashboard/TaxSettingsForm";
 import type { Metadata } from "next";
-import { requireRestaurant } from "@/lib/auth";
+import { requireBusinessModule } from "@/lib/business-access";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { SettingsForm } from "@/components/dashboard/SettingsForm";
 import { ActivationPanel } from "@/components/dashboard/ActivationPanel";
@@ -19,13 +19,14 @@ import { formatDate } from "@/lib/utils";
 export const metadata: Metadata = { title: "Settings" };
 
 export default async function SettingsPage() {
-  const [restaurant, supabase, platform, t] = await Promise.all([
-    requireRestaurant(),
+  const [member, supabase, platform, t] = await Promise.all([
+    requireBusinessModule("settings"),
     createServerSupabase(),
     getPlatformSettings(),
     getT(),
   ]);
 
+  const restaurant = member.restaurant;
   const {count: tableCount,error:tableError}=moduleEnabled(restaurant,"tables") ? await supabase.from("restaurant_tables").select("id",{count:"exact",head:true}).eq("restaurant_id",restaurant.id).eq("is_active",true) : {count:0,error:null};
   if(tableError)throw new Error("Could not load table settings");
   const ar=(await getLocale())==="ar";

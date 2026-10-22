@@ -34,7 +34,7 @@ export function moduleEnabled(config: BusinessConfig, module: BusinessModule): b
  return config.enabled_modules.includes(module)||(module==='staff'&&config.enabled_modules.includes('team'));
 }
 export const RETAIL_MODULES: BusinessModule[] = ['pos','reports','orders','staff','invoices','customers','offers','design','subcategories',...CORE];
-export const MENU_ONLY_MODULES: BusinessModule[] = ['products','design','qr'];
+export const MENU_ONLY_MODULES: BusinessModule[] = ['products','design','qr','settings'];
 export function isMenuOnly(config: BusinessConfig): boolean {
  return config.enabled_modules != null && moduleEnabled(config,'products') && moduleEnabled(config,'design') && BUSINESS_MODULES.every(m=>MENU_ONLY_MODULES.includes(m)||!moduleEnabled(config,m));
 }

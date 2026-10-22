@@ -38,4 +38,24 @@ await db.exec('reset role');await db.query("update restaurants set enabled_modul
 await assert.rejects(()=>db.query('select customer_directory($1)',[rid]),/unavailable/);assert.equal((await db.query('select * from business_customers')).rows.length,0);assert.equal((await db.query("update business_customers set name='No access' where id=$1 returning id",[c.id])).rows.length,0);
 await db.query('select save_dashboard_settings($1,$2)',[rid,JSON.stringify({...settings,payment_whatsapp:'',payment_details:'',delivery_fee:5})]);row=(await db.query('select * from restaurant_settings where restaurant_id=$1',[rid])).rows[0];assert.equal(row.payment_whatsapp,'201012345678');assert.equal(row.payment_details,'Bank 123');assert.equal(Number(row.delivery_fee),5);
 await db.exec('reset role;set role anon');await assert.rejects(()=>db.query('select customer_directory($1)',[rid]),/permission denied/);await db.exec('reset role');
+// Basic menu upgrades preserve paid settings and remain tenant-scoped.
+const basic='20000000-0000-4000-8000-000000000003';
+await db.exec(`insert into configuration_features(key,kind) values ('products','module'),('design','module'),('qr','module'),('settings','module'),('customers','module');
+insert into restaurants(id,owner_id,business_kind,enabled_modules) values ('${basic}','${actor}','restaurant',array['products','design','qr','product_ingredients','features_v3']);
+insert into restaurant_members values ('${basic}','${actor}',true,'owner');`);
+const paidBefore=JSON.stringify((await db.query('select enabled_modules from restaurants where id=$1',[rid])).rows);
+const upgrade=readFileSync('supabase/migrations/20261022181835_menu_only_settings.sql','utf8');
+await db.exec(upgrade);await db.exec(upgrade);
+assert.equal(JSON.stringify((await db.query('select enabled_modules from restaurants where id=$1',[rid])).rows),paidBefore);
+const basicModules=(await db.query('select enabled_modules from restaurants where id=$1',[basic])).rows[0].enabled_modules;
+assert.deepEqual(basicModules,['products','design','qr','product_ingredients','features_v3','settings','contact_settings']);
+await db.exec('set role authenticated');
+await db.query('select save_dashboard_settings($1,$2)',[basic,JSON.stringify({...settings,show_prices:false,show_ingredients:false,ordering_enabled:true,remote_ordering_enabled:true})]);
+const basicSettings=(await db.query('select * from restaurant_settings where restaurant_id=$1',[basic])).rows[0];
+assert.equal(basicSettings.show_prices,false);assert.equal(basicSettings.show_ingredients,false);
+assert.equal(basicSettings.location_url,settings.location_url);
+assert.equal(basicSettings.remote_ordering_enabled,false);assert.equal(basicSettings.payment_whatsapp,'');
+assert.equal((await db.query('select ordering_enabled from restaurants where id=$1',[basic])).rows[0].ordering_enabled,false);
+await assert.rejects(()=>db.query('select save_dashboard_settings($1,$2)',[other,JSON.stringify(settings)]),/unavailable/);
+await db.exec('reset role');
 console.log('PASS: atomic settings and rollback, disabled capability preservation, normalized customer phones, new/edit customer authorization, immutable invoice snapshots, accurate activity stats, currency-separated overview and tenant/anon isolation');await db.close();

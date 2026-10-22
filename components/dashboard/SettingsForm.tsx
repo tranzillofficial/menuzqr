@@ -4,7 +4,7 @@ import Link from 'next/link';
 import {useRouter} from 'next/navigation';
 import {saveDashboardSettings} from '@/lib/actions/dashboard-settings';
 import {featureEnabled} from '@/lib/business-features';
-import {moduleEnabled} from '@/lib/business-modules';
+import {isMenuOnly,moduleEnabled} from '@/lib/business-modules';
 import {useI18n} from '@/components/i18n/I18nProvider';
 import {Switch} from '@/components/ui/Field';
 import {Icon} from '@/components/ui/Icons';
@@ -20,7 +20,7 @@ export function SettingsForm({restaurant:r,settings:s,hasTables,sections=[]}:{re
  const [country,setCountry]=useState(prefix),[number,setNumber]=useState(phone.startsWith(prefix)?phone.slice(prefix.length):phone);
  const tables=hasTables&&moduleEnabled(r,'tables'),retail=r.business_kind==='supermarket',payments=featureEnabled(r,'payment_settings'),contacts=featureEnabled(r,'contact_settings'),delivery=retail&&featureEnabled(r,'delivery_settings');
  const mainActive=active==='features'||active==='storefront';
- const tabs=[{id:'features',ar:'العرض والطلبات',en:'Display & orders',icon:Icon.eye},...(delivery||payments||contacts?[{id:'storefront',ar:'التوصيل والدفع والتواصل',en:'Delivery & contact',icon:Icon.store}]:[]),...sections.map(s=>({...s,icon:s.id==='whatsapp'?Icon.qr:s.id==='alerts'?Icon.bell:s.id==='print'?Icon.print:s.id==='account'?Icon.users:Icon.receipt}))];
+ const tabs=[{id:'features',ar:isMenuOnly(r)?'عرض المنيو':'العرض والطلبات',en:isMenuOnly(r)?'Menu display':'Display & orders',icon:Icon.eye},...(delivery||payments||contacts?[{id:'storefront',ar:!payments&&!delivery?'التواصل والموقع':'التوصيل والدفع والتواصل',en:!payments&&!delivery?'Contact & location':'Delivery & contact',icon:Icon.store}]:[]),...sections.map(s=>({...s,icon:s.id==='whatsapp'?Icon.qr:s.id==='alerts'?Icon.bell:s.id==='print'?Icon.print:s.id==='account'?Icon.users:Icon.receipt}))];
  useEffect(()=>{if(state?.ok)router.refresh();},[state,router]);
  const field='mt-2 min-w-0 w-full rounded-xl border border-ink-100 bg-white px-3 py-2.5 text-xs outline-none focus:border-brand-300 sm:text-sm';
  function row(key:keyof typeof values,title:string,description:string,IconComponent:typeof Icon.eye){return <div key={key} className="flex items-center gap-3 border-b border-ink-100 p-3 last:border-0 sm:p-4"><span className="grid size-9 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600"><IconComponent className="size-4"/></span><div className="min-w-0 flex-1"><p className="text-xs font-semibold sm:text-sm">{title}</p><p className="mt-1 text-[11px] leading-5 text-ink-400 sm:text-xs">{description}</p></div><Switch checked={values[key]} label={title} onChange={v=>setValues(prev=>({...prev,[key]:v}))}/></div>}
@@ -31,7 +31,7 @@ export function SettingsForm({restaurant:r,settings:s,hasTables,sections=[]}:{re
    <fieldset disabled={pending} className="space-y-4">
     {Object.entries(values).map(([key,value])=><input key={key} type="hidden" name={key} value={(key==='ordering_enabled'&&!tables&&!retail?values.remote_ordering_enabled:value)?'on':''}/>)}
     <section hidden={active!=='features'} id="settings-panel-features" role="tabpanel" aria-labelledby="settings-tab-features" className="rounded-2xl bg-white p-3 ring-1 ring-black/5 sm:p-5">{title(l('مزايا المنيو','Menu features'),l('تحكم في عرض المنيو وخيارات الطلب المتاحة لعملائك.','Control menu display and ordering options.'))}<div className="overflow-hidden rounded-xl border border-ink-100">
-     {row('sound_enabled',l('صوت الإشعارات','Notification sound'),l('تشغيل نغمة عند وصول طلب جديد.','Play a sound when a new order arrives.'),Icon.bell)}
+     {moduleEnabled(r,'orders')&&row('sound_enabled',l('صوت الإشعارات','Notification sound'),l('تشغيل نغمة عند وصول طلب جديد.','Play a sound when a new order arrives.'),Icon.bell)}
      {row('show_prices',l('إظهار الأسعار','Show prices'),l('إظهار أو إخفاء أسعار الأصناف في المنيو.','Show or hide item prices in the menu.'),Icon.eye)}
      {featureEnabled(r,'online_ordering')&&row(retail?'ordering_enabled':'remote_ordering_enabled',retail?l('طلبات التوصيل — الدفع عند الاستلام','Delivery orders — pay on delivery'):l('الطلب من المنيو','Online menu ordering'),l('استقبال طلبات من الرابط العام بدون طاولة.','Receive orders from the public menu link.'),Icon.store)}
      {tables&&moduleEnabled(r,'orders')&&featureEnabled(r,'online_ordering')&&row('ordering_enabled',l('طلبات الطاولات','Table orders'),l('استقبال طلبات من QR الطاولة.','Receive orders through table QR codes.'),Icon.table)}
