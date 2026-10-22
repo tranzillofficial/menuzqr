@@ -27,6 +27,9 @@ export type Restaurant = TaxSettings & {
   description: string | null;
   logo_url: string | null;
   cover_url: string | null;
+  cover_fit?: "contain" | "cover";
+  cover_position_x?: number;
+  cover_position_y?: number;
   phone: string | null;
   contact_phones?: string[];
   address: string | null;
@@ -313,6 +316,9 @@ export type MenuData = {
     | "description"
     | "logo_url"
     | "cover_url"
+    | "cover_fit"
+    | "cover_position_x"
+    | "cover_position_y"
     | "phone"
     | "contact_phones"
     | "address"

@@ -1,4 +1,5 @@
 "use client";
+import {MenuCover} from "../MenuCover";
 import {MenuContact} from "../MenuContact";
 
 import { useMemo } from "react";
@@ -15,7 +16,8 @@ export function MinimalMenu() {
 
   return (
     <div className="min-h-screen bg-white pb-28 text-ink-900">
-      <header className="mx-auto max-w-xl px-5 pt-10">
+      <header className="mx-auto max-w-xl px-5 pt-5">
+        {restaurant.cover_url&&<MenuCover restaurant={restaurant} className="mb-4 h-40 rounded-xl sm:h-48"/>}
         <div className="flex items-center gap-3">
           {restaurant.logo_url && (
             <MenuImage

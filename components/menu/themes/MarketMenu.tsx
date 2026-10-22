@@ -1,4 +1,5 @@
 "use client";
+import {MenuCover} from "../MenuCover";
 import {MenuContact} from "../MenuContact";
 
 import { useMemo } from "react";
@@ -17,21 +18,8 @@ export function MarketMenu() {
   return (
     <div className="min-h-screen bg-[#fffbeb] pb-28 text-[#1c1917]">
       <header className="relative overflow-hidden rounded-b-[2.5rem] bg-[#0f766e]">
-        {restaurant.cover_url && (
-          <MenuImage
-            src={restaurant.cover_url}
-            alt=""
-            className="absolute inset-0 h-full w-full opacity-25"
-            sizes="100vw"
-            priority
-          />
-        )}
-        <div
-          aria-hidden="true"
-          className="absolute -end-16 -top-16 size-56 rounded-full bg-[#f59e0b]/30 blur-2xl"
-        />
-
-        <div className="relative px-6 pb-10 pt-12 text-center">
+        {restaurant.cover_url&&<MenuCover restaurant={restaurant} className="h-44 w-full sm:h-56"/>}
+        <div className="relative px-6 pb-6 pt-6 text-center">
           {restaurant.logo_url && (
             <MenuImage
               src={restaurant.logo_url}

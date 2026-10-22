@@ -66,6 +66,7 @@ export function ImagePicker({
   chooseSource = false,
   compact = false,
   onBusyChange,
+  hidePreview = false,
 }: {
   restaurantId: string;
   kind: ImageRole;
@@ -80,6 +81,7 @@ export function ImagePicker({
   allowLibrary?: boolean;
   chooseSource?: boolean;
   compact?: boolean;
+  hidePreview?: boolean;
   onBusyChange?: (busy: boolean) => void;
 }) {
   const toast = useToast();
@@ -162,7 +164,7 @@ export function ImagePicker({
           : "space-y-2.5"
       }
     >
-      <div
+      {!hidePreview && <div
         className={cn(
           "relative overflow-hidden rounded-xl border border-dashed border-ink-300 bg-ink-50",
           aspect === "wide"
@@ -218,7 +220,8 @@ export function ImagePicker({
             </div>
           </div>
         )}
-      </div>
+      </div>}
+      {hidePreview && busy && <p role="status" className="text-xs text-ink-500">{status.phase === "compressing" ? "Optimising…" : "Uploading…"}</p>}
 
       <div
         className={

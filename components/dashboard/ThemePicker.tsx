@@ -15,7 +15,7 @@ import type { TranslationKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 /** Render the actual menu at a phone width, isolated from dashboard breakpoints. */
-function Preview({ theme, locale, title }: { theme: MenuThemeId; locale: string; title: string }) {
+function Preview({ theme, locale, title, personalized }: { theme: MenuThemeId; locale: string; title: string; personalized: boolean }) {
   const container = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.7);
   const [loaded, setLoaded] = useState(false);
@@ -27,7 +27,7 @@ function Preview({ theme, locale, title }: { theme: MenuThemeId; locale: string;
   }, []);
   return <div ref={container} aria-hidden="true" className="pointer-events-none relative aspect-[390/680] overflow-hidden bg-ink-50">
     {!loaded && <div className="absolute inset-0 animate-pulse bg-ink-100" />}
-    <iframe title={title} src={`/preview/menu-theme/${theme}?lang=${locale}`} loading="lazy" tabIndex={-1}
+    <iframe title={title} src={`/preview/menu-theme/${theme}?lang=${locale}${personalized?"&account=1":""}`} loading="lazy" tabIndex={-1}
       onLoad={() => setLoaded(true)} className="absolute left-0 top-0 border-0" scrolling="no"
       style={{ width: 390, height: 700, transform: `scale(${scale})`, transformOrigin: 'top left' }} />
   </div>;
@@ -57,7 +57,7 @@ export function ThemePicker({
 
   return (
     <div className="space-y-4">
-      <p className="text-xs text-ink-500">{l("نفس المحتوى داخل كل قالب للمقارنة. افتح المعاينة لتصفح التصميم قبل تطبيقه.", "Compare each design with the same sample menu. Open a preview before applying.")}</p>
+      <p className="text-xs text-ink-500">{l("معاينة باسم وصور نشاطك، مع أصناف تجريبية للمقارنة. افتح القالب لتصفحه قبل تطبيقه.", "Preview your business name and images with sample items. Open a design before applying.")}</p>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {MENU_THEMES.map((theme) => {
           const active = selected === theme.id;
@@ -72,7 +72,7 @@ export function ThemePicker({
               )}
             >
               <button type="button" disabled={pending} onClick={() => setPreview(theme.id)} aria-label={`${l("معاينة", "Preview")} ${t(`theme.${theme.id}.name` as TranslationKey)}`} className="relative block w-full border-b border-ink-100 text-start focus-visible:outline-2 focus-visible:outline-brand-500">
-                <Preview theme={theme.id} locale={locale} title={t(`theme.${theme.id}.name` as TranslationKey)} />
+                <Preview theme={theme.id} personalized={!adminDemo} locale={locale} title={t(`theme.${theme.id}.name` as TranslationKey)} />
                 {current === theme.id && (
                   <span className="absolute end-2 top-2 rounded-full bg-emerald-600 px-2 py-0.5 text-[11px] font-medium text-white shadow">
                     {t("design.current")}
@@ -144,7 +144,7 @@ export function ThemePicker({
         title={`${l("معاينة", "Preview")} ${preview ? t(`theme.${preview}.name` as TranslationKey) : ""}`}
         description={l("معاينة تجريبية. اختيار القالب لا يحفظه حتى تضغط تطبيق.", "Sample preview. Select a design, then apply to save it.")}
         footer={<button type="button" disabled={pending} onClick={() => { if (preview) setSelected(preview); setPreview(null); }} className="min-h-10 rounded-lg bg-brand-600 px-4 text-sm font-semibold text-white">{l("اختيار القالب", "Select design")}</button>}>
-        {preview && <iframe key={`${preview}-${locale}`} title={l("معاينة المنيو كاملة", "Full menu preview")} src={`/preview/menu-theme/${preview}?lang=${locale}`} className="mx-auto block h-[min(62dvh,650px)] w-full max-w-[390px] rounded-xl border border-ink-200" />}
+        {preview && <iframe key={`${preview}-${locale}`} title={l("معاينة المنيو كاملة", "Full menu preview")} src={`/preview/menu-theme/${preview}?lang=${locale}${adminDemo?"":"&account=1"}`} className="mx-auto block h-[min(62dvh,650px)] w-full max-w-[390px] rounded-xl border border-ink-200" />}
       </Modal>
     </div>
   );

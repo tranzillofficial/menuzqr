@@ -1,4 +1,5 @@
 "use client";
+import {MenuCover} from "../MenuCover";
 import {MenuContact} from "../MenuContact";
 
 import { DemoMenu } from "./DemoMenu";
@@ -28,13 +29,7 @@ function StandardModernMenu() {
       <header className="relative">
         <div className="relative h-44 sm:h-56">
           {restaurant.cover_url ? (
-            <MenuImage
-              src={restaurant.cover_url}
-              alt=""
-              className="absolute inset-0 h-full w-full"
-              sizes="100vw"
-              priority
-            />
+            <MenuCover restaurant={restaurant} className="absolute inset-0 h-full w-full"/>
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-brand-500 to-brand-700" />
           )}

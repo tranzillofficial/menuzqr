@@ -39,7 +39,7 @@ export const getPublicMenu = cache(async function getPublicMenu(
   const { data: restaurant } = await supabase
     .from("restaurants")
     .select(
-      "id,business_kind,enabled_modules,name,slug,description,logo_url,cover_url,phone,contact_phones,address,currency,language,menu_theme,ordering_enabled,waiter_calls_enabled,status,owner_id,activation_expires_at,business_timezone,tax_mode,vat_registered,prices_include_vat,tax_rates,menu_prices_include_vat"
+      "id,business_kind,enabled_modules,name,slug,description,logo_url,cover_url,cover_fit,cover_position_x,cover_position_y,phone,contact_phones,address,currency,language,menu_theme,ordering_enabled,waiter_calls_enabled,status,owner_id,activation_expires_at,business_timezone,tax_mode,vat_registered,prices_include_vat,tax_rates,menu_prices_include_vat"
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -163,7 +163,7 @@ export const getPublicMenu = cache(async function getPublicMenu(
       menu_path:domain?"/menu":`/${slug}/menu`,
       payments: payments ?? undefined,
       offers: preview ? [] : currentOffers,
-      restaurant: { enabled_modules: restaurant.enabled_modules, business_kind: restaurant.business_kind, business_timezone:restaurant.business_timezone, id: restaurant.id, name: restaurant.name, slug: restaurant.slug, description: restaurant.description, logo_url: restaurant.logo_url, cover_url: restaurant.cover_url, phone: restaurant.phone, contact_phones:restaurant.contact_phones, address: restaurant.address, currency: restaurant.currency, language: restaurant.language, menu_theme: restaurant.menu_theme, ordering_enabled: restaurant.ordering_enabled, waiter_calls_enabled: restaurant.waiter_calls_enabled, prices_include_vat: restaurant.prices_include_vat, menu_prices_include_vat: restaurant.menu_prices_include_vat, vat_registered: restaurant.vat_registered, tax_mode: restaurant.tax_mode, tax_rates: restaurant.tax_rates },
+      restaurant: { enabled_modules: restaurant.enabled_modules, business_kind: restaurant.business_kind, business_timezone:restaurant.business_timezone, id: restaurant.id, name: restaurant.name, slug: restaurant.slug, description: restaurant.description, logo_url: restaurant.logo_url, cover_url: restaurant.cover_url, cover_fit:restaurant.cover_fit, cover_position_x:restaurant.cover_position_x, cover_position_y:restaurant.cover_position_y, phone: restaurant.phone, contact_phones:restaurant.contact_phones, address: restaurant.address, currency: restaurant.currency, language: restaurant.language, menu_theme: restaurant.menu_theme, ordering_enabled: restaurant.ordering_enabled, waiter_calls_enabled: restaurant.waiter_calls_enabled, prices_include_vat: restaurant.prices_include_vat, menu_prices_include_vat: restaurant.menu_prices_include_vat, vat_registered: restaurant.vat_registered, tax_mode: restaurant.tax_mode, tax_rates: restaurant.tax_rates },
       categories: market || moduleEnabled(restaurant,"subcategories") ? grouped : grouped.filter((c) => c.products.length > 0),
     },
   };

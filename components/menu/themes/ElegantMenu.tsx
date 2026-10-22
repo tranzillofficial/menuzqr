@@ -1,4 +1,5 @@
 "use client";
+import {MenuCover} from "../MenuCover";
 import {MenuContact} from "../MenuContact";
 
 import { useMemo } from "react";
@@ -18,13 +19,7 @@ export function ElegantMenu() {
       <header className="relative">
         <div className="relative h-64 sm:h-80">
           {restaurant.cover_url ? (
-            <MenuImage
-              src={restaurant.cover_url}
-              alt=""
-              className="absolute inset-0 h-full w-full"
-              sizes="100vw"
-              priority
-            />
+            <MenuCover restaurant={restaurant} className="absolute inset-0 h-full w-full"/>
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-[#3a332b] to-[#6b5c48]" />
           )}

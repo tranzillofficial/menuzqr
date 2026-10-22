@@ -15,7 +15,7 @@ import type { MenuData } from "@/lib/types";
 const themes = { elegant: ElegantMenu, modern: ModernMenu, minimal: MinimalMenu, noir: NoirMenu, market: MarketMenu };
 
 // A shared sample keeps comparisons fair. No merchant data or order endpoints.
-export function MenuThemePreview({ theme, locale }: { theme: MenuThemeId; locale: Locale }) {
+export function MenuThemePreview({ theme, locale, branding }: { theme: MenuThemeId; locale: Locale; branding?: Pick<MenuData["restaurant"],"name"|"description"|"logo_url"|"cover_url"|"cover_fit"|"cover_position_x"|"cover_position_y"> }) {
   const ar = locale === "ar";
   const samples = [
     ["كابتشينو", "Cappuccino", 65, "/demo/d460c2dc-d0de-4bef-b9f4-e2082e363aa3.webp"],
@@ -34,6 +34,7 @@ export function MenuThemePreview({ theme, locale }: { theme: MenuThemeId; locale
       enabled_modules: ["products", "design", "qr", "features_v3"],
       ordering_enabled: false, waiter_calls_enabled: false,
       tax_mode: "none", vat_registered: false, prices_include_vat: true, business_timezone: "Africa/Cairo",
+      ...branding,
     },
     categories: [0, 1].map((index) => ({
       ...common, id: `preview-category-${index}`, name: index === 0 ? (ar ? "القهوة" : "Coffee") : (ar ? "الحلويات" : "Desserts"),

@@ -1,4 +1,5 @@
 "use client";
+import {MenuCover} from "../MenuCover";
 import {MenuContact} from "../MenuContact";
 
 import { useMemo } from "react";
@@ -19,13 +20,7 @@ export function NoirMenu() {
       <header className="relative">
         <div className="relative h-72">
           {restaurant.cover_url ? (
-            <MenuImage
-              src={restaurant.cover_url}
-              alt=""
-              className="absolute inset-0 h-full w-full opacity-70"
-              sizes="100vw"
-              priority
-            />
+            <MenuCover restaurant={restaurant} className="absolute inset-0 h-full w-full"/>
           ) : (
             <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_0%,#2b2118_0%,#0b0b0d_70%)]" />
           )}
