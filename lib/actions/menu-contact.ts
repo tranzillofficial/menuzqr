@@ -3,6 +3,7 @@ import {revalidatePath} from 'next/cache';
 import {createAdminSupabase} from '@/lib/supabase/admin';
 import {getMenuRestaurant,str,fail,done,sanitiseImageUrl} from './helpers';
 import {contactPhones,safeContactUrl} from '@/lib/menu-contact';
+import {featureEnabled} from '@/lib/business-features';
 import {normalizeWhatsapp} from '@/lib/phone';
 import type {ActionState} from '@/lib/types';
 export async function saveMenuContact(_previous:ActionState,form:FormData):Promise<ActionState>{
@@ -16,8 +17,9 @@ export async function saveMenuContact(_previous:ActionState,form:FormData):Promi
  const links:Record<string,string>={};for(const key of ['location_url','instagram_url','facebook_url','website_url']){const value=str(form,key);if(value&&(value.length>500||!safeContactUrl(value)))return fail('روابط التواصل لازم تبدأ بـ https://.');links[key]=value;}
  // Tenant and permission come exclusively from the authenticated manager context.
  const db=createAdminSupabase();
- const settings=await db.from('restaurant_settings').upsert({restaurant_id:owned.restaurant.id,...links,payment_whatsapp:whatsapp},{onConflict:'restaurant_id'});if(settings.error)return fail('تعذر حفظ روابط التواصل.');
- const result=await db.from('restaurants').update({contact_phones:phones,phone:phones[0]??null,address:str(form,'address').slice(0,400)||null,logo_url:logo,cover_url:cover}).eq('id',owned.restaurant.id);
+ const contactsEnabled=featureEnabled(owned.restaurant,'contact_settings');
+ if(contactsEnabled){const settings=await db.from('restaurant_settings').upsert({restaurant_id:owned.restaurant.id,...links,payment_whatsapp:whatsapp},{onConflict:'restaurant_id'});if(settings.error)return fail('تعذر حفظ روابط التواصل.');}
+ const result=await db.from('restaurants').update({...(contactsEnabled?{contact_phones:phones,phone:phones[0]??null,address:str(form,'address').slice(0,400)||null}:{}),logo_url:logo,cover_url:cover}).eq('id',owned.restaurant.id);
  if(result.error)return fail('تم حفظ الروابط، لكن تعذر حفظ بيانات النشاط. حاول الحفظ مرة أخرى.');
  revalidatePath('/dashboard','layout');revalidatePath(`/${owned.restaurant.slug}/menu`);return done('تم حفظ بيانات المنيو والتواصل.');
 }
