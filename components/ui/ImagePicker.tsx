@@ -65,6 +65,7 @@ export function ImagePicker({
   allowLibrary = true,
   chooseSource = false,
   compact = false,
+  onBusyChange,
 }: {
   restaurantId: string;
   kind: ImageRole;
@@ -79,6 +80,7 @@ export function ImagePicker({
   allowLibrary?: boolean;
   chooseSource?: boolean;
   compact?: boolean;
+  onBusyChange?: (busy: boolean) => void;
 }) {
   const toast = useToast();
   const t = useT();
@@ -91,6 +93,7 @@ export function ImagePicker({
   const [libraryOpen, setLibraryOpen] = useState(false);
 
   const busy = status.phase !== "idle";
+  useEffect(() => { onBusyChange?.(busy); }, [busy, onBusyChange]);
 
   const upload = useCallback(
     async (file: File) => {

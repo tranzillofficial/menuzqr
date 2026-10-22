@@ -149,7 +149,7 @@ export async function deleteAssetIfOwned(url: string | null | undefined, restaur
  */
 export function sanitiseImageUrl(url: string | null): string | null {
   if (!url) return null;
-  if (url === "/images/clients/cilio-logo.webp") return url;
+  if (["/images/clients/cilio-logo.webp", "/images/clients/t9-logo.jpg", "/images/clients/t9-cover.jpg"].includes(url)) return url;
   if (/^https:\/\/ik\.imagekit\.io\/redom\/menuzqr\/catalog\/supermarket\/[a-z_]+\/[a-f0-9]+\.webp$/.test(url)) return url;
   // Bundled category photographs are also safe and must survive category edits.
   if (/^\/images\/supermarket-categories\/(pantry|dairy|drinks|snacks|household|bakery)-v1\.webp$/.test(url)) return url;

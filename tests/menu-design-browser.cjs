@@ -7,17 +7,20 @@ const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),
  const next=require('node:child_process').spawn(process.execPath,['node_modules/next/dist/bin/next','start','--hostname','127.0.0.1','--port','3100'],{cwd:root,stdio:'ignore'});
  for(let i=0;i<100;i++){try{const response=await fetch('http://127.0.0.1:3100/preview/menu-theme/modern');if(response.ok)break;}catch{}await new Promise(r=>setTimeout(r,200));if(i===99){next.kill();throw Error('Preview server did not start')}}
  const mocks={
+  'next/image':`export default function Image({fill,priority,unoptimized,sizes,loader,...props}){return <img {...props} style={fill?{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover'}:undefined}/>} `,
   'next/navigation':`export const useRouter=()=>({refresh(){window.refreshes=(window.refreshes||0)+1}});`,
   'next/link':`export default function Link({children,...props}){return <a {...props}>{children}</a>}`,
   '@/lib/actions/restaurant':`export async function updateMenuThemeAction(theme){window.savedThemes.push(theme);return {ok:true,message:'Saved'}}`,
   '@/lib/actions/admin':`export async function updateDemoMenuThemeAction(theme){window.savedThemes.push(theme);return {ok:true,message:'Saved'}}`,
+  '@/lib/actions/menu-contact':`export async function saveMenuContact(previous,form){window.savedProfile=Object.fromEntries(form);return {ok:true,message:'Saved'}}`,
+  '@/lib/supabase/client':`export function createClient(){return {storage:{from(){return {async upload(){await new Promise(r=>setTimeout(r,100));return {error:null}},getPublicUrl(path){return {data:{publicUrl:'https://example.com/'+path}}}}}}}}`,
   '@/lib/actions/dashboard-settings':`export async function saveDashboardSettings(previous,form){window.savedSettings=Object.fromEntries(form);return {ok:true,message:'Saved'}}`,
  };
- const app=await build({stdin:{contents:`import {createRoot} from 'react-dom/client';import {useState} from 'react';import {ThemePicker} from '@/components/dashboard/ThemePicker';import {SettingsForm} from '@/components/dashboard/SettingsForm';import {I18nProvider} from '@/components/i18n/I18nProvider';import {ToastProvider} from '@/components/ui/Toast';import {MENU_ONLY_MODULES} from '@/lib/business-modules';import {MENU_ONLY_FEATURES} from '@/lib/business-features';
+ const app=await build({stdin:{contents:`import {createRoot} from 'react-dom/client';import {useState} from 'react';import {ThemePicker} from '@/components/dashboard/ThemePicker';import {SettingsForm} from '@/components/dashboard/SettingsForm';import {MenuContactForm} from '@/components/dashboard/MenuContactForm';import {I18nProvider} from '@/components/i18n/I18nProvider';import {ToastProvider} from '@/components/ui/Toast';import {MENU_ONLY_MODULES} from '@/lib/business-modules';import {MENU_ONLY_FEATURES} from '@/lib/business-features';
  const params=new URLSearchParams(location.search),locale=params.get('lang')||'ar';document.documentElement.dir=locale==='ar'?'rtl':'ltr';window.savedThemes=[];
  const restaurant={id:'sample',slug:'sample',menu_theme:'modern',name:'Sample',business_kind:'restaurant',enabled_modules:[...MENU_ONLY_MODULES,...MENU_ONLY_FEATURES,'features_v2','features_v3'],ordering_enabled:false,waiter_calls_enabled:false};
- function App(){return <I18nProvider locale={locale}><ToastProvider><main className="mx-auto max-w-5xl p-4 sm:p-6">{params.has('settings')?<SettingsForm restaurant={restaurant} hasTables={false} settings={{sound_enabled:true,show_prices:true,show_ingredients:true}}/>:<ThemePicker current="modern" slug="sample" isActive/>}</main></ToastProvider></I18nProvider>};createRoot(document.getElementById('root')).render(<App/>);`,resolveDir:root,loader:'tsx'},bundle:true,write:false,format:'iife',jsx:'automatic',absWorkingDir:root,plugins:[{name:'mock',setup(b){b.onResolve({filter:/.*/},a=>mocks[a.path]?{path:a.path,namespace:'mock'}:undefined);b.onLoad({filter:/.*/,namespace:'mock'},a=>({contents:mocks[a.path],loader:'tsx',resolveDir:root}));}}]});
- const css=fs.readdirSync(path.join(root,'.next/static/chunks')).filter(p=>p.endsWith('.css')).map(p=>fs.readFileSync(path.join(root,'.next/static/chunks',p),'utf8')).join('\n');
+ function App(){return <I18nProvider locale={locale}><ToastProvider><main className="mx-auto max-w-5xl p-4 sm:p-6">{params.has('settings')?<SettingsForm restaurant={restaurant} hasTables={false} settings={{sound_enabled:true,show_prices:true,show_ingredients:true}} sections={[{id:'profile',ar:'البروفايل',en:'Profile',content:<MenuContactForm restaurant={{...restaurant,logo_url:'/images/clients/t9-logo.jpg',cover_url:'/images/clients/t9-cover.jpg'}} settings={{}}/>}]}/>:<ThemePicker current="modern" slug="sample" isActive/>}</main></ToastProvider></I18nProvider>};createRoot(document.getElementById('root')).render(<App/>);`,resolveDir:root,loader:'tsx'},bundle:true,write:false,format:'iife',jsx:'automatic',absWorkingDir:root,plugins:[{name:'mock',setup(b){b.onResolve({filter:/.*/},a=>mocks[a.path]?{path:a.path,namespace:'mock'}:undefined);b.onLoad({filter:/.*/,namespace:'mock'},a=>({contents:mocks[a.path],loader:'tsx',resolveDir:root}));}}]});
+ const css=['chunks','css'].flatMap(dir=>{const folder=path.join(root,'.next/static',dir);return fs.existsSync(folder)?fs.readdirSync(folder).filter(p=>p.endsWith('.css')).map(p=>fs.readFileSync(path.join(folder,p),'utf8')):[]}).join('\n');
  const server=http.createServer((req,res)=>{
   if(req.url==='/test.js'){res.setHeader('content-type','text/javascript');return res.end(app.outputFiles[0].text)}
   if(req.url==='/test.css'){res.setHeader('content-type','text/css');return res.end(css)}
@@ -47,11 +50,23 @@ const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),
   await page.goto(origin+'/test?settings=1');
   assert.equal(await page.getByRole('switch').count(),2);
   assert.equal(await page.getByText('صوت الإشعارات',{exact:true}).count(),0);
-  await page.getByRole('tab',{name:'التواصل والموقع',exact:true}).click();
+  await page.getByRole('tab',{name:'البروفايل',exact:true}).click();
   await page.getByLabel('رابط اللوكيشن',{exact:true}).fill('https://maps.example.com/cafe');
-  await page.getByRole('button',{name:'حفظ التعديلات',exact:true}).click();
-  await page.waitForFunction(()=>window.savedSettings?.location_url==='https://maps.example.com/cafe');
+  await page.getByRole('button',{name:'حفظ البروفايل',exact:true}).click();
+  await page.waitForFunction(()=>window.savedProfile?.location_url==='https://maps.example.com/cafe');
+  assert.equal(await page.evaluate(()=>window.savedProfile.logo_url),'/images/clients/t9-logo.jpg');
+  assert.equal(await page.evaluate(()=>window.savedProfile.cover_url),'/images/clients/t9-cover.jpg');
   assert.equal(await page.getByLabel('رقم محفظة كاش',{exact:true}).count(),0);
+  for(const width of [320,390,768,1440]){
+   await page.setViewportSize({width,height:900});await page.goto(origin+'/test?settings=1');
+   await page.getByRole('tab',{name:'البروفايل',exact:true}).click();
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`profile overflow at ${width}`);
+   await page.screenshot({path:`/tmp/menu-profile-${width}.png`,fullPage:true});
+  }
+  await page.locator('input[type=file]').first().setInputFiles(path.join(root,'public/images/clients/t9-logo.jpg'));
+  await page.waitForFunction(()=>document.querySelector('input[name=logo_url]').value.startsWith('https://example.com/'));
+  await page.getByRole('button',{name:'حفظ البروفايل',exact:true}).click();
+  await page.waitForFunction(()=>window.savedProfile?.logo_url.startsWith('https://example.com/'));
   await page.goto(origin+'/test?lang=en');await page.getByRole('button',{name:'Preview Elegant',exact:true}).click();
   await page.frameLocator('iframe[title="Full menu preview"]').getByRole('heading',{name:'Bloom Café'}).waitFor();
   await page.getByRole('button',{name:'Close',exact:true}).click();assert.equal(await page.getByRole('dialog').count(),0);
@@ -60,5 +75,5 @@ const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),
    assert.equal(await page.getByRole('button',{name:/أضف إلى الطلب|Add to order/}).count(),0);
   }
   assert.deepEqual(errors,[]);console.log('PASS: five real theme previews, AR/EN, 320/390/768/1440 without overflow, preview/select/save isolation, dialog close and settings save with paid controls hidden');
- }finally{await browser.close();await new Promise(r=>server.close(r));next.kill()}
+ }catch(error){console.error('Browser errors:',errors);await page.screenshot({path:'/tmp/menu-profile-failure.png',fullPage:true});throw error;}finally{await browser.close();await new Promise(r=>server.close(r));next.kill()}
 })().catch(e=>{console.error(e);process.exit(1)});
