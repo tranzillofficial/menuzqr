@@ -12,7 +12,7 @@ import type { TranslationKey } from "@/lib/i18n";
 export default async function HomePage() {
   const [user, platform, t] = await Promise.all([getUser(), getPlatformSettings(), getT()]);
   const locale = await getLocale();
-  const price = locale==="ar"?"800 جنيه":"EGP 800";
+  const price = locale==="ar"?"1,250 جنيه":"EGP 1,250";
 
   const features: Array<{ icon: keyof typeof Icon; title: TranslationKey; body: TranslationKey }> = [
     { icon: "palette", title: "landing.f1Title", body: "landing.f1Body" },
